@@ -72,8 +72,8 @@ CPoint3D CGameObject::WorldTransform(CPoint3D& f3Model)
 
 void CGameObject::Animate(float fElapsedTime)
 {
-	//Rotate(m_fxRotationSpeed * fElapsedTime, m_fyRotationSpeed *
-	//	fElapsedTime, m_fzRotationSpeed * fElapsedTime);
+	Rotate(m_fxRotationSpeed * fElapsedTime, m_fyRotationSpeed *
+		fElapsedTime, m_fzRotationSpeed * fElapsedTime);
 }
 
 void CGameObject::Render(HDC hDCFrameBuffer)
@@ -85,9 +85,4 @@ void CGameObject::Render(HDC hDCFrameBuffer)
 		::SelectObject(hDCFrameBuffer, hOldPen);
 		::DeleteObject(hPen);
 	}
-}
-
-void CAirplaneGameObject::Animate(float)
-{
-
 }

@@ -23,7 +23,11 @@ public:
 	CCamera* GetCamera() { return(m_pCamera); }
 };
 
-class CAirplaneGameObject : public CGameObject {
+class CAirplaneGameObject : public CPlayer {
 public:
-	virtual void Animate(float);
+	//virtual void Animate(float);
+	CAirplaneGameObject() {
+		CAirplaneMesh* pAirplaneMesh = new CAirplaneMesh(1, 1, 1);
+		SetMesh(pAirplaneMesh);
+	}
 };

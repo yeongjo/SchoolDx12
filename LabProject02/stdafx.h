@@ -33,5 +33,7 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
-#define FRAME_BUFFER_WIDTH 800
-#define FRAME_BUFFER_HEIGHT 600
+#define FRAME_BUFFER_WIDTH 640
+#define FRAME_BUFFER_HEIGHT 480
+
+#define DegreeToRadian(x) float((x)*3.141592654f/180.0f)
