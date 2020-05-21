@@ -1,24 +1,24 @@
 #pragma once
 
 #include "GameObject.h"
+#include "Camera.h"
 #include "Player.h"
 
-class CScene
-{
+class CScene {
 public:
-	CScene() { }
-	virtual ~CScene() { }
+	CScene(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
+	virtual ~CScene() {}
 private:
-	//게임 객체들의 개수와 게임 객체들의 리스트(배열)이다. 
-	int m_nObjects = 0;
-	CGameObject **m_ppObjects = NULL;
+	vector<CGameObject*> m_pObjects;
+	CPlayer* m_pPlayer = NULL;
 public:
-	//게임 객체들을 생성하고 소멸한다. 
 	virtual void BuildObjects();
 	virtual void ReleaseObjects();
-	//게임 객체들을 애니메이션한다.
 	virtual void Animate(float fElapsedTime);
-	//게임 객체들을 렌더링한다. 
 	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+	//윈도우 메시지(키보드, 마우스)를 처리한다. 
+	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {}
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {}
+	CGameObject* CheckCollision(const CGameObject* rhs);
+	CGameObject* CheckCollision(XMFLOAT3 origin, XMFLOAT3 direc);
 };
-

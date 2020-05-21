@@ -1,67 +1,78 @@
 #pragma once
 #include "Mesh.h"
+class CCamera;
 
-class CGameObject
-{
+class CGameObject {
 public:
-	CGameObject() { }
+	CGameObject() {}
 	~CGameObject();
-private:
-	//게임 객체의 위치(월드 좌표계)이다.
-	float m_fxPosition = 0.0f;
-	float m_fyPosition = 0.0f;
-	float m_fzPosition = 0.0f;
-
-	//게임 객체의 x-축, y-축, z-축 회전 양(축을 기준으로 반시계 방향)이다.
-	float m_fxRotation = 0.0f;
-	float m_fyRotation = 0.0f;
-	float m_fzRotation = 0.0f;
-
-	//게임 객체의 x-축, y-축, z-축 회전 양이다.
-	float m_fxRotationSpeed = 0.0f;
-	float m_fyRotationSpeed = 0.0f;
-	float m_fzRotationSpeed = 0.0f;
-
-	//게임 객체의 모양(메쉬, 모델)이다.
-	CMesh *m_pMesh = NULL;
-
-	//게임 객체의 색상(선분의 색상)이다.
+public:
+	bool m_bActive = true;
+	//게임 객체의 모양(메쉬, 모델)이다. 
+	CMesh* m_pMesh = NULL;
+	//게임 객체의 월드 변환 행렬이다. 
+	XMFLOAT4X4 m_xmf4x4World = Matrix4x4::Identity();
+	//게임 객체의 색상(선분의 색상)이다. 
 	DWORD m_dwColor = RGB(255, 0, 0);
+	//게임 객체의 이동 방향을 나타내는 벡터이다.
+	XMFLOAT3 m_xmf3MovingDirection = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	float m_fMovingSpeed = 0.0f;
+	float m_fMovingRange = 0.0f;
+	//게임 객체의 회전축을 나타내는 벡터이다. 
+	XMFLOAT3 m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	float m_fRotationSpeed = 0.0f;
+	//충돌검사위한 범위설정
+	float radius = 1;
 public:
 	void SetMesh(CMesh *pMesh) {
-		m_pMesh = pMesh; if (pMesh)
+		m_pMesh = pMesh; 
+		if (pMesh)
 			pMesh->AddRef();
 	}
+	void SetActive(bool bActive) { m_bActive = bActive; }
 	void SetColor(DWORD dwColor) { m_dwColor = dwColor; }
-	void SetPosition(float x, float y, float z) {
-		m_fxPosition = x;
-		m_fyPosition = y; m_fzPosition = z;
-	}
-	void SetRotation(float x, float y, float z) {
-		m_fxRotation = x;
-		m_fyRotation = y; m_fzRotation = z;
-	}
-	void SetRotationSpeed(float x, float y, float z) {
-		m_fxRotationSpeed = x; m_fyRotationSpeed = y; m_fzRotationSpeed = z;
-	}
-	//게임 객체를 x-축, y-축, z-축으로 이동한다.
-	void Move(float x, float y, float z) {
-		m_fxPosition += x;
-		m_fyPosition += y; m_fyPosition += z;
-	}
-	//게임 객체를 x-축, y-축, z-축을 기준으로 회전한다.
-	void Rotate(float x, float y, float z) { m_fxRotation += x;
-	m_fyRotation += y; m_fzRotation += z;
-}
-public:
-	//메쉬의 정점 하나를 게임 객체의 위치와 방향을 사용하여 월드 좌표 변환을 한다.
-	CPoint3D WorldTransform(CPoint3D& f3Model);
+	void SetPosition(float x, float y, float z);
+	void SetPosition(const XMFLOAT3& xmf3Position);
 
-	//게임 객체를 애니메이션 한다.
+	void SetMovingDirection(const XMFLOAT3& xmf3MovingDirection);
+	void SetMovingSpeed(float fSpeed) { m_fMovingSpeed = fSpeed; }
+	void SetMovingRange(float fRange) { m_fMovingRange = fRange; }
+	void SetRotationAxis(const XMFLOAT3& xmf3RotationAxis);
+	void SetRotationSpeed(float fSpeed) { m_fRotationSpeed = fSpeed; }
+	void Move(const XMFLOAT3& vDirection, float fSpeed);
+	void Rotate(float fPitch, float fYaw, float fRoll);
+	void Rotate(const XMFLOAT3& xmf3Axis, float fAngle);
+	virtual void OnUpdateTransform() {}
 	virtual void Animate(float fElapsedTime);
+	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
 
-	//게임 객체를 렌더링한다.
-	virtual void Render(HDC hDCFrameBuffer);
+	CGameObject* CheckCollision(const CGameObject* rhs);
+	CGameObject* CheckCollision(XMFLOAT3 origin, XMFLOAT3 direc);
+
+	friend class CCollision;
 };
 
+class CExplosedObjects : public CGameObject{
+public:
+	CGameObject objs[50];
+	CGameObject mainObj;
 
+	bool isExplode = false;
+	float explodeRestoreTime = 2;
+	float elapsedExplodeTime = 0;
+
+	CExplosedObjects();
+	virtual void Animate(float fElapsedTime);
+	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+};
+
+class CBullet : public CGameObject{
+public:
+	CGameObject *target = nullptr;
+	float elapsedTime = 0;
+	float destoryTime = 8;
+
+	CBullet(XMFLOAT3 direc);
+
+	virtual void Animate(float fElapsedTime);
+};

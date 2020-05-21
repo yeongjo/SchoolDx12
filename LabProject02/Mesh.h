@@ -1,26 +1,13 @@
 #pragma once
+#include "stdafx.h"
 
-
-class CPoint3D
-{
-public:
-	CPoint3D() { }
-	CPoint3D(float x, float y, float z) {
-		this->pos.x = x; this->pos.y = y;
-		this->pos.z = z;
-	}
-	virtual ~CPoint3D() { }
-	XMFLOAT3 pos;
-};
 class CVertex
 {
 public:
 	CVertex() { }
-	CVertex(float x, float y, float z) {
-		m_f3Position = CPoint3D(x, y, z);
-	}
+	CVertex(float x, float y, float z) { m_xmf3Position = XMFLOAT3(x, y, z); }
 	virtual ~CVertex() { }
-	CPoint3D m_f3Position;
+	XMFLOAT3 m_xmf3Position;
 };
 class CPolygon
 {
@@ -67,7 +54,7 @@ public:
 	virtual void Render(HDC hDCFrameBuffer);
 };
 //직육면체 클래스를 선언한다.
-class CCubeMesh : public CMesh
+class CCubeMesh : public CMesh, public Singleton<CCubeMesh>
 {
 public:
 	CCubeMesh(float fWidth = 4.0f, float fHeight = 4.0f, float fDepth

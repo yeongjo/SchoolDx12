@@ -2,52 +2,82 @@
 #include "Scene.h"
 #include "GraphicsPipeline.h"
 
-void CScene::BuildObjects()
-{
-	//직육면체 메쉬를 생성한다.
-	CMapMesh *pCubeMesh = new CMapMesh();
-	//게임 객체 2 개를 생성한다.
-	m_nObjects = 1;
-	m_ppObjects = new CGameObject*[m_nObjects];
-	m_ppObjects[0] = new CGameObject();
-	m_ppObjects[0]->SetMesh(pCubeMesh);
-	m_ppObjects[0]->SetPosition(-0.f, 0.0f, -0.0f);
-	m_ppObjects[0]->SetRotation(0.0f, 0.0f, 0.0f);
-	//m_ppObjects[0]->SetRotationSpeed(5.0f, 30.0f, 9.0f);
-	m_ppObjects[0]->SetColor(RGB(255, 0, 0));
-	//m_ppObjects[1] = new CGameObject();
-	//m_ppObjects[1]->SetMesh(pCubeMesh);
-	//m_ppObjects[1]->SetPosition(+8.5f, 0.0f, -14.0f);
-	//m_ppObjects[1]->SetRotation(0.0f, 0.0f, 0.0f);
-	//m_ppObjects[1]->SetRotationSpeed(30.0f, 9.0f, 5.0f);
-	//m_ppObjects[1]->SetColor(RGB(0, 0, 255));
+void CScene::BuildObjects() {
+	CCubeMesh* pCubeMesh = &CCubeMesh::getInstance();
+	m_pObjects.resize(6);
+	m_pObjects[0] = new CExplosedObjects();
+	m_pObjects[0]->SetMesh(pCubeMesh);
+	m_pObjects[0]->SetColor(RGB(255, 0, 0));
+	m_pObjects[0]->SetPosition(-13.5f, 0.0f, +14.0f);
+	m_pObjects[0]->SetRotationAxis(XMFLOAT3(1.0f, 1.0f, 0.0f));
+	m_pObjects[0]->SetRotationSpeed(90.0f);
+	m_pObjects[0]->SetMovingDirection(XMFLOAT3(1.0f, 0.0f, 0.0f));
+	m_pObjects[0]->SetMovingSpeed(0.5f);
+	m_pObjects[1] = new CExplosedObjects();
+	m_pObjects[1]->SetMesh(pCubeMesh);
+	m_pObjects[1]->SetColor(RGB(0, 0, 255));
+	m_pObjects[1]->SetPosition(+13.5f, 0.0f, +14.0f);
+	m_pObjects[1]->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 1.0f));
+	m_pObjects[1]->SetRotationSpeed(180.0f);
+	m_pObjects[1]->SetMovingDirection(XMFLOAT3(-1.0f, 0.0f, 0.0f));
+	m_pObjects[1]->SetMovingSpeed(1.5f);
+	m_pObjects[2] = new CExplosedObjects();
+	m_pObjects[2]->SetMesh(pCubeMesh);
+	m_pObjects[2]->SetColor(RGB(0, 255, 0));
+	m_pObjects[2]->SetPosition(0.0f, +5.0f, 20.0f);
+	m_pObjects[2]->SetRotationAxis(XMFLOAT3(1.0f, 0.0f, 1.0f));
+	m_pObjects[2]->SetRotationSpeed(30.15f);
+	m_pObjects[2]->SetMovingDirection(XMFLOAT3(1.0f, -1.0f, 0.0f));
+	m_pObjects[2]->SetMovingSpeed(0.0f);
+	m_pObjects[3] = new CExplosedObjects();
+	m_pObjects[3]->SetMesh(pCubeMesh);
+	m_pObjects[3]->SetColor(RGB(0, 255, 255));
+	m_pObjects[3]->SetPosition(0.0f, 0.0f, 40.0f);
+	m_pObjects[3]->SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
+	m_pObjects[3]->SetRotationSpeed(40.6f);
+	m_pObjects[3]->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, 1.0f));
+	m_pObjects[3]->SetMovingSpeed(0.0f);
+	m_pObjects[4] = new CExplosedObjects();
+	m_pObjects[4]->SetMesh(pCubeMesh);
+	m_pObjects[4]->SetColor(RGB(128, 0, 255));
+	m_pObjects[4]->SetPosition(10.0f, 10.0f, 50.0f);
+	m_pObjects[4]->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 1.0f));
+	m_pObjects[4]->SetRotationSpeed(50.06f);
+	m_pObjects[4]->SetMovingDirection(XMFLOAT3(0.0f, 1.0f, 1.0f));
+	m_pObjects[4]->SetMovingSpeed(0.0f);
+	m_pObjects[5] = new CGameObject();
+	m_pObjects[5]->SetMesh(new CMapMesh());
+	m_pObjects[5]->radius = -1000;
 }
-void CScene::ReleaseObjects()
-{
-	for (int i = 0; i < m_nObjects; i++) 
-		if (m_ppObjects[i]) 
-			delete m_ppObjects[i];
-	if (m_ppObjects) 
-		delete[] m_ppObjects;
+void CScene::ReleaseObjects() {
+	for (size_t i = 0; i < m_pObjects.size(); i++) if (m_pObjects[i]) delete m_pObjects[i];
+	m_pObjects.clear();
 }
 
-void CScene::Animate(float fElapsedTime)
-{
-	for (int i = 0; i < m_nObjects; i++)
-		m_ppObjects[i]->Animate(fElapsedTime);
+void CScene::Animate(float fElapsedTime) {
+	for (size_t i = 0; i < m_pObjects.size(); i++)
+		m_pObjects[i]->Animate(fElapsedTime);
 }
 
-void CScene::Render(HDC hDCFrameBuffer, CCamera* pCamera)
-{
-	//현재 카메라를 렌더링 파이프라인에 설정한다. 
-	if (pCamera) CGraphicsPipeline::SetCamera(pCamera);
+void CScene::Render(HDC hDCFrameBuffer, CCamera* pCamera) {
+	CGraphicsPipeline::SetViewport(&pCamera->m_Viewport);
+	CGraphicsPipeline::SetViewProjectTransform(&pCamera->m_xmf4x4ViewProject);
+	for (size_t i = 0; i < m_pObjects.size(); i++)
+		m_pObjects[i]->Render(hDCFrameBuffer, pCamera);
+}
 
-	for (int i = 0; i < m_nObjects; i++)
-	{
-		//현재 게임 객체를 렌더링 파이프라인에 설정한다. 
-		CGraphicsPipeline::SetGameObject(m_ppObjects[i]);
-
-		//현재 게임 객체를 렌더링한다. 
-		m_ppObjects[i]->Render(hDCFrameBuffer);
+CGameObject* CScene::CheckCollision(const CGameObject* rhs){
+	for(auto& t:m_pObjects){
+		auto obj = t->CheckCollision(rhs);
+		if(obj!=nullptr) return obj;
 	}
+	return nullptr;
+}
+
+CGameObject * CScene::CheckCollision(XMFLOAT3 origin, XMFLOAT3 direc){
+	for(auto& t:m_pObjects){
+		auto obj = t->CheckCollision(origin, direc);
+		if(obj!=nullptr) return obj;
+	}
+	return nullptr;
 }

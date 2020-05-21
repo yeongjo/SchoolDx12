@@ -6,8 +6,6 @@
 #include "LabProject02-1.h"
 #include "GameFramework.h"
 
-CGameFramework gGameFramework;
-
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
@@ -55,10 +53,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 		}
 		else {
-			gGameFramework.FrameAdvance();
+			CGameFramework::getInstance().FrameAdvance();
 		}
 	}
-	gGameFramework.OnDestroy();
+	CGameFramework::getInstance().OnDestroy();
 
 	return (int)msg.wParam;
 }
@@ -117,7 +115,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	if (!hMainWnd) return(FALSE);
 
 	//프로그램의 주 윈도우가 생성되면 CGameFramework 클래스의 OnCreate() 함수를 호출하여 프레임 워크 객체를 초기화하도록 한다.
-	gGameFramework.OnCreate(hInstance, hMainWnd);
+	CGameFramework::getInstance().OnCreate(hInstance, hMainWnd);
 	::ShowWindow(hMainWnd, nCmdShow);
 	::UpdateWindow(hMainWnd);
 	return(TRUE);
@@ -133,10 +131,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
+	lParam) {
 	switch (message) {
-	case WM_SIZE:
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
 	case WM_RBUTTONDOWN:
@@ -144,14 +141,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 	case WM_KEYDOWN:
 	case WM_KEYUP:
+		CGameFramework::getInstance().OnProcessingWindowMessage(hWnd, message, wParam,
+			lParam);
 		break;
 	case WM_DESTROY:
 		::PostQuitMessage(0);
 		break;
 	default:
-		return(::DefWindowProc(hWnd, message, wParam, lParam));
+		return(DefWindowProc(hWnd, message, wParam, lParam));
 	}
-	return 0;
+	return(0);
 }
 
 // 정보 대화 상자의 메시지 처리기입니다.
