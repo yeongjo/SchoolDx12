@@ -73,3 +73,8 @@ public:
 	CAirplaneMesh(float fWidth, float fHeight, float fDepth);
 	virtual ~CAirplaneMesh() {}
 };
+
+class CLineMesh: public CMesh{
+public:
+	CLineMesh();
+};

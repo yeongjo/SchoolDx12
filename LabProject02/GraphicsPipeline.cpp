@@ -9,10 +9,16 @@ XMFLOAT3 CGraphicsPipeline::Project(XMFLOAT3& xmf3Model){
 	XMMATRIX xmmtxModelToProject =
 		XMMatrixMultiply(XMLoadFloat4x4(m_pxmf4x4World),
 			XMLoadFloat4x4(m_pxmf4x4ViewProject));
+	XMFLOAT4 t(xmf3Model.x, xmf3Model.y, xmf3Model.z, 1);
 	XMFLOAT3 xmf3Project;
-	XMStoreFloat3(&xmf3Project,
-		XMVector3TransformCoord(XMLoadFloat3(&xmf3Model),
-			xmmtxModelToProject));
+	XMStoreFloat4(&t,
+		XMVector4Transform(XMLoadFloat4(&t), xmmtxModelToProject));
+	if(t.z!=0){
+		t.w = (t.w>0 ? t.w : -t.w);
+		xmf3Project.x = t.x/t.w;
+		xmf3Project.y = t.y/t.w;
+		xmf3Project.z = t.z/t.w;
+	}
 	return(xmf3Project);
 }
 

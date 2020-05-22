@@ -1,9 +1,9 @@
+#include "stdafx.h"
 #include "GameObject.h"
 #include "Camera.h"
 #include "GameFramework.h"
 #include "GraphicsPipeline.h"
 #include "Mesh.h"
-#include "stdafx.h"
 
 CGameObject::~CGameObject(void){
 	//이 게임 객체는 더 이상 메쉬를 참조하지 않으므로 메쉬의 참조값을 1 감소한다.

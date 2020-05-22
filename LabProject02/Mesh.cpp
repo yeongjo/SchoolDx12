@@ -61,8 +61,6 @@ bool GetClipedLine(bool prevInside, bool curInside, XMFLOAT3 &prevPos, XMFLOAT3 
 				auto direc = XMVector3Normalize(prev-cur);
 				if(BoundingBox(center, size).Intersects(cur, direc, dist)){
 					if(dist>0){
-						if(curPos.z<0)
-							print(L"hi");
 						auto point = cur+direc*dist;
 						XMStoreFloat3(&curPos, point);
 					}
@@ -79,8 +77,8 @@ bool GetClipedLine(bool prevInside, bool curInside, XMFLOAT3 &prevPos, XMFLOAT3 
 		}
 		return true;
 	}
-	
-	/*auto direc = XMVector3Normalize(prev-cur);
+
+	auto direc = XMVector3Normalize(prev-cur);
 	if(BoundingBox(center, size).Intersects(cur, direc, dist)){
 		if(dist>0){
 			auto point = cur+direc*dist;
@@ -94,9 +92,81 @@ bool GetClipedLine(bool prevInside, bool curInside, XMFLOAT3 &prevPos, XMFLOAT3 
 			XMStoreFloat3(&prevPos, point);
 		}
 	} else return false;
-	return true;*/
+	return true;
+
 	return false;
 }
+
+bool intersectPlane(const XMVECTOR &n, const XMVECTOR &p0, const XMVECTOR &l0, const XMVECTOR &l, float &t){
+	// assuming vectors are all normalized
+	float denom;
+	XMStoreFloat(&denom, XMVector3Dot(n, l));
+
+	if(denom>1e-6){
+		auto p0l0 = p0-l0;
+		XMStoreFloat(&t, XMVector3Dot(p0l0, n));
+		t = t/denom;
+		return (t>=0);
+	}
+	return false;
+}
+
+// z:0 보다 더 뒤로 가는것들 교점구함
+bool GetIntersectPoint(XMFLOAT3& start, XMFLOAT3& end){
+	if(start.z>0&&end.z>0) return false;
+	auto n = XMFLOAT3(0, 0, -1);
+	auto p0 = XMFLOAT3(0, 0, 0);
+	XMVECTOR l = XMVector3Normalize(XMLoadFloat3(&end)-XMLoadFloat3(&start));
+	XMVECTOR l0 = XMLoadFloat3(&start);
+	XMFLOAT3* changePoint = &end;
+	if(start.z<0){ // end가 화면안 start가 안쪽으로 넘어갈때
+		l = -l;
+		l0 = XMLoadFloat3(&end);
+		changePoint = &start;
+	}
+
+	float t;
+	auto result = intersectPlane(XMLoadFloat3(&n), XMLoadFloat3(&p0), l0, l, t);
+	if(result)
+		XMStoreFloat3(changePoint, l0+l*t);
+	return result;
+}
+
+//void CMesh::Render(HDC hDCFrameBuffer){
+//	XMFLOAT3 f3InitialProject, f3PreviousProject;
+//	bool bPreviousInside = false, bInitialInside = false, bCurrentInside = false, bIntersectInside = false;
+//	for(int j = 0; j<m_nPolygons; j++){
+//		int nVertices = m_ppPolygons[j]->m_nVertices;
+//		CVertex* pVertices = m_ppPolygons[j]->m_pVertices;
+//		f3PreviousProject = f3InitialProject = CGraphicsPipeline::Project(pVertices[0].m_xmf3Position);
+//		bPreviousInside = bInitialInside =
+//			(-1.0f<=f3InitialProject.x)&&(f3InitialProject.x<=1.0f)&&
+//			(-1.0f<=f3InitialProject.y)&&(f3InitialProject.y<=1.0f);
+//		for(int i = 1; i<nVertices; i++){
+//			XMFLOAT3 f3CurrentProject = CGraphicsPipeline::Project(pVertices[i].m_xmf3Position);
+//			bCurrentInside =
+//				(-1.0f<=f3CurrentProject.x)&&(f3CurrentProject.x<=1.0f)&&
+//				(-1.0f<=f3CurrentProject.y)&&(f3CurrentProject.y<=1.0f);
+//
+//			if(((0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f)||(0.0f<=f3CurrentProject.z&&f3CurrentProject.z<=1.0f))&&
+//				(bPreviousInside||bCurrentInside)){
+//				XMFLOAT3 t0 = f3PreviousProject, t1 = f3CurrentProject;
+//				if(!(bPreviousInside&&bCurrentInside))
+//					GetIntersectPoint(t0, t1);
+//				::Draw2DLine(hDCFrameBuffer, t0, t1);
+//			}
+//
+//			f3PreviousProject = f3CurrentProject;
+//			bPreviousInside = bCurrentInside;
+//		}
+//		if(((0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f)||(0.0f<=f3PreviousProject.z&&f3PreviousProject.z<=1.0f))&&
+//			((bInitialInside||bPreviousInside))&& nVertices>2){
+//			XMFLOAT3 t0 = f3PreviousProject, t1 = f3InitialProject;
+//			if(!(bInitialInside&&bPreviousInside))
+//				GetIntersectPoint(t0, t1);
+//			::Draw2DLine(hDCFrameBuffer, t0, t1);//		}
+//	}
+//}
 
 void CMesh::Render(HDC hDCFrameBuffer){
 	XMFLOAT3 f3InitialProject, f3PreviousProject;
@@ -108,32 +178,25 @@ void CMesh::Render(HDC hDCFrameBuffer){
 		bPreviousInside = bInitialInside =
 			(-1.0f<=f3InitialProject.x)&&(f3InitialProject.x<=1.0f)&&
 			(-1.0f<=f3InitialProject.y)&&(f3InitialProject.y<=1.0f)&&
-			(0.0f<=f3InitialProject.z)&&(f3InitialProject.z<=1.0f);
+			(0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f);
 		for(int i = 1; i<nVertices; i++){
 			XMFLOAT3 f3CurrentProject = CGraphicsPipeline::Project(pVertices[i].m_xmf3Position);
 			bCurrentInside =
 				(-1.0f<=f3CurrentProject.x)&&(f3CurrentProject.x<=1.0f)&&
 				(-1.0f<=f3CurrentProject.y)&&(f3CurrentProject.y<=1.0f)&&
-				((0.0f<=f3CurrentProject.z)&&(f3CurrentProject.z<=1.0f));
+				(0.0f<=f3CurrentProject.z&&f3CurrentProject.z<=1.0f);
 
-			XMFLOAT3 prev = f3PreviousProject, cur = f3CurrentProject;
-			if(GetClipedLine(bPreviousInside, bCurrentInside, prev, cur)){
-				::Draw2DLine(hDCFrameBuffer, prev, cur);
-				if(prev.z<=0.001f||cur.z<=0.001f)
-					print(L"%f, %f\n", prev.z, cur.z);
-			}
+			XMFLOAT3 t0 = f3PreviousProject, t1 = f3CurrentProject;
+			if(GetClipedLine(bPreviousInside, bCurrentInside, t0, t1))
+				::Draw2DLine(hDCFrameBuffer, t0, t1);
 
 			f3PreviousProject = f3CurrentProject;
 			bPreviousInside = bCurrentInside;
 		}
 		if(nVertices>2){
-			XMFLOAT3 prev = f3PreviousProject, cur = f3InitialProject;
-			if(GetClipedLine(bPreviousInside, bInitialInside, prev, cur)){
-				::Draw2DLine(hDCFrameBuffer, prev, cur);
-				if(prev.z<0||cur.z<0)
-					print(L"%f, %f\n", prev.z, cur.z);
-			}
-		}
+			XMFLOAT3 t0 = f3PreviousProject, t1 = f3InitialProject;
+			if(GetClipedLine(bPreviousInside, bInitialInside, t0, t1))
+				::Draw2DLine(hDCFrameBuffer, t0, t1);		}
 	}
 }
 
@@ -326,4 +389,12 @@ CAirplaneMesh::CAirplaneMesh(float fWidth, float fHeight, float fDepth)
 	pFace->SetVertex(1, CVertex(-fx, -y3, +fz));
 	pFace->SetVertex(2, CVertex(-fx, -y3, -fz));
 	SetPolygon(i++, pFace);
+}
+
+CLineMesh::CLineMesh() : CMesh(1){
+	CVertex verts[2] = {{0, 0, 1}, {0, 0, -1}};
+	auto t = new CPolygon(2);
+	t->SetVertex(0, verts[0]);
+	t->SetVertex(1, verts[1]);
+	SetPolygon(0, t);
 }

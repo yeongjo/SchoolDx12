@@ -65,7 +65,7 @@ void CGameFramework::BuildObjects() {
 	m_pPlayer->SetColor(RGB(0, 0, 255));
 	m_pPlayer->SetCamera(pCamera);
 	//카메라는 플레이어 객체 뒤쪽 위에서 플레이어를 바라본다. 
-	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 5.0f, -15.0f));
+	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 0.0f, -0.01f));
 	m_pScene = new CScene(m_pPlayer);
 	m_pScene->BuildObjects();
 }

@@ -3,6 +3,12 @@
 #include "GraphicsPipeline.h"
 
 void CScene::BuildObjects() {
+	//m_pObjects.resize(1);
+	//m_pObjects[0] = new CExplosedObjects();
+	//m_pObjects[0]->SetMesh(new CLineMesh());
+	//m_pObjects[0]->SetColor(RGB(255, 0, 0));
+	//m_pObjects[0]->SetPosition(-0.0f, 0.0f, 0.5f);
+
 	CCubeMesh* pCubeMesh = &CCubeMesh::getInstance();
 	m_pObjects.resize(6);
 	m_pObjects[0] = new CExplosedObjects();
