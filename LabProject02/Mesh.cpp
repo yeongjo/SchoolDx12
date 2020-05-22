@@ -51,9 +51,10 @@ void Draw2DLine(HDC hDCFrameBuffer, XMFLOAT3& f3PreviousProject, XMFLOAT3& f3Cur
 bool GetClipedLine(bool prevInside, bool curInside, XMFLOAT3 &prevPos, XMFLOAT3 &curPos){
 	auto prev = XMLoadFloat3(&prevPos);
 	auto cur = XMLoadFloat3(&curPos);
+	if(XMVector3Equal(prev, cur)) return false;
 	float dist;
 	XMFLOAT3 center(0, 0, 0.5f);
-	XMFLOAT3 size(1, 1, 0.5f);
+	XMFLOAT3 size(100, 100, 0.5f);
 
 	if(prevInside||curInside){
 		if(prevInside!=curInside){
@@ -112,8 +113,8 @@ bool intersectPlane(const XMVECTOR &n, const XMVECTOR &p0, const XMVECTOR &l0, c
 }
 
 // z:0 보다 더 뒤로 가는것들 교점구함
-bool GetIntersectPoint(XMFLOAT3& start, XMFLOAT3& end){
-	if(start.z>0&&end.z>0) return false;
+void GetIntersectPoint(XMFLOAT3& start, XMFLOAT3& end){
+	if(start.z>0&&end.z>0) return;
 	auto n = XMFLOAT3(0, 0, -1);
 	auto p0 = XMFLOAT3(0, 0, 0);
 	XMVECTOR l = XMVector3Normalize(XMLoadFloat3(&end)-XMLoadFloat3(&start));
@@ -129,7 +130,60 @@ bool GetIntersectPoint(XMFLOAT3& start, XMFLOAT3& end){
 	auto result = intersectPlane(XMLoadFloat3(&n), XMLoadFloat3(&p0), l0, l, t);
 	if(result)
 		XMStoreFloat3(changePoint, l0+l*t);
-	return result;
+}
+
+
+void CMesh::Render(HDC hDCFrameBuffer){
+	XMFLOAT3 f3InitialProject, f3PreviousProject, f3InitialView, f3PreviousView;
+	bool bPreviousInside = false, bInitialInside = false, bCurrentInside = false, bIntersectInside = false;
+	for(int j = 0; j<m_nPolygons; j++){
+		int nVertices = m_ppPolygons[j]->m_nVertices;
+		CVertex* pVertices = m_ppPolygons[j]->m_pVertices;
+		f3PreviousView = f3InitialView = CGraphicsPipeline::World2View(pVertices[0].m_xmf3Position);
+		bPreviousInside = bInitialInside = 0.0f<=f3InitialView.z;
+		for(int i = 1; i<nVertices; i++){
+			XMFLOAT3 f3CurrentView = CGraphicsPipeline::World2View(pVertices[i].m_xmf3Position);
+
+			XMFLOAT3 t0 = f3PreviousView, t1 = f3CurrentView;
+			GetIntersectPoint(t0, t1);
+			t0 = CGraphicsPipeline::View2Project(t0);
+			t1 = CGraphicsPipeline::View2Project(t1);
+			::Draw2DLine(hDCFrameBuffer, t0, t1);
+
+			f3PreviousView = f3CurrentView;
+			bPreviousInside = bCurrentInside;
+		}
+		if(nVertices>2){
+			XMFLOAT3 t0 = f3PreviousView, t1 = f3InitialView;
+			GetIntersectPoint(t0, t1);
+			t0 = CGraphicsPipeline::View2Project(t0);
+			t1 = CGraphicsPipeline::View2Project(t1);
+			::Draw2DLine(hDCFrameBuffer, t0, t1);		}
+
+		/*f3PreviousProject = f3InitialProject = CGraphicsPipeline::View2Project(f3InitialView);
+		bPreviousInside = bInitialInside =
+			(-1.0f<=f3InitialProject.x)&&(f3InitialProject.x<=1.0f)&&
+			(-1.0f<=f3InitialProject.y)&&(f3InitialProject.y<=1.0f)&&
+			(0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f);
+		for(int i = 1; i<nVertices; i++){
+			XMFLOAT3 f3CurrentProject = CGraphicsPipeline::World2View(pVertices[i].m_xmf3Position);
+			bCurrentInside =
+				(-1.0f<=f3CurrentProject.x)&&(f3CurrentProject.x<=1.0f)&&
+				(-1.0f<=f3CurrentProject.y)&&(f3CurrentProject.y<=1.0f)&&
+				(0.0f<=f3CurrentProject.z&&f3CurrentProject.z<=1.0f);
+
+			XMFLOAT3 t0 = f3PreviousProject, t1 = f3CurrentProject;
+			if(GetClipedLine(bPreviousInside, bCurrentInside, t0, t1))
+				::Draw2DLine(hDCFrameBuffer, t0, t1);
+
+			f3PreviousProject = f3CurrentProject;
+			bPreviousInside = bCurrentInside;
+		}
+		if(nVertices>2){
+			XMFLOAT3 t0 = f3PreviousProject, t1 = f3InitialProject;
+			if(GetClipedLine(bPreviousInside, bInitialInside, t0, t1))
+				::Draw2DLine(hDCFrameBuffer, t0, t1);		}*/
+	}
 }
 
 //void CMesh::Render(HDC hDCFrameBuffer){
@@ -168,37 +222,37 @@ bool GetIntersectPoint(XMFLOAT3& start, XMFLOAT3& end){
 //	}
 //}
 
-void CMesh::Render(HDC hDCFrameBuffer){
-	XMFLOAT3 f3InitialProject, f3PreviousProject;
-	bool bPreviousInside = false, bInitialInside = false, bCurrentInside = false, bIntersectInside = false;
-	for(int j = 0; j<m_nPolygons; j++){
-		int nVertices = m_ppPolygons[j]->m_nVertices;
-		CVertex* pVertices = m_ppPolygons[j]->m_pVertices;
-		f3PreviousProject = f3InitialProject = CGraphicsPipeline::Project(pVertices[0].m_xmf3Position);
-		bPreviousInside = bInitialInside =
-			(-1.0f<=f3InitialProject.x)&&(f3InitialProject.x<=1.0f)&&
-			(-1.0f<=f3InitialProject.y)&&(f3InitialProject.y<=1.0f)&&
-			(0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f);
-		for(int i = 1; i<nVertices; i++){
-			XMFLOAT3 f3CurrentProject = CGraphicsPipeline::Project(pVertices[i].m_xmf3Position);
-			bCurrentInside =
-				(-1.0f<=f3CurrentProject.x)&&(f3CurrentProject.x<=1.0f)&&
-				(-1.0f<=f3CurrentProject.y)&&(f3CurrentProject.y<=1.0f)&&
-				(0.0f<=f3CurrentProject.z&&f3CurrentProject.z<=1.0f);
-
-			XMFLOAT3 t0 = f3PreviousProject, t1 = f3CurrentProject;
-			if(GetClipedLine(bPreviousInside, bCurrentInside, t0, t1))
-				::Draw2DLine(hDCFrameBuffer, t0, t1);
-
-			f3PreviousProject = f3CurrentProject;
-			bPreviousInside = bCurrentInside;
-		}
-		if(nVertices>2){
-			XMFLOAT3 t0 = f3PreviousProject, t1 = f3InitialProject;
-			if(GetClipedLine(bPreviousInside, bInitialInside, t0, t1))
-				::Draw2DLine(hDCFrameBuffer, t0, t1);		}
-	}
-}
+//void CMesh::Render(HDC hDCFrameBuffer){
+//	XMFLOAT3 f3InitialProject, f3PreviousProject;
+//	bool bPreviousInside = false, bInitialInside = false, bCurrentInside = false, bIntersectInside = false;
+//	for(int j = 0; j<m_nPolygons; j++){
+//		int nVertices = m_ppPolygons[j]->m_nVertices;
+//		CVertex* pVertices = m_ppPolygons[j]->m_pVertices;
+//		f3PreviousProject = f3InitialProject = CGraphicsPipeline::Project(pVertices[0].m_xmf3Position);
+//		bPreviousInside = bInitialInside =
+//			(-1.0f<=f3InitialProject.x)&&(f3InitialProject.x<=1.0f)&&
+//			(-1.0f<=f3InitialProject.y)&&(f3InitialProject.y<=1.0f)&&
+//			(0.0f<=f3InitialProject.z&&f3InitialProject.z<=1.0f);
+//		for(int i = 1; i<nVertices; i++){
+//			XMFLOAT3 f3CurrentProject = CGraphicsPipeline::Project(pVertices[i].m_xmf3Position);
+//			bCurrentInside =
+//				(-1.0f<=f3CurrentProject.x)&&(f3CurrentProject.x<=1.0f)&&
+//				(-1.0f<=f3CurrentProject.y)&&(f3CurrentProject.y<=1.0f)&&
+//				(0.0f<=f3CurrentProject.z&&f3CurrentProject.z<=1.0f);
+//
+//			XMFLOAT3 t0 = f3PreviousProject, t1 = f3CurrentProject;
+//			if(GetClipedLine(bPreviousInside, bCurrentInside, t0, t1))
+//				::Draw2DLine(hDCFrameBuffer, t0, t1);
+//
+//			f3PreviousProject = f3CurrentProject;
+//			bPreviousInside = bCurrentInside;
+//		}
+//		if(nVertices>2){
+//			XMFLOAT3 t0 = f3PreviousProject, t1 = f3InitialProject;
+//			if(GetClipedLine(bPreviousInside, bInitialInside, t0, t1))
+//				::Draw2DLine(hDCFrameBuffer, t0, t1);//		}
+//	}
+//}
 
 CCubeMesh::CCubeMesh(float fWidth, float fHeight, float fDepth)
 	:CMesh(6){
@@ -223,13 +277,13 @@ CCubeMesh::CCubeMesh(float fWidth, float fHeight, float fDepth)
 CCubeMesh::~CCubeMesh(){
 }
 
-CMapMesh::CMapMesh(): CMesh(40+4){
-	CVertex verts[4] = {{-10, 10, 0}, {10, 10, 0}, {10, -10, 0}, {-10, -10, 0}};
+CMapMesh::CMapMesh(): CMesh(40+4*8){
+	CVertex verts[4] = {{-20, 20, 0}, {20, 20, 0}, {20, -20, 0}, {-20, -20, 0}};
 
 	int totalZ = 50;
 	int lineCount = 40;
-	int offsetZ = totalZ/(float)lineCount*2;
-	int curZ = -totalZ;
+	float offsetZ = totalZ/(float)lineCount*2;
+	float curZ = -totalZ;
 	for(int i = 0; i<lineCount; i++){
 		auto t = new CPolygon(4);
 		for(size_t j = 0; j<4; j++){
@@ -241,12 +295,27 @@ CMapMesh::CMapMesh(): CMesh(40+4){
 		SetPolygon(i, t);
 	}
 	for(size_t i = 0; i<4; i++){
-		auto t = new CPolygon(2);
-		verts[i].m_xmf3Position.z = -totalZ;
-		t->SetVertex(0, verts[i]);
-		verts[i].m_xmf3Position.z = totalZ;
-		t->SetVertex(1, verts[i]);
-		SetPolygon(i+lineCount, t);
+		verts[i].m_xmf3Position.z = 0;
+	}
+	for(size_t i = 0; i<4; i++){ // 방향결정
+		auto direc = (XMLoadFloat3(&verts[(i+1)%4].m_xmf3Position)-XMLoadFloat3(&verts[i].m_xmf3Position)) / 8.0f;
+		auto startPos = XMLoadFloat3(&verts[i].m_xmf3Position);
+		for(size_t j = 0; j<8; j++){ // 방향에 맞춰만들기
+			auto t = new CPolygon(2);
+			XMFLOAT3 tem;
+			CVertex temp;
+			startPos = XMVectorSetZ(startPos, -totalZ);
+			XMStoreFloat3(&tem, startPos);
+			temp.m_xmf3Position = tem;
+			t->SetVertex(0, temp);
+			startPos = XMVectorSetZ(startPos, totalZ);
+			XMStoreFloat3(&tem, startPos);
+			temp.m_xmf3Position = tem;
+			t->SetVertex(1, temp);
+			SetPolygon(i*8+j+lineCount, t);
+			startPos += direc;
+		}
+		
 	}
 }
 
@@ -392,7 +461,7 @@ CAirplaneMesh::CAirplaneMesh(float fWidth, float fHeight, float fDepth)
 }
 
 CLineMesh::CLineMesh() : CMesh(1){
-	CVertex verts[2] = {{0, 0, 1}, {0, 0, -1}};
+	CVertex verts[2] = {{0, 0, 10}, {0, 0, -10}};
 	auto t = new CPolygon(2);
 	t->SetVertex(0, verts[0]);
 	t->SetVertex(1, verts[1]);

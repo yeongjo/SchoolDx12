@@ -152,11 +152,11 @@ void CPlayer::Animate(float fElapsedTime){
 	}
 }
 void CPlayer::Render(HDC hDCFrameBuffer, CCamera * pCamera){
-	//CGameObject::Render(hDCFrameBuffer, pCamera);
-	//for(auto& t:bullets){
-	//	if(t->m_bActive)
-	//		t->Render(hDCFrameBuffer, pCamera);
-	//}
+	CGameObject::Render(hDCFrameBuffer, pCamera);
+	for(auto& t:bullets){
+		if(t->m_bActive)
+			t->Render(hDCFrameBuffer, pCamera);
+	}
 }
 void CPlayer::Shot(){
 

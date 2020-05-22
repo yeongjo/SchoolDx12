@@ -57,6 +57,32 @@ void CGameObject::Move(const XMFLOAT3 &vDirection, float fSpeed){
 	SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed,
 		m_xmf4x4World._42+vDirection.y * fSpeed,
 		m_xmf4x4World._43+vDirection.z * fSpeed);
+
+	auto x = m_xmf4x4World._41;
+	auto y = m_xmf4x4World._42;
+	auto z = m_xmf4x4World._43;
+	auto mapX = CMap::getConst().m_xmf4x4World._41;
+	auto mapY = CMap::getConst().m_xmf4x4World._42;
+	auto mapZ = CMap::getConst().m_xmf4x4World._43;
+	bool a, b;
+	if((x<-20+mapX&&m_xmf3MovingDirection.x<0)||(20+mapX<x&& m_xmf3MovingDirection.x>0)){
+		m_xmf3MovingDirection.x = -m_xmf3MovingDirection.x;
+		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
+			m_xmf4x4World._42+vDirection.y * fSpeed*2,
+			m_xmf4x4World._43+vDirection.z * fSpeed*2);
+	}
+	if((y<-20+mapY&&m_xmf3MovingDirection.y<0)||(20+mapY<y&& m_xmf3MovingDirection.y>0)){
+		m_xmf3MovingDirection.y = -m_xmf3MovingDirection.y;
+		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
+			m_xmf4x4World._42+vDirection.y * fSpeed*2,
+			m_xmf4x4World._43+vDirection.z * fSpeed*2);
+	}
+	if((z<-50+mapZ&&m_xmf3MovingDirection.z<0)||(50+mapZ<z&& m_xmf3MovingDirection.z>0)){
+		m_xmf3MovingDirection.z = -m_xmf3MovingDirection.z;
+		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
+			m_xmf4x4World._42+vDirection.y * fSpeed*2,
+			m_xmf4x4World._43+vDirection.z * fSpeed*2);
+	}
 }
 void CGameObject::Animate(float fElapsedTime){
 	if(m_fRotationSpeed!=0.0f)
@@ -88,7 +114,7 @@ CGameObject *CGameObject::CheckCollision(const CGameObject *rhs){
 	XMStoreFloat(&distance, len);
 
 	float &&radi = radius+rhs->radius;
-	if(radi<=0 || distance>(radi * radi))
+	if(radi<=0||distance>(radi * radi))
 		return nullptr;
 	return this;
 }
@@ -116,13 +142,12 @@ CExplosedObjects::CExplosedObjects(){
 	mainObj.SetMovingDirection(direc);
 	mainObj.SetRotationAxis(direc);
 	mainObj.SetRotationSpeed(30);
-	for(size_t i = 0; i<50; i++){
+	for(size_t i = 0; i<100; i++){
 		objs[i].SetMesh(mesh);
 		XMFLOAT3 direc(random(), random(), random());
 		normalize(direc);
 		objs[i].SetMovingDirection(direc);
 		objs[i].SetMovingSpeed(30);
-		objs[i].SetColor(m_dwColor);
 	}
 }
 
@@ -131,7 +156,8 @@ void CExplosedObjects::Animate(float fElapsedTime){
 	// 비활성화는 폭발상태
 	if(!m_bActive){
 		if(!isExplode) // 한번만 초기 위치 설정함
-			for(size_t i = 0; i<50; i++){
+			for(size_t i = 0; i<100; i++){
+				objs[i].SetColor(m_dwColor);
 				objs[i].SetPosition(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43);
 			}
 		isExplode = true;
@@ -188,9 +214,27 @@ void CBullet::Animate(float fElapsedTime){
 		auto direc = XMVector3Normalize(targetPos-pos);
 		auto direcVec = XMLoadFloat3(&m_xmf3MovingDirection);
 		auto off = direc-direcVec;
-		direcVec+=off*fElapsedTime*5*elapsedTime*elapsedTime;
+		direcVec += off*fElapsedTime*5*elapsedTime*elapsedTime;
 		direcVec = XMVector3Normalize(direcVec);
 		XMStoreFloat3(&m_xmf3MovingDirection, direcVec);
 	}
 	CGameObject::Animate(fElapsedTime);
+}
+
+void CMap::Animate(float fElapsedTime){
+	float mapX = m_xmf4x4World._41;
+	float mapY = m_xmf4x4World._42;
+	float mapZ = m_xmf4x4World._43;
+	float x = CAirplanePlayer::getConst().m_xmf4x4World._41;
+	float y = CAirplanePlayer::getConst().m_xmf4x4World._42;
+	float z = CAirplanePlayer::getConst().m_xmf4x4World._43;
+
+	float offsetZ = 50/(float)40*2;
+	if(x<-20+mapX||20+mapX<x||y<-20+mapY||20+mapY<y){
+		m_xmf4x4World._41 = x;
+		m_xmf4x4World._42 = y;
+	}
+	if(z<-offsetZ+mapZ||offsetZ+mapZ<z){
+		m_xmf4x4World._43 = z;
+	}
 }

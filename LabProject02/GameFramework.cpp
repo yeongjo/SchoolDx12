@@ -59,13 +59,13 @@ void CGameFramework::BuildObjects() {
 	pCamera->SetFOVAngle(60.0f);
 	//비행기 메쉬를 생성하고 플레이어 객체에 연결한다. 
 	CAirplaneMesh* pAirplaneMesh = new CAirplaneMesh(6.0f, 6.0f, 1.0f);
-	m_pPlayer = new CAirplanePlayer();
+	m_pPlayer = CAirplanePlayer::getPointer();
 	m_pPlayer->SetPosition(0.0f, 0.0f, 0.0f);
 	m_pPlayer->SetMesh(pAirplaneMesh);
 	m_pPlayer->SetColor(RGB(0, 0, 255));
 	m_pPlayer->SetCamera(pCamera);
 	//카메라는 플레이어 객체 뒤쪽 위에서 플레이어를 바라본다. 
-	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 0.0f, -0.01f));
+	m_pPlayer->SetCameraOffset(XMFLOAT3(0.0f, 5.5f, -15.01f));
 	m_pScene = new CScene(m_pPlayer);
 	m_pScene->BuildObjects();
 }

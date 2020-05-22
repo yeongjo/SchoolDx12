@@ -52,7 +52,7 @@ public:
 	void SetTarget(float x, float y);
 };
 
-class CAirplanePlayer : public CPlayer {
+class CAirplanePlayer : public CPlayer, public Singleton<CAirplanePlayer>{
 	vector<CGameObject> bullets;
 public:
 	CAirplanePlayer(){}

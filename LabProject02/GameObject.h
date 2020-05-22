@@ -54,7 +54,7 @@ public:
 
 class CExplosedObjects : public CGameObject{
 public:
-	CGameObject objs[50];
+	CGameObject objs[100];
 	CGameObject mainObj;
 
 	bool isExplode = false;
@@ -74,5 +74,9 @@ public:
 
 	CBullet(XMFLOAT3 direc);
 
+	virtual void Animate(float fElapsedTime);
+};
+
+class CMap: public CGameObject, public Singleton<CMap>{
 	virtual void Animate(float fElapsedTime);
 };

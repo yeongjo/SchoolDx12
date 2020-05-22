@@ -18,7 +18,7 @@ void CScene::BuildObjects() {
 	m_pObjects[0]->SetRotationAxis(XMFLOAT3(1.0f, 1.0f, 0.0f));
 	m_pObjects[0]->SetRotationSpeed(90.0f);
 	m_pObjects[0]->SetMovingDirection(XMFLOAT3(1.0f, 0.0f, 0.0f));
-	m_pObjects[0]->SetMovingSpeed(0.5f);
+	m_pObjects[0]->SetMovingSpeed(2.5f);
 	m_pObjects[1] = new CExplosedObjects();
 	m_pObjects[1]->SetMesh(pCubeMesh);
 	m_pObjects[1]->SetColor(RGB(0, 0, 255));
@@ -34,7 +34,7 @@ void CScene::BuildObjects() {
 	m_pObjects[2]->SetRotationAxis(XMFLOAT3(1.0f, 0.0f, 1.0f));
 	m_pObjects[2]->SetRotationSpeed(30.15f);
 	m_pObjects[2]->SetMovingDirection(XMFLOAT3(1.0f, -1.0f, 0.0f));
-	m_pObjects[2]->SetMovingSpeed(0.0f);
+	m_pObjects[2]->SetMovingSpeed(4.0f);
 	m_pObjects[3] = new CExplosedObjects();
 	m_pObjects[3]->SetMesh(pCubeMesh);
 	m_pObjects[3]->SetColor(RGB(0, 255, 255));
@@ -42,16 +42,17 @@ void CScene::BuildObjects() {
 	m_pObjects[3]->SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
 	m_pObjects[3]->SetRotationSpeed(40.6f);
 	m_pObjects[3]->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, 1.0f));
-	m_pObjects[3]->SetMovingSpeed(0.0f);
+	m_pObjects[3]->SetMovingSpeed(3.0f);
 	m_pObjects[4] = new CExplosedObjects();
 	m_pObjects[4]->SetMesh(pCubeMesh);
 	m_pObjects[4]->SetColor(RGB(128, 0, 255));
-	m_pObjects[4]->SetPosition(10.0f, 10.0f, 50.0f);
+	m_pObjects[4]->SetPosition(10.0f, 10.0f, 30.0f);
 	m_pObjects[4]->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 1.0f));
 	m_pObjects[4]->SetRotationSpeed(50.06f);
 	m_pObjects[4]->SetMovingDirection(XMFLOAT3(0.0f, 1.0f, 1.0f));
-	m_pObjects[4]->SetMovingSpeed(0.0f);
-	m_pObjects[5] = new CGameObject();
+	m_pObjects[4]->SetMovingSpeed(5.0f);
+	m_pObjects[5] = new CMap();
+	m_pObjects[5]->SetColor(RGB(0, 0, 0));
 	m_pObjects[5]->SetMesh(new CMapMesh());
 	m_pObjects[5]->radius = -1000;
 }
@@ -68,6 +69,8 @@ void CScene::Animate(float fElapsedTime) {
 void CScene::Render(HDC hDCFrameBuffer, CCamera* pCamera) {
 	CGraphicsPipeline::SetViewport(&pCamera->m_Viewport);
 	CGraphicsPipeline::SetViewProjectTransform(&pCamera->m_xmf4x4ViewProject);
+	CGraphicsPipeline::m_pxmf4x4Project = &pCamera->m_xmf4x4Project;
+	CGraphicsPipeline::m_pxmf4x4View = &pCamera->m_xmf4x4View;
 	for (size_t i = 0; i < m_pObjects.size(); i++)
 		m_pObjects[i]->Render(hDCFrameBuffer, pCamera);
 }

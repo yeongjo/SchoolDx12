@@ -29,29 +29,26 @@ void CCamera::GenerateViewMatrix() {
 	//카메라의 z-축을 기준으로 카메라의 좌표축들이 직교하도록 만든다. 
 	XMVECTOR xmvLook = XMVector3Normalize(XMLoadFloat3(&m_xmf3Look));
 	XMVECTOR xmvUp = XMVector3Normalize(XMLoadFloat3(&m_xmf3Up));
-	XMVECTOR xmvRight = XMVector3Normalize(XMVector3Cross(xmvUp,
-		xmvLook));
+	XMVECTOR xmvRight = XMVector3Normalize(XMVector3Cross(xmvUp, xmvLook));
 	xmvUp = XMVector3Normalize(XMVector3Cross(xmvLook, xmvRight));
 	XMStoreFloat3(&m_xmf3Look, xmvLook);
 	XMStoreFloat3(&m_xmf3Right, xmvRight);
 	XMStoreFloat3(&m_xmf3Up, xmvUp);
 	//카메라 변환 행렬은 카메라 월드변환 행렬의 역행렬(전치행렬)이다. 
-	m_xmf4x4View._11 = m_xmf3Right.x; m_xmf4x4View._12 = m_xmf3Up.x;
-	m_xmf4x4View._13 = m_xmf3Look.x;
-	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y;
-	m_xmf4x4View._23 = m_xmf3Look.y;
-	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z;
-	m_xmf4x4View._33 = m_xmf3Look.z;
+	m_xmf4x4View._11 = m_xmf3Right.x; m_xmf4x4View._12 = m_xmf3Up.x; m_xmf4x4View._13 = m_xmf3Look.x;
+	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y; m_xmf4x4View._23 = m_xmf3Look.y;
+	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z; m_xmf4x4View._33 = m_xmf3Look.z;
 	XMVECTOR xmvPosition = XMLoadFloat3(&m_xmf3Position);
-	m_xmf4x4View._41 = -XMVectorGetX(XMVector3Dot(xmvPosition,
-		xmvRight));
+	m_xmf4x4View._41 = -XMVectorGetX(XMVector3Dot(xmvPosition, xmvRight));
 	m_xmf4x4View._42 = -XMVectorGetX(XMVector3Dot(xmvPosition, xmvUp));
-	m_xmf4x4View._43 = -XMVectorGetX(XMVector3Dot(xmvPosition,
-		xmvLook));
+	m_xmf4x4View._43 = -XMVectorGetX(XMVector3Dot(xmvPosition, xmvLook));
 
 	XMStoreFloat4x4(&m_xmf4x4ViewProject,
 		XMMatrixMultiply(XMLoadFloat4x4(&m_xmf4x4View),
 			XMLoadFloat4x4(&m_xmf4x4Project)));
+
+	//XMStoreFloat4x4(&m_xmf4x4ViewProject,
+	//	XMLoadFloat4x4(&m_xmf4x4View));
 }
 
 //카메라를 이동한다. 
