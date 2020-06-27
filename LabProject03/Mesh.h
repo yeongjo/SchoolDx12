@@ -1,80 +1,72 @@
-#pragma once
-#include "stdafx.h"
+ï»¿#pragma once
 
+//ì •ì ì„ í‘œí˜„í•˜ê¸° ìœ„í•œ í´ë˜ìŠ¤ë¥¼ ì„ ì–¸í•œë‹¤. 
 class CVertex
 {
-public:
-	CVertex() { }
-	CVertex(float x, float y, float z) { m_xmf3Position = XMFLOAT3(x, y, z); }
-	virtual ~CVertex() { }
+protected:
+	//ì •ì ì˜ ìœ„ì¹˜ ë²¡í„°ì´ë‹¤(ëª¨ë“  ì •ì ì€ ìµœì†Œí•œ ìœ„ì¹˜ ë²¡í„°ë¥¼ ê°€ì ¸ì•¼ í•œë‹¤). 
 	XMFLOAT3 m_xmf3Position;
-};
-class CPolygon
-{
 public:
-	CPolygon() { }
-	CPolygon(int nVertices);
-	virtual ~CPolygon();
-
-	//´Ù°¢Çü(¸é)À» ±¸¼ºÇÏ´Â Á¤Á¡µéÀÇ ¸®½ºÆ®ÀÌ´Ù.
-	int m_nVertices = 0;
-	CVertex *m_pVertices = NULL;
-
-	void SetVertex(int nIndex, CVertex vertex);
+	CVertex() {
+		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
+	CVertex(XMFLOAT3 xmf3Position) {
+		m_xmf3Position = xmf3Position;
+	}
+	~CVertex() { }
 };
-
+class CDiffusedVertex : public CVertex
+{
+protected:
+	//ì •ì ì˜ ìƒ‰ìƒì´ë‹¤. 
+	XMFLOAT4 m_xmf4Diffuse;
+public:
+	CDiffusedVertex() {
+		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); 
+		m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse) {
+		m_xmf3Position =
+			XMFLOAT3(x, y, z); m_xmf4Diffuse = xmf4Diffuse;
+	}
+	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse) {
+		m_xmf3Position =
+			xmf3Position; m_xmf4Diffuse = xmf4Diffuse;
+	}
+	~CDiffusedVertex() { }
+};
 
 class CMesh
 {
 public:
-	CMesh() { }
-	CMesh(int nPolygons);
+	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CMesh();
 private:
-	//ÀÎ½ºÅÏ½Ì(Instancing)À» À§ÇÏ¿© ¸Ş½¬´Â °ÔÀÓ °´Ã¼µé¿¡ °øÀ¯µÉ ¼ö ÀÖ´Ù.
-	//´ÙÀ½ ÂüÁ¶°ª(Reference Count)Àº ¸Ş½¬°¡ °øÀ¯µÇ´Â °ÔÀÓ °´Ã¼ÀÇ °³¼ö¸¦ ³ªÅ¸³½´Ù.
-	int m_nReferences = 1;
+	int m_nReferences = 0;
 public:
-	//¸Ş½¬°¡ °ÔÀÓ °´Ã¼¿¡ °øÀ¯µÉ ¶§¸¶´Ù ÂüÁ¶°ªÀ» 1¾¿ Áõ°¡½ÃÅ²´Ù.
-	void AddRef() { m_nReferences++; }
-	//¸Ş½¬¸¦ °øÀ¯ÇÏ´Â °ÔÀÓ °´Ã¼°¡ ¼Ò¸êµÉ ¶§¸¶´Ù ÂüÁ¶°ªÀ» 1¾¿ °¨¼Ò½ÃÅ²´Ù.
-	//ÂüÁ¶°ªÀÌ 0ÀÌµÇ¸é ¸Ş½¬¸¦ ¼Ò¸ê½ÃÅ²´Ù.
-	void Release() {
-		m_nReferences--;
-		if (m_nReferences <= 0)
-			delete this;
+	void AddRef() {
+		m_nReferences++;
 	}
-private:
-	//¸Ş½¬¸¦ ±¸¼ºÇÏ´Â ´Ù°¢Çü(¸é)µéÀÇ ¸®½ºÆ®ÀÌ´Ù.
-	int m_nPolygons = 0;
-	CPolygon **m_ppPolygons = NULL;
+	void Release() {
+		if (--m_nReferences <= 0) delete this;
+	}
+	void ReleaseUploadBuffers();
+protected:
+	ID3D12Resource *m_pd3dVertexBuffer = NULL;
+	ID3D12Resource *m_pd3dVertexUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW m_d3dVertexBufferView;
+	D3D12_PRIMITIVE_TOPOLOGY m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	UINT m_nSlot = 0;
+	UINT m_nVertices = 0;
+	UINT m_nStride = 0;
+	UINT m_nOffset = 0;
 public:
-	void SetPolygon(int nIndex, CPolygon *pPolygon);
-	//¸Ş½¬¸¦ ·»´õ¸µÇÑ´Ù.
-	virtual void Render(HDC hDCFrameBuffer);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };
-//Á÷À°¸éÃ¼ Å¬·¡½º¸¦ ¼±¾ğÇÑ´Ù.
-class CCubeMesh : public CMesh, public Singleton<CCubeMesh>
+
+class CTriangleMesh : public CMesh
 {
 public:
-	CCubeMesh(float fWidth = 4.0f, float fHeight = 4.0f, float fDepth
-		= 4.0f);
-	virtual ~CCubeMesh();
-};
-
-class CMapMesh : public CMesh {
-public:
-	CMapMesh();
-	virtual ~CMapMesh();
-};
-
-class CAirplaneMesh : public CMesh {
-public:
-	CAirplaneMesh(float fWidth, float fHeight, float fDepth);
-	virtual ~CAirplaneMesh() {}
-};
-
-class CLineMesh: public CMesh{
-public:
-	CLineMesh();
+	CTriangleMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual ~CTriangleMesh() { }
 };

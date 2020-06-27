@@ -1,240 +1,50 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
+#include "Shader.h"
 #include "GameObject.h"
-#include "Camera.h"
-#include "GameFramework.h"
-#include "GraphicsPipeline.h"
-#include "Mesh.h"
 
-CGameObject::~CGameObject(void){
-	//ÀÌ °ÔÀÓ °´Ã¼´Â ´õ ÀÌ»ó ¸Þ½¬¸¦ ÂüÁ¶ÇÏÁö ¾ÊÀ¸¹Ç·Î ¸Þ½¬ÀÇ ÂüÁ¶°ªÀ» 1 °¨¼ÒÇÑ´Ù.
-	if(m_pMesh)
-		m_pMesh->Release();
+CGameObject::CGameObject()
+{
+	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 }
-
-void CGameObject::SetPosition(float x, float y, float z){
-	m_xmf4x4World._41 = x;
-	m_xmf4x4World._42 = y;
-	m_xmf4x4World._43 = z;
-}
-void CGameObject::SetPosition(const XMFLOAT3 &xmf3Position){
-	m_xmf4x4World._41 = xmf3Position.x;
-	m_xmf4x4World._42 = xmf3Position.y;
-	m_xmf4x4World._43 = xmf3Position.z;
-}
-
-void CGameObject::SetMovingDirection(const XMFLOAT3 &xmf3MovingDirection){
-	XMStoreFloat3(&m_xmf3MovingDirection,
-		XMVector3Normalize(XMLoadFloat3(&xmf3MovingDirection)));
-}
-
-void CGameObject::SetRotationAxis(const XMFLOAT3 &xmf3RotationAxis){
-	XMStoreFloat3(&m_xmf3RotationAxis,
-		XMVector3Normalize(XMLoadFloat3(&xmf3RotationAxis)));
-}
-
-//¿ÀÀÏ·¯ °¢µµÀÇ È¸Àü, ¿Þ¼ÕÁÂÇ¥°è¿¡¼­ È¸Àü(ÀÚÀü) Çà·ÄÀº ÆòÇàÀÌµ¿ Çà·Ä ¿ÞÂÊ¿¡
-//°öÇØ¾ß ÇÑ´Ù.
-void CGameObject::Rotate(float fPitch, float fYaw, float fRoll){
-	XMMATRIX xmmtxRotate = XMMatrixRotationRollPitchYaw(
-		XMConvertToRadians(fPitch), XMConvertToRadians(fYaw),
-		XMConvertToRadians(fRoll));
-	XMStoreFloat4x4(
-		&m_xmf4x4World,
-		XMMatrixMultiply(xmmtxRotate, XMLoadFloat4x4(&m_xmf4x4World)));
-}
-
-//È¸ÀüÃàÀ» Áß½ÉÀ¸·Î È¸Àü, ¿Þ¼ÕÁÂÇ¥°è¿¡¼­ È¸Àü(ÀÚÀü) Çà·ÄÀº ÆòÇàÀÌµ¿ Çà·Ä ¿ÞÂÊ¿¡
-//°öÇØ¾ß ÇÑ´Ù.
-void CGameObject::Rotate(const XMFLOAT3 &xmf3RotationAxis, float fAngle){
-	XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3RotationAxis),
-		XMConvertToRadians(fAngle));
-	XMStoreFloat4x4(
-		&m_xmf4x4World,
-		XMMatrixMultiply(xmmtxRotate, XMLoadFloat4x4(&m_xmf4x4World)));
-}
-
-void CGameObject::Move(const XMFLOAT3 &vDirection, float fSpeed){
-	SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed,
-		m_xmf4x4World._42+vDirection.y * fSpeed,
-		m_xmf4x4World._43+vDirection.z * fSpeed);
-
-	auto x = m_xmf4x4World._41;
-	auto y = m_xmf4x4World._42;
-	auto z = m_xmf4x4World._43;
-	auto mapX = CMap::getConst().m_xmf4x4World._41;
-	auto mapY = CMap::getConst().m_xmf4x4World._42;
-	auto mapZ = CMap::getConst().m_xmf4x4World._43;
-	bool a, b;
-	if((x<-20+mapX&&m_xmf3MovingDirection.x<0)||(20+mapX<x&& m_xmf3MovingDirection.x>0)){
-		m_xmf3MovingDirection.x = -m_xmf3MovingDirection.x;
-		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
-			m_xmf4x4World._42+vDirection.y * fSpeed*2,
-			m_xmf4x4World._43+vDirection.z * fSpeed*2);
-	}
-	if((y<-20+mapY&&m_xmf3MovingDirection.y<0)||(20+mapY<y&& m_xmf3MovingDirection.y>0)){
-		m_xmf3MovingDirection.y = -m_xmf3MovingDirection.y;
-		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
-			m_xmf4x4World._42+vDirection.y * fSpeed*2,
-			m_xmf4x4World._43+vDirection.z * fSpeed*2);
-	}
-	if((z<-50+mapZ&&m_xmf3MovingDirection.z<0)||(50+mapZ<z&& m_xmf3MovingDirection.z>0)){
-		m_xmf3MovingDirection.z = -m_xmf3MovingDirection.z;
-		SetPosition(m_xmf4x4World._41+vDirection.x * fSpeed*2,
-			m_xmf4x4World._42+vDirection.y * fSpeed*2,
-			m_xmf4x4World._43+vDirection.z * fSpeed*2);
-	}
-}
-void CGameObject::Animate(float fElapsedTime){
-	if(m_fRotationSpeed!=0.0f)
-		Rotate(m_xmf3RotationAxis, m_fRotationSpeed * fElapsedTime);
-	if(m_fMovingSpeed!=0.0f)
-		Move(m_xmf3MovingDirection, m_fMovingSpeed * fElapsedTime);
-}
-
-void CGameObject::Render(HDC hDCFrameBuffer, CCamera *pCamera){
-	if(m_pMesh){
-		CGraphicsPipeline::SetWorldTransform(&m_xmf4x4World);
-		HPEN hPen = ::CreatePen(PS_SOLID, 0, m_dwColor);
-		HPEN hOldPen = (HPEN)::SelectObject(hDCFrameBuffer, hPen);
-		m_pMesh->Render(hDCFrameBuffer);
-		::SelectObject(hDCFrameBuffer, hOldPen);
-		::DeleteObject(hPen);
+CGameObject::~CGameObject()
+{
+	if (m_pMesh) m_pMesh->Release();
+	if (m_pShader)
+	{
+		m_pShader->ReleaseShaderVariables();
+		m_pShader->Release();
 	}
 }
 
-CGameObject *CGameObject::CheckCollision(const CGameObject *rhs){
-	// ±æÀÌ ±¸ÇÏ±â
-	XMFLOAT3 diff;
-	diff.x = m_xmf4x4World._41-rhs->m_xmf4x4World._41;
-	diff.y = m_xmf4x4World._42-rhs->m_xmf4x4World._42;
-	diff.z = m_xmf4x4World._43-rhs->m_xmf4x4World._43;
-	auto diffVec = XMLoadFloat3(&diff);
-	auto len = XMVector3LengthSq(diffVec);
-	float distance = 0.0f;
-	XMStoreFloat(&distance, len);
-
-	float &&radi = radius+rhs->radius;
-	if(radi<=0||distance>(radi * radi))
-		return nullptr;
-	return this;
+void CGameObject::SetShader(CShader *pShader)
+{
+	if (m_pShader) m_pShader->Release();
+	m_pShader = pShader;
+	if (m_pShader) m_pShader->AddRef();
+}
+void CGameObject::SetMesh(CMesh *pMesh)
+{
+	if (m_pMesh) m_pMesh->Release();
+	m_pMesh = pMesh;
+	if (m_pMesh) m_pMesh->AddRef();
 }
 
-CGameObject *CGameObject::CheckCollision(XMFLOAT3 origin, XMFLOAT3 direc){
-	if(radius<=0) return nullptr;
-	XMFLOAT3 diff;
-	diff.x = m_xmf4x4World._41;
-	diff.y = m_xmf4x4World._42;
-	diff.z = m_xmf4x4World._43;
-	float dist;
-	auto test = XMLoadFloat3(&origin)-XMLoadFloat3(&direc)*2;
-	if(BoundingSphere(diff, radius)
-		.Intersects(test, XMLoadFloat3(&direc), dist)){
-		return this;
-	}
-	return nullptr;
+void CGameObject::ReleaseUploadBuffers()
+{
+	//ì •ì  ë²„í¼ë¥¼ ìœ„í•œ ì—…ë¡œë“œ ë²„í¼ë¥¼ ì†Œë©¸ì‹œí‚¨ë‹¤. 
+	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
 }
-
-CExplosedObjects::CExplosedObjects(){
-	auto mesh = new CCubeMesh();
-	mainObj.SetMesh(mesh);
-	XMFLOAT3 direc(random(), random(), random());
-	normalize(direc);
-	mainObj.SetMovingDirection(direc);
-	mainObj.SetRotationAxis(direc);
-	mainObj.SetRotationSpeed(30);
-	for(size_t i = 0; i<100; i++){
-		objs[i].SetMesh(mesh);
-		XMFLOAT3 direc(random(), random(), random());
-		normalize(direc);
-		objs[i].SetMovingDirection(direc);
-		objs[i].SetMovingSpeed(30);
-	}
+void CGameObject::Animate(float fTimeElapsed)
+{
 }
-
-void CExplosedObjects::Animate(float fElapsedTime){
-
-	// ºñÈ°¼ºÈ­´Â Æø¹ß»óÅÂ
-	if(!m_bActive){
-		if(!isExplode) // ÇÑ¹ø¸¸ ÃÊ±â À§Ä¡ ¼³Á¤ÇÔ
-			for(size_t i = 0; i<100; i++){
-				objs[i].SetColor(m_dwColor);
-				objs[i].SetPosition(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43);
-			}
-		isExplode = true;
-		elapsedExplodeTime += fElapsedTime;
-		if(explodeRestoreTime<elapsedExplodeTime){
-			elapsedExplodeTime = 0;
-			m_bActive = true;
-			isExplode = false;
-		}
-		for(auto &t:objs)
-			t.Animate(fElapsedTime);
-	} else{
-		CGameObject::Animate(fElapsedTime);
-	}
+void CGameObject::OnPrepareRender()
+{
 }
-
-void CExplosedObjects::Render(HDC hDCFrameBuffer, CCamera *pCamera){
-	if(!m_bActive){
-		for(auto &t:objs)
-			t.Render(hDCFrameBuffer, pCamera);
-	} else{
-		CGameObject::Render(hDCFrameBuffer, pCamera);
-	}
-}
-
-CBullet::CBullet(XMFLOAT3 direc){
-	SetMovingDirection(direc);
-	SetMovingSpeed(30);
-}
-
-void CBullet::Animate(float fElapsedTime){
-	if(!m_bActive)
-		return;
-
-	// Ãæµ¹°Ë»ç
-	auto game = CGameFramework::getInstance();
-	auto collobj = game.CheckCollision(this);
-	if(collobj!=nullptr){
-		m_bActive = collobj->m_bActive = false;
-		target = nullptr;
-		elapsedTime = 0;
-	}
-
-	elapsedTime += fElapsedTime;
-	if(destoryTime<elapsedTime){
-		m_bActive = false;
-		target = nullptr;
-		elapsedTime = 0;
-	}
-
-	if(target!=nullptr){
-		auto targetPos = XMVectorSet(target->m_xmf4x4World._41, target->m_xmf4x4World._42, target->m_xmf4x4World._43, 0);
-		auto pos = XMVectorSet(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43, 0);
-		auto direc = XMVector3Normalize(targetPos-pos);
-		auto direcVec = XMLoadFloat3(&m_xmf3MovingDirection);
-		auto off = direc-direcVec;
-		direcVec += off*fElapsedTime*5*elapsedTime*elapsedTime;
-		direcVec = XMVector3Normalize(direcVec);
-		XMStoreFloat3(&m_xmf3MovingDirection, direcVec);
-	}
-	CGameObject::Animate(fElapsedTime);
-}
-
-void CMap::Animate(float fElapsedTime){
-	float mapX = m_xmf4x4World._41;
-	float mapY = m_xmf4x4World._42;
-	float mapZ = m_xmf4x4World._43;
-	float x = CAirplanePlayer::getConst().m_xmf4x4World._41;
-	float y = CAirplanePlayer::getConst().m_xmf4x4World._42;
-	float z = CAirplanePlayer::getConst().m_xmf4x4World._43;
-
-	float offsetZ = 50/(float)40*2;
-	if(x<-20+mapX||20+mapX<x||y<-20+mapY||20+mapY<y){
-		m_xmf4x4World._41 = x;
-		m_xmf4x4World._42 = y;
-	}
-	if(z<-offsetZ+mapZ||offsetZ+mapZ<z){
-		m_xmf4x4World._43 = z;
-	}
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	OnPrepareRender();
+	//ê²Œìž„ ê°ì²´ì— ì…°ì´ë” ê°ì²´ê°€ ì—°ê²°ë˜ì–´ ìžˆìœ¼ë©´ ì…°ì´ë” ìƒíƒœ ê°ì²´ë¥¼ ì„¤ì •í•œë‹¤. 
+	if (m_pShader) m_pShader->Render(pd3dCommandList);
+	//ê²Œìž„ ê°ì²´ì— ë©”ì‰¬ê°€ ì—°ê²°ë˜ì–´ ìžˆìœ¼ë©´ ë©”ì‰¬ë¥¼ ë Œë”ë§í•œë‹¤. 
+	if (m_pMesh) m_pMesh->Render(pd3dCommandList);
 }
