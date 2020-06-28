@@ -1,8 +1,9 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Timer.h"
 #include "Scene.h"
+
+class CCamera;
 
 class CGameFramework : public Singleton<CGameFramework>{
 private:
@@ -44,13 +45,12 @@ private:
 	UINT64 m_nFenceValues[m_nSwapChainBuffers];
 	HANDLE m_hFenceEvent;
 	//펜스 인터페이스 포인터, 펜스의 값, 이벤트 핸들이다.
-	D3D12_VIEWPORT m_d3dViewport;
-	D3D12_RECT m_d3dScissorRect;
-	//뷰포트와 씨저 사각형이다. 
 
 	CScene *m_pScene;
 
 	_TCHAR m_pszFrameRate[50];
+public:
+	CCamera *m_pCamera = NULL;
 public:
 	CGameFramework();
 	~CGameFramework(){

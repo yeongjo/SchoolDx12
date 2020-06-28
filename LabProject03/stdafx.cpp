@@ -1,13 +1,5 @@
 #include "stdafx.h"
 
-namespace Matrix4x4 {
-	XMFLOAT4X4 Identity() {
-		XMFLOAT4X4 transFloat4x4;
-		XMStoreFloat4x4(&transFloat4x4, XMMatrixIdentity());
-		return transFloat4x4;
-	}
-}
-
 float random(){
 	return (float)rand()/(float)RAND_MAX*2.0f-1.0f;
 }
