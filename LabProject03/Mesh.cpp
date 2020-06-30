@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "Mesh.h"
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {
@@ -10,12 +10,11 @@ CMesh::~CMesh() {
 	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
 	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
 	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
-	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
 	m_pd3dIndexUploadBuffer = NULL;
 }
 
 void CMesh::ReleaseUploadBuffers() {
-	//Á¤Á¡ ¹öÆÛ¸¦ À§ÇÑ ¾÷·Îµå ¹öÆÛ¸¦ ¼Ò¸ê½ÃÅ²´Ù. 
+	//ì •ì  ë²„í¼ë¥¼ ìœ„í•œ ì—…ë¡œë“œ ë²„í¼ë¥¼ ì†Œë©¸ì‹œí‚¨ë‹¤. 
 	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
 	m_pd3dVertexUploadBuffer = NULL;
 };
@@ -23,24 +22,24 @@ void CMesh::ReleaseUploadBuffers() {
 
 CTriangleMesh::CTriangleMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList) : CMesh(pd3dDevice, pd3dCommandList) {
-	//»ï°¢Çü ¸Þ½¬¸¦ Á¤ÀÇÇÑ´Ù. 
+	//ì‚¼ê°í˜• ë©”ì‰¬ë¥¼ ì •ì˜í•œë‹¤. 
 	m_nVertices = 3;
 	m_nStride = sizeof(CDiffusedVertex);
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	/*Á¤Á¡(»ï°¢ÇüÀÇ ²ÀÁöÁ¡)ÀÇ »ö»óÀº ½Ã°è¹æÇâ ¼ø¼­ ´ë·Î »¡°£»ö, ³ì»ö, ÆÄ¶õ»öÀ¸·Î ÁöÁ¤ÇÑ´Ù.
-	RGBA(Red, Green, Blue, Alpha) 4°³ÀÇ ÆÄ¶ó¸ÞÅÍ¸¦ »ç¿ëÇÏ¿© »ö»óÀ» Ç¥ÇöÇÑ´Ù.
-	°¢ ÆÄ¶ó¸ÞÅÍ´Â 0.0~1.0 »çÀÌÀÇ ½Ç¼ö°ªÀ» °¡Áø´Ù.*/
+	/*ì •ì (ì‚¼ê°í˜•ì˜ ê¼­ì§€ì )ì˜ ìƒ‰ìƒì€ ì‹œê³„ë°©í–¥ ìˆœì„œ ëŒ€ë¡œ ë¹¨ê°„ìƒ‰, ë…¹ìƒ‰, íŒŒëž€ìƒ‰ìœ¼ë¡œ ì§€ì •í•œë‹¤.
+	RGBA(Red, Green, Blue, Alpha) 4ê°œì˜ íŒŒë¼ë©”í„°ë¥¼ ì‚¬ìš©í•˜ì—¬ ìƒ‰ìƒì„ í‘œí˜„í•œë‹¤.
+	ê° íŒŒë¼ë©”í„°ëŠ” 0.0~1.0 ì‚¬ì´ì˜ ì‹¤ìˆ˜ê°’ì„ ê°€ì§„ë‹¤.*/
 	CDiffusedVertex pVertices[3];
 	pVertices[0] = CDiffusedVertex(XMFLOAT3(0.0f, 0.5f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f,
 		1.0f));
 	pVertices[1] = CDiffusedVertex(XMFLOAT3(0.5f, -0.5f, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f,
 		1.0f));
 	pVertices[2] = CDiffusedVertex(XMFLOAT3(-0.5f, -0.5f, 0.0f), XMFLOAT4(Colors::Blue));
-	//»ï°¢Çü ¸Þ½¬¸¦ ¸®¼Ò½º(Á¤Á¡ ¹öÆÛ)·Î »ý¼ºÇÑ´Ù. 
+	//ì‚¼ê°í˜• ë©”ì‰¬ë¥¼ ë¦¬ì†ŒìŠ¤(ì •ì  ë²„í¼)ë¡œ ìƒì„±í•œë‹¤. 
 	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices,
 		m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,
 		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
-	//Á¤Á¡ ¹öÆÛ ºä¸¦ »ý¼ºÇÑ´Ù. 
+	//ì •ì  ë²„í¼ ë·°ë¥¼ ìƒì„±í•œë‹¤. 
 	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
 	m_d3dVertexBufferView.StrideInBytes = m_nStride;
 	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
@@ -51,12 +50,12 @@ CCubeMeshDiffused::~CCubeMeshDiffused() {
 CCubeMeshDiffused::CCubeMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, float fWidth, float fHeight, float fDepth) : CMesh(pd3dDevice,
 		pd3dCommandList) {
-	//Á÷À°¸éÃ¼´Â ²ÀÁöÁ¡(Á¤Á¡)ÀÌ 8°³ÀÌ´Ù. 
+	//ì§ìœ¡ë©´ì²´ëŠ” ê¼­ì§€ì (ì •ì )ì´ 8ê°œì´ë‹¤. 
 	m_nVertices = 8;
 	m_nStride = sizeof(CDiffusedVertex);
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
-	//Á¤Á¡ ¹öÆÛ´Â Á÷À°¸éÃ¼ÀÇ ²ÀÁöÁ¡ 8°³¿¡ ´ëÇÑ Á¤Á¡ µ¥ÀÌÅÍ¸¦ °¡Áø´Ù. 
+	//ì •ì  ë²„í¼ëŠ” ì§ìœ¡ë©´ì²´ì˜ ê¼­ì§€ì  8ê°œì— ëŒ€í•œ ì •ì  ë°ì´í„°ë¥¼ ê°€ì§„ë‹¤. 
 	CDiffusedVertex pVertices[8];
 	pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx, +fy, -fz), RANDOM_COLOR);
 	pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx, +fy, -fz), RANDOM_COLOR);
@@ -72,43 +71,43 @@ CCubeMeshDiffused::CCubeMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
 	m_d3dVertexBufferView.StrideInBytes = m_nStride;
 	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
-	/*ÀÎµ¦½º ¹öÆÛ´Â Á÷À°¸éÃ¼ÀÇ 6°³ÀÇ ¸é(»ç°¢Çü)¿¡ ´ëÇÑ ±âÇÏ Á¤º¸¸¦ °®´Â´Ù. »ï°¢Çü ¸®½ºÆ®·Î Á÷À°¸éÃ¼¸¦ Ç¥ÇöÇÒ °ÍÀÌ¹Ç·Î °¢ ¸éÀº 2°³ÀÇ »ï°¢ÇüÀ» °¡Áö°í °¢ »ï°¢ÇüÀº 3°³ÀÇ Á¤Á¡ÀÌ ÇÊ¿äÇÏ´Ù. Áï, ÀÎµ¦½º ¹öÆÛ´Â ÀüÃ¼ 36(=6*2*3)°³ÀÇ ÀÎµ¦½º¸¦ °¡Á®¾ß ÇÑ´Ù.*/
+	/*ì¸ë±ìŠ¤ ë²„í¼ëŠ” ì§ìœ¡ë©´ì²´ì˜ 6ê°œì˜ ë©´(ì‚¬ê°í˜•)ì— ëŒ€í•œ ê¸°í•˜ ì •ë³´ë¥¼ ê°–ëŠ”ë‹¤. ì‚¼ê°í˜• ë¦¬ìŠ¤íŠ¸ë¡œ ì§ìœ¡ë©´ì²´ë¥¼ í‘œí˜„í•  ê²ƒì´ë¯€ë¡œ ê° ë©´ì€ 2ê°œì˜ ì‚¼ê°í˜•ì„ ê°€ì§€ê³  ê° ì‚¼ê°í˜•ì€ 3ê°œì˜ ì •ì ì´ í•„ìš”í•˜ë‹¤. ì¦‰, ì¸ë±ìŠ¤ ë²„í¼ëŠ” ì „ì²´ 36(=6*2*3)ê°œì˜ ì¸ë±ìŠ¤ë¥¼ ê°€ì ¸ì•¼ í•œë‹¤.*/
 	m_nIndices = 36;
 	UINT pnIndices[36];
-	//¨Í ¾Õ¸é(Front) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“ ì•žë©´(Front) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[0] = 3; pnIndices[1] = 1; pnIndices[2] = 0;
-	//¨Î ¾Õ¸é(Front) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â“‘ ì•žë©´(Front) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[3] = 2; pnIndices[4] = 1; pnIndices[5] = 3;
-	//¨Ï À­¸é(Top) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“’ ìœ—ë©´(Top) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[6] = 0; pnIndices[7] = 5; pnIndices[8] = 4;
-	//¨Ð À­¸é(Top) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â““ ìœ—ë©´(Top) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[9] = 1; pnIndices[10] = 5; pnIndices[11] = 0;
-	//¨Ñ µÞ¸é(Back) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“” ë’·ë©´(Back) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[12] = 3; pnIndices[13] = 4; pnIndices[14] = 7;
-	//¨Ò µÞ¸é(Back) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â“• ë’·ë©´(Back) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[15] = 0; pnIndices[16] = 4; pnIndices[17] = 3;
-	//¨Ó ¾Æ·¡¸é(Bottom) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“– ì•„ëž˜ë©´(Bottom) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[18] = 1; pnIndices[19] = 6; pnIndices[20] = 5;
-	//¨Ô ¾Æ·¡¸é(Bottom) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â“— ì•„ëž˜ë©´(Bottom) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[21] = 2; pnIndices[22] = 6; pnIndices[23] = 1;
-	//¨Õ ¿·¸é(Left) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“˜ ì˜†ë©´(Left) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[24] = 2; pnIndices[25] = 7; pnIndices[26] = 6;
-	//¨Ö ¿·¸é(Left) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â“™ ì˜†ë©´(Left) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[27] = 3; pnIndices[28] = 7; pnIndices[29] = 2;
-	//¨× ¿·¸é(Right) »ç°¢ÇüÀÇ À§ÂÊ »ï°¢Çü
+	//â“š ì˜†ë©´(Right) ì‚¬ê°í˜•ì˜ ìœ„ìª½ ì‚¼ê°í˜•
 	pnIndices[30] = 6; pnIndices[31] = 4; pnIndices[32] = 5;
-	//¨Ø ¿·¸é(Right) »ç°¢ÇüÀÇ ¾Æ·¡ÂÊ »ï°¢Çü
+	//â“› ì˜†ë©´(Right) ì‚¬ê°í˜•ì˜ ì•„ëž˜ìª½ ì‚¼ê°í˜•
 	pnIndices[33] = 7; pnIndices[34] = 4; pnIndices[35] = 6;
-	//ÀÎµ¦½º ¹öÆÛ¸¦ »ý¼ºÇÑ´Ù. 
+	//ì¸ë±ìŠ¤ ë²„í¼ë¥¼ ìƒì„±í•œë‹¤. 
 	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices,
 		sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
 		&m_pd3dIndexUploadBuffer);
-	//ÀÎµ¦½º ¹öÆÛ ºä¸¦ »ý¼ºÇÑ´Ù. 
+	//ì¸ë±ìŠ¤ ë²„í¼ ë·°ë¥¼ ìƒì„±í•œë‹¤. 
 	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
 
-	//¸Þ½¬ÀÇ ¹Ù¿îµù ¹Ú½º(¸ðµ¨ ÁÂÇ¥°è)¸¦ »ý¼ºÇÑ´Ù. 
+	//ë©”ì‰¬ì˜ ë°”ìš´ë”© ë°•ìŠ¤(ëª¨ë¸ ì¢Œí‘œê³„)ë¥¼ ìƒì„±í•œë‹¤. 
 	m_xmBoundingBox = BoundingOrientedBox(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(fx, fy, fz), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
@@ -120,12 +119,12 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 	m_nSlot = 0;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
-	//À§ÀÇ ±×¸²°ú °°Àº ºñÇà±â ¸Þ½¬¸¦ Ç¥ÇöÇÏ±â À§ÇÑ Á¤Á¡ µ¥ÀÌÅÍÀÌ´Ù.
+	//ìœ„ì˜ ê·¸ë¦¼ê³¼ ê°™ì€ ë¹„í–‰ê¸° ë©”ì‰¬ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ ì •ì  ë°ì´í„°ì´ë‹¤.
 	CDiffusedVertex pVertices[24 * 3];
 	float x1 = fx * 0.2f, y1 = fy * 0.2f, x2 = fx * 0.1f, y3 = fy * 0.3f, y2 = ((y1 - (fy -
 		y3)) / x1) * x2 + (fy - y3);
 	int i = 0;
-	//ºñÇà±â ¸Þ½¬ÀÇ À§ÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ìœ„ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), -fz),
 		Vector4::Add(xmf4Color, RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(+x1, -y1, -fz), Vector4::Add(xmf4Color,
@@ -150,7 +149,7 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(-fx, -y3, -fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
-	//ºñÇà±â ¸Þ½¬ÀÇ ¾Æ·¡ÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ì•„ëž˜ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), +fz),
 		Vector4::Add(xmf4Color, RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, 0.0f, +fz), Vector4::Add(xmf4Color,
@@ -175,7 +174,7 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(-x1, -y1, +fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
-	//ºñÇà±â ¸Þ½¬ÀÇ ¿À¸¥ÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ì˜¤ë¥¸ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), -fz),
 		Vector4::Add(xmf4Color, RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), +fz),
@@ -200,7 +199,7 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(+fx, -y3, +fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
-	//ºñÇà±â ¸Þ½¬ÀÇ µÚÂÊ/¿À¸¥ÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ë’¤ìª½/ì˜¤ë¥¸ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(+x1, -y1, -fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(+fx, -y3, -fz), Vector4::Add(xmf4Color,
@@ -225,7 +224,7 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, 0.0f, +fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
-	//ºñÇà±â ¸Þ½¬ÀÇ ¿ÞÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ì™¼ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), +fz),
 		Vector4::Add(xmf4Color, RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, +(fy + y3), -fz),
@@ -250,7 +249,7 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(-fx, -y3, +fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
-	//ºñÇà±â ¸Þ½¬ÀÇ µÚÂÊ/¿ÞÂÊ ¸é
+	//ë¹„í–‰ê¸° ë©”ì‰¬ì˜ ë’¤ìª½/ì™¼ìª½ ë©´
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, 0.0f, -fz), Vector4::Add(xmf4Color,
 		RANDOM_COLOR));
 	pVertices[i++] = CDiffusedVertex(XMFLOAT3(0.0f, 0.0f, +fz), Vector4::Add(xmf4Color,
@@ -281,12 +280,14 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device *pd3dDevice,
 	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
 	m_d3dVertexBufferView.StrideInBytes = m_nStride;
 	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
-	//¸Þ½¬ÀÇ ¹Ù¿îµù ¹Ú½º(¸ðµ¨ ÁÂÇ¥°è)¸¦ »ý¼ºÇÑ´Ù. 
+	//ë©”ì‰¬ì˜ ë°”ìš´ë”© ë°•ìŠ¤(ëª¨ë¸ ì¢Œí‘œê³„)ë¥¼ ìƒì„±í•œë‹¤. 
 	m_xmBoundingBox = BoundingOrientedBox(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(fx, fy,
 		fz), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 CAirplaneMeshDiffused::~CAirplaneMeshDiffused() {
-}void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList) {
+}
+
+void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList) {
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dVertexBufferView);
 	Render(pd3dCommandList, 1);
 }
@@ -301,27 +302,29 @@ void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances) 
 }
 void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances,
 	D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView) {
-	//Á¤Á¡ ¹öÆÛ ºä¿Í ÀÎ½ºÅÏ½Ì ¹öÆÛ ºä¸¦ ÀÔ·Â-Á¶¸³ ´Ü°è¿¡ ¼³Á¤ÇÑ´Ù. 
+	//ì •ì  ë²„í¼ ë·°ì™€ ì¸ìŠ¤í„´ì‹± ë²„í¼ ë·°ë¥¼ ìž…ë ¥-ì¡°ë¦½ ë‹¨ê³„ì— ì„¤ì •í•œë‹¤. 
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[] = { m_d3dVertexBufferView,
 		d3dInstancingBufferView
 	};
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, _countof(pVertexBufferViews),
 		pVertexBufferViews);
 	Render(pd3dCommandList, nInstances);
-}CHeightMapImage::CHeightMapImage(LPCTSTR pFileName, int nWidth, int nLength, XMFLOAT3
+}
+
+CHeightMapImage::CHeightMapImage(LPCTSTR pFileName, int nWidth, int nLength, XMFLOAT3
 	xmf3Scale) {
 	m_nWidth = nWidth;
 	m_nLength = nLength;
 	m_xmf3Scale = xmf3Scale;
 	BYTE *pHeightMapPixels = new BYTE[m_nWidth * m_nLength];
-	//ÆÄÀÏÀ» ¿­°í ÀÐ´Â´Ù. ³ôÀÌ ¸Ê ÀÌ¹ÌÁö´Â ÆÄÀÏ Çì´õ°¡ ¾ø´Â RAW ÀÌ¹ÌÁöÀÌ´Ù. 
+	//íŒŒì¼ì„ ì—´ê³  ì½ëŠ”ë‹¤. ë†’ì´ ë§µ ì´ë¯¸ì§€ëŠ” íŒŒì¼ í—¤ë”ê°€ ì—†ëŠ” RAW ì´ë¯¸ì§€ì´ë‹¤. 
 	HANDLE hFile = ::CreateFile(pFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY, NULL);
 	DWORD dwBytesRead;
 	::ReadFile(hFile, pHeightMapPixels, (m_nWidth * m_nLength), &dwBytesRead, NULL);
 	::CloseHandle(hFile);
 
-	/*ÀÌ¹ÌÁöÀÇ y-Ãà°ú ÁöÇüÀÇ z-ÃàÀÌ ¹æÇâÀÌ ¹Ý´ëÀÌ¹Ç·Î ÀÌ¹ÌÁö¸¦ »óÇÏ´ëÄª ½ÃÄÑ ÀúÀåÇÑ´Ù. ±×·¯¸é ´ÙÀ½ ±×¸²°ú °°ÀÌ ÀÌ ¹ÌÁöÀÇ ÁÂÇ¥Ãà°ú ÁöÇüÀÇ ÁÂÇ¥ÃàÀÇ ¹æÇâÀÌ ÀÏÄ¡ÇÏ°Ô µÈ´Ù.*/
+	/*ì´ë¯¸ì§€ì˜ y-ì¶•ê³¼ ì§€í˜•ì˜ z-ì¶•ì´ ë°©í–¥ì´ ë°˜ëŒ€ì´ë¯€ë¡œ ì´ë¯¸ì§€ë¥¼ ìƒí•˜ëŒ€ì¹­ ì‹œì¼œ ì €ìž¥í•œë‹¤. ê·¸ëŸ¬ë©´ ë‹¤ìŒ ê·¸ë¦¼ê³¼ ê°™ì´ ì´ ë¯¸ì§€ì˜ ì¢Œí‘œì¶•ê³¼ ì§€í˜•ì˜ ì¢Œí‘œì¶•ì˜ ë°©í–¥ì´ ì¼ì¹˜í•˜ê²Œ ëœë‹¤.*/
 
 	m_pHeightMapPixels = new BYTE[m_nWidth * m_nLength];
 	for (int y = 0; y < m_nLength; y++) {
@@ -339,31 +342,32 @@ CHeightMapImage::~CHeightMapImage() {
 }
 
 XMFLOAT3 CHeightMapImage::GetHeightMapNormal(int x, int z) {
-	//x-ÁÂÇ¥¿Í z-ÁÂÇ¥°¡ ³ôÀÌ ¸ÊÀÇ ¹üÀ§¸¦ ¹þ¾î³ª¸é ÁöÇüÀÇ ¹ý¼± º¤ÅÍ´Â y-Ãà ¹æÇâ º¤ÅÍÀÌ´Ù.
+	//x-ì¢Œí‘œì™€ z-ì¢Œí‘œê°€ ë†’ì´ ë§µì˜ ë²”ìœ„ë¥¼ ë²—ì–´ë‚˜ë©´ ì§€í˜•ì˜ ë²•ì„  ë²¡í„°ëŠ” y-ì¶• ë°©í–¥ ë²¡í„°ì´ë‹¤.
 	if ((x < 0.0f) || (z < 0.0f) || (x >= m_nWidth) || (z >= m_nLength))
 		return(XMFLOAT3(0.0f, 1.0f, 0.0f));
-	/*³ôÀÌ ¸Ê¿¡¼­ (x, z) ÁÂÇ¥ÀÇ ÇÈ¼¿ °ª°ú ÀÎÁ¢ÇÑ µÎ °³ÀÇ Á¡ (x+1, z), (z, z+1)¿¡ ´ëÇÑ ÇÈ¼¿ °ªÀ» »ç¿ëÇÏ¿© ¹ý¼± º¤ÅÍ¸¦ °è»êÇÑ´Ù.*/
+	/*ë†’ì´ ë§µì—ì„œ (x, z) ì¢Œí‘œì˜ í”½ì…€ ê°’ê³¼ ì¸ì ‘í•œ ë‘ ê°œì˜ ì  (x+1, z), (z, z+1)ì— ëŒ€í•œ í”½ì…€ ê°’ì„ ì‚¬ìš©í•˜ì—¬ ë²•ì„  ë²¡í„°ë¥¼ ê³„ì‚°í•œë‹¤.*/
 	int nHeightMapIndex = x + (z * m_nWidth);
 	int xHeightMapAdd = (x < (m_nWidth - 1)) ? 1 : -1;
 	int zHeightMapAdd = (z < (m_nLength - 1)) ? m_nWidth : -m_nWidth;
-	//(x, z), (x+1, z), (z, z+1)ÀÇ ÇÈ¼¿¿¡¼­ ÁöÇüÀÇ ³ôÀÌ¸¦ ±¸ÇÑ´Ù. 
+	//(x, z), (x+1, z), (z, z+1)ì˜ í”½ì…€ì—ì„œ ì§€í˜•ì˜ ë†’ì´ë¥¼ êµ¬í•œë‹¤. 
 	float y1 = (float)m_pHeightMapPixels[nHeightMapIndex] * m_xmf3Scale.y;
 	float y2 = (float)m_pHeightMapPixels[nHeightMapIndex + xHeightMapAdd] * m_xmf3Scale.y;
 	float y3 = (float)m_pHeightMapPixels[nHeightMapIndex + zHeightMapAdd] * m_xmf3Scale.y;
-	//xmf3Edge1Àº (0, y3, m_xmf3Scale.z) - (0, y1, 0) º¤ÅÍÀÌ´Ù. 
+	//xmf3Edge1ì€ (0, y3, m_xmf3Scale.z) - (0, y1, 0) ë²¡í„°ì´ë‹¤. 
 	XMFLOAT3 xmf3Edge1 = XMFLOAT3(0.0f, y3 - y1, m_xmf3Scale.z);
-	//xmf3Edge2´Â (m_xmf3Scale.x, y2, 0) - (0, y1, 0) º¤ÅÍÀÌ´Ù.
+	//xmf3Edge2ëŠ” (m_xmf3Scale.x, y2, 0) - (0, y1, 0) ë²¡í„°ì´ë‹¤.
 	XMFLOAT3 xmf3Edge2 = XMFLOAT3(m_xmf3Scale.x, y2 - y1, 0.0f);
-	//¹ý¼± º¤ÅÍ´Â xmf3Edge1°ú xmf3Edge2ÀÇ ¿ÜÀûÀ» Á¤±ÔÈ­ÇÏ¸é µÈ´Ù. 
+	//ë²•ì„  ë²¡í„°ëŠ” xmf3Edge1ê³¼ xmf3Edge2ì˜ ì™¸ì ì„ ì •ê·œí™”í•˜ë©´ ëœë‹¤. 
 	XMFLOAT3 xmf3Normal = Vector3::CrossProduct(xmf3Edge1, xmf3Edge2, true);
 	return(xmf3Normal);
-}
+}
+
 #define _WITH_APPROXIMATE_OPPOSITE_CORNER
 
 float CHeightMapImage::GetHeight(float fx, float fz) {
-	/*ÁöÇüÀÇ ÁÂÇ¥ (fx, fz)´Â ÀÌ¹ÌÁö ÁÂÇ¥°èÀÌ´Ù. ³ôÀÌ ¸ÊÀÇ x-ÁÂÇ¥¿Í z-ÁÂÇ¥°¡ ³ôÀÌ ¸ÊÀÇ ¹üÀ§¸¦ ¹þ¾î³ª¸é ÁöÇüÀÇ ³ôÀÌ´Â 0ÀÌ´Ù.*/
+	/*ì§€í˜•ì˜ ì¢Œí‘œ (fx, fz)ëŠ” ì´ë¯¸ì§€ ì¢Œí‘œê³„ì´ë‹¤. ë†’ì´ ë§µì˜ x-ì¢Œí‘œì™€ z-ì¢Œí‘œê°€ ë†’ì´ ë§µì˜ ë²”ìœ„ë¥¼ ë²—ì–´ë‚˜ë©´ ì§€í˜•ì˜ ë†’ì´ëŠ” 0ì´ë‹¤.*/
 	if ((fx < 0.0f) || (fz < 0.0f) || (fx >= m_nWidth) || (fz >= m_nLength)) return(0.0f);
-	//³ôÀÌ ¸ÊÀÇ ÁÂÇ¥ÀÇ Á¤¼ö ºÎºÐ°ú ¼Ò¼ö ºÎºÐÀ» °è»êÇÑ´Ù. 
+	//ë†’ì´ ë§µì˜ ì¢Œí‘œì˜ ì •ìˆ˜ ë¶€ë¶„ê³¼ ì†Œìˆ˜ ë¶€ë¶„ì„ ê³„ì‚°í•œë‹¤. 
 	int x = (int)fx;
 	int z = (int)fz;
 	float fxPercent = fx - x;
@@ -373,18 +377,18 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 	float fTopLeft = (float)m_pHeightMapPixels[x + ((z + 1)*m_nWidth)];
 	float fTopRight = (float)m_pHeightMapPixels[(x + 1) + ((z + 1)*m_nWidth)];
 #ifdef _WITH_APPROXIMATE_OPPOSITE_CORNER
-	//z-ÁÂÇ¥°¡ 1, 3, 5, ...ÀÎ °æ¿ì ÀÎµ¦½º°¡ ¿À¸¥ÂÊ¿¡¼­ ¿ÞÂÊÀ¸·Î ³ª¿­µÈ´Ù.
+	//z-ì¢Œí‘œê°€ 1, 3, 5, ...ì¸ ê²½ìš° ì¸ë±ìŠ¤ê°€ ì˜¤ë¥¸ìª½ì—ì„œ ì™¼ìª½ìœ¼ë¡œ ë‚˜ì—´ëœë‹¤.
 	bool bRightToLeft = ((z % 2) != 0);
 	if (bRightToLeft) {
-		/*ÁöÇüÀÇ »ï°¢ÇüµéÀÌ ¿À¸¥ÂÊ¿¡¼­ ¿ÞÂÊ ¹æÇâÀ¸·Î ³ª¿­µÇ´Â °æ¿ìÀÌ´Ù. ´ÙÀ½ ±×¸²ÀÇ ¿À¸¥ÂÊÀº (fzPercent < fxPercent) ÀÎ °æ¿ìÀÌ´Ù. ÀÌ °æ¿ì TopLeftÀÇ ÇÈ¼¿ °ªÀº (fTopLeft = fTopRight + (fBottomLeft - fBottomRight))·Î ±Ù»çÇÑ´Ù. ´ÙÀ½ ±×¸²ÀÇ ¿ÞÂÊÀº (fzPercent ¡Ã fxPercent)ÀÎ °æ¿ìÀÌ´Ù. ÀÌ °æ¿ì BottomRightÀÇ ÇÈ¼¿ °ªÀº (fBottomRight = fBottomLeft + (fTopRight - fTopLeft))·Î ±Ù»çÇÑ´Ù.*/
+		/*ì§€í˜•ì˜ ì‚¼ê°í˜•ë“¤ì´ ì˜¤ë¥¸ìª½ì—ì„œ ì™¼ìª½ ë°©í–¥ìœ¼ë¡œ ë‚˜ì—´ë˜ëŠ” ê²½ìš°ì´ë‹¤. ë‹¤ìŒ ê·¸ë¦¼ì˜ ì˜¤ë¥¸ìª½ì€ (fzPercent < fxPercent) ì¸ ê²½ìš°ì´ë‹¤. ì´ ê²½ìš° TopLeftì˜ í”½ì…€ ê°’ì€ (fTopLeft = fTopRight + (fBottomLeft - fBottomRight))ë¡œ ê·¼ì‚¬í•œë‹¤. ë‹¤ìŒ ê·¸ë¦¼ì˜ ì™¼ìª½ì€ (fzPercent â‰¥ fxPercent)ì¸ ê²½ìš°ì´ë‹¤. ì´ ê²½ìš° BottomRightì˜ í”½ì…€ ê°’ì€ (fBottomRight = fBottomLeft + (fTopRight - fTopLeft))ë¡œ ê·¼ì‚¬í•œë‹¤.*/
 
 		if (fzPercent >= fxPercent)
 			fBottomRight = fBottomLeft + (fTopRight - fTopLeft);
 		else
 			fTopLeft = fTopRight + (fBottomLeft - fBottomRight);
 	} else {
-		/*ÁöÇüÀÇ »ï°¢ÇüµéÀÌ ¿ÞÂÊ¿¡¼­ ¿À¸¥ÂÊ ¹æÇâÀ¸·Î ³ª¿­µÇ´Â °æ¿ìÀÌ´Ù. ´ÙÀ½ ±×¸²ÀÇ ¿ÞÂÊÀº (fzPercent < (1.0f - fxPercent))ÀÎ °æ¿ìÀÌ´Ù. ÀÌ °æ¿ì TopRightÀÇ ÇÈ¼¿ °ªÀº (fTopRight = fTopLeft + (fBottomRight - fBottomLeft))·Î
-		±Ù»çÇÑ´Ù. ´ÙÀ½ ±×¸²ÀÇ ¿À¸¥ÂÊÀº (fzPercent ¡Ã (1.0f - fxPercent))ÀÎ °æ¿ìÀÌ´Ù. ÀÌ °æ¿ì BottomLeftÀÇ ÇÈ¼¿ °ªÀº (fBottomLeft = fTopLeft + (fBottomRight - fTopRight))·Î ±Ù»çÇÑ´Ù.*/
+		/*ì§€í˜•ì˜ ì‚¼ê°í˜•ë“¤ì´ ì™¼ìª½ì—ì„œ ì˜¤ë¥¸ìª½ ë°©í–¥ìœ¼ë¡œ ë‚˜ì—´ë˜ëŠ” ê²½ìš°ì´ë‹¤. ë‹¤ìŒ ê·¸ë¦¼ì˜ ì™¼ìª½ì€ (fzPercent < (1.0f - fxPercent))ì¸ ê²½ìš°ì´ë‹¤. ì´ ê²½ìš° TopRightì˜ í”½ì…€ ê°’ì€ (fTopRight = fTopLeft + (fBottomRight - fBottomLeft))ë¡œ
+		ê·¼ì‚¬í•œë‹¤. ë‹¤ìŒ ê·¸ë¦¼ì˜ ì˜¤ë¥¸ìª½ì€ (fzPercent â‰¥ (1.0f - fxPercent))ì¸ ê²½ìš°ì´ë‹¤. ì´ ê²½ìš° BottomLeftì˜ í”½ì…€ ê°’ì€ (fBottomLeft = fTopLeft + (fBottomRight - fTopRight))ë¡œ ê·¼ì‚¬í•œë‹¤.*/
 
 		if (fzPercent < (1.0f - fxPercent))
 			fTopRight = fTopLeft + (fBottomRight - fBottomLeft);
@@ -392,7 +396,7 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 			fBottomLeft = fTopLeft + (fBottomRight - fTopRight);
 	}
 #endif
-	//»ç°¢ÇüÀÇ ³× Á¡À» º¸°£ÇÏ¿© ³ôÀÌ(ÇÈ¼¿ °ª)¸¦ °è»êÇÑ´Ù. 
+	//ì‚¬ê°í˜•ì˜ ë„¤ ì ì„ ë³´ê°„í•˜ì—¬ ë†’ì´(í”½ì…€ ê°’)ë¥¼ ê³„ì‚°í•œë‹¤. 
 	float fTopHeight = fTopLeft * (1 - fxPercent) + fTopRight * fxPercent;
 	float fBottomHeight = fBottomLeft * (1 - fxPercent) + fBottomRight * fxPercent;
 	float fHeight = fBottomHeight * (1 - fzPercent) + fTopHeight * fzPercent;
@@ -401,20 +405,20 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 	ID3D12GraphicsCommandList *pd3dCommandList, int xStart, int zStart, int nWidth, int
 	nLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color, void *pContext) : CMesh(pd3dDevice,
 		pd3dCommandList) {
-	//°ÝÀÚÀÇ ±³Á¡(Á¤Á¡)ÀÇ °³¼ö´Â (nWidth * nLength)ÀÌ´Ù. 
+	//ê²©ìžì˜ êµì (ì •ì )ì˜ ê°œìˆ˜ëŠ” (nWidth * nLength)ì´ë‹¤. 
 	m_nVertices = nWidth * nLength;
 	m_nStride = sizeof(CDiffusedVertex);
-	//°ÝÀÚ´Â »ï°¢Çü ½ºÆ®¸³À¸·Î ±¸¼ºÇÑ´Ù.
+	//ê²©ìžëŠ” ì‚¼ê°í˜• ìŠ¤íŠ¸ë¦½ìœ¼ë¡œ êµ¬ì„±í•œë‹¤.
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 	m_nWidth = nWidth;
 	m_nLength = nLength;
 	m_xmf3Scale = xmf3Scale;
 	CDiffusedVertex *pVertices = new CDiffusedVertex[m_nVertices];
-	/*xStart¿Í zStart´Â °ÝÀÚÀÇ ½ÃÀÛ À§Ä¡(x-ÁÂÇ¥¿Í z-ÁÂÇ¥)¸¦ ³ªÅ¸³½´Ù. Ä¿´Ù¶õ ÁöÇüÀº °ÝÀÚµéÀÇ ÀÌÂ÷¿ø ¹è¿­·Î ¸¸µé ÇÊ¿ä°¡ ÀÖ±â ¶§¹®¿¡ ÀüÃ¼ ÁöÇü¿¡¼­ °¢ °ÝÀÚÀÇ ½ÃÀÛ À§Ä¡¸¦ ³ªÅ¸³»´Â Á¤º¸°¡ ÇÊ¿äÇÏ´Ù.*/
+	/*xStartì™€ zStartëŠ” ê²©ìžì˜ ì‹œìž‘ ìœ„ì¹˜(x-ì¢Œí‘œì™€ z-ì¢Œí‘œ)ë¥¼ ë‚˜íƒ€ë‚¸ë‹¤. ì»¤ë‹¤ëž€ ì§€í˜•ì€ ê²©ìžë“¤ì˜ ì´ì°¨ì› ë°°ì—´ë¡œ ë§Œë“¤ í•„ìš”ê°€ ìžˆê¸° ë•Œë¬¸ì— ì „ì²´ ì§€í˜•ì—ì„œ ê° ê²©ìžì˜ ì‹œìž‘ ìœ„ì¹˜ë¥¼ ë‚˜íƒ€ë‚´ëŠ” ì •ë³´ê°€ í•„ìš”í•˜ë‹¤.*/
 	float fHeight = 0.0f, fMinHeight = +FLT_MAX, fMaxHeight = -FLT_MAX;
 	for (int i = 0, z = zStart; z < (zStart + nLength); z++) {
 		for (int x = xStart; x < (xStart + nWidth); x++, i++) {
-			//Á¤Á¡ÀÇ ³ôÀÌ¿Í »ö»óÀ» ³ôÀÌ ¸ÊÀ¸·ÎºÎÅÍ ±¸ÇÑ´Ù. 
+			//ì •ì ì˜ ë†’ì´ì™€ ìƒ‰ìƒì„ ë†’ì´ ë§µìœ¼ë¡œë¶€í„° êµ¬í•œë‹¤. 
 			XMFLOAT3 xmf3Position = XMFLOAT3((x*m_xmf3Scale.x), OnGetHeight(x, z, pContext),
 				(z*m_xmf3Scale.z));
 			XMFLOAT4 xmf3Color = Vector4::Add(OnGetColor(x, z, pContext), xmf4Color);
@@ -423,7 +427,7 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 			if (fHeight > fMaxHeight) fMaxHeight = fHeight;
 		}
 	}
-	//´ÙÀ½ ±×¸²Àº °ÝÀÚÀÇ ±³Á¡(Á¤Á¡)À» ³ª¿­ÇÏ´Â ¼ø¼­¸¦ º¸¿©ÁØ´Ù.
+	//ë‹¤ìŒ ê·¸ë¦¼ì€ ê²©ìžì˜ êµì (ì •ì )ì„ ë‚˜ì—´í•˜ëŠ” ìˆœì„œë¥¼ ë³´ì—¬ì¤€ë‹¤.
 
 	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices,
 		m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,
@@ -432,48 +436,48 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 	m_d3dVertexBufferView.StrideInBytes = m_nStride;
 	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 	delete[] pVertices;
-	/*°ÝÀÚ´Â »ç°¢ÇüµéÀÇ ÁýÇÕÀÌ°í »ç°¢ÇüÀº µÎ °³ÀÇ »ï°¢ÇüÀ¸·Î ±¸¼ºµÇ¹Ç·Î °ÝÀÚ´Â ´ÙÀ½ ±×¸²°ú °°ÀÌ »ï°¢ÇüµéÀÇ ÁýÇÕÀÌ
-	¶ó°í ÇÒ ¼ö ÀÖ´Ù. °ÝÀÚ¸¦ Ç¥ÇöÇÏ±â À§ÇÏ¿© °ÝÀÚÀÇ »ï°¢ÇüµéÀ» Á¤Á¡ ¹öÆÛÀÇ ÀÎµ¦½º·Î Ç¥ÇöÇØ¾ß ÇÑ´Ù. »ï°¢Çü ½ºÆ®¸³À»
-	»ç¿ëÇÏ¿© »ï°¢ÇüµéÀ» Ç¥ÇöÇÏ±â À§ÇÏ¿© »ï°¢ÇüµéÀº »ç°¢ÇüÀÇ ÁÙ ´ÜÀ§·Î ¾Æ·¡¿¡¼­ À§ÂÊ ¹æÇâÀ¸·Î(z-Ãà) ³ª¿­ÇÑ´Ù. Ã¹ ¹ø
-	Â° »ç°¢Çü ÁÙÀÇ »ï°¢ÇüµéÀº ¿ÞÂÊ¿¡¼­ ¿À¸¥ÂÊÀ¸·Î(x-Ãà) ³ª¿­ÇÑ´Ù. µÎ ¹øÂ° ÁÙÀÇ »ï°¢ÇüµéÀº ¿À¸¥ÂÊ¿¡¼­ ¿ÞÂÊ ¹æÇâÀ¸·Î
-	³ª¿­ÇÑ´Ù. Áï, »ç°¢ÇüÀÇ ÁÙÀÌ ¹Ù²ð ¶§¸¶´Ù ³ª¿­ ¼ø¼­°¡ ¹Ù²îµµ·Ï ÇÑ´Ù. ´ÙÀ½ ±×¸²ÀÇ °ÝÀÚ¿¡ ´ëÇÏ¿© »ï°¢Çü ½ºÆ®¸³À» »ç
-	¿ëÇÏ¿© »ï°¢ÇüµéÀ» Ç¥ÇöÇÏ±â À§ÇÑ ÀÎµ¦½ºÀÇ ³ª¿­Àº ´ÙÀ½°ú °°ÀÌ °ÝÀÚÀÇ m¹øÂ° ÁÙ°ú (m+1)¹øÂ° ÁÙÀÇ Á¤Á¡ ¹øÈ£¸¦ »ç
-	°¢ÇüÀÇ ³ª¿­ ¹æÇâ¿¡ µû¶ó ¹ø°¥¾Æ ¾Æ·¡, À§, ¾Æ·¡, À§, ... ¼ø¼­·Î ³ª¿­ÇÏ¸é µÈ´Ù. 0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12
-	ÀÌ·¸°Ô ÀÎµ¦½º¸¦ ³ª¿­ÇÏ¸é »ï°¢Çü ½ºÆ®¸³À» »ç¿ëÇÒ °ÍÀÌ¹Ç·Î ½ÇÁ¦ ±×·ÁÁö´Â »ï°¢ÇüµéÀÇ ÀÎµ¦½º´Â ´ÙÀ½°ú °°´Ù. (0, 6, 1), (1, 6, 7), (1, 7, 2), (2, 7, 8), (2, 8, 3), (3, 8, 9), ... ±×·¯³ª ÀÌ·¯ÇÑ ÀÎµ¦½º¸¦ »ç¿ëÇÏ¸é Ã¹ ¹øÂ° ÁÙÀ» Á¦¿ÜÇÏ°í »ï°¢ÇüµéÀÌ Á¦´ë·Î ±×·ÁÁöÁö ¾Ê´Â´Ù. ¿Ö³ÄÇÏ¸é »ï°¢Çü ½ºÆ®
-	¸³¿¡¼­´Â ¸¶Áö¸· 2°³ÀÇ Á¤Á¡°ú »õ·Î¿î ÇÏ³ªÀÇ Á¤Á¡À» »ç¿ëÇÏ¿© »õ·Î¿î »ï°¢ÇüÀ» ±×¸°´Ù. ±×¸®°í È¦¼ö ¹øÂ° »ï°¢ÇüÀÇ
-	Á¤Á¡ ³ª¿­ ¼ø¼­(¿ÍÀÎµù ¼ø¼­)´Â ½Ã°è¹æÇâÀÌ°í Â¦¼ö ¹øÂ° »ï°¢ÇüÀÇ ¿ÍÀÎµù ¼ø¼­´Â ¹Ý½Ã°è¹æÇâÀÌ¾î¾ß ÇÑ´Ù. °ÝÀÚÀÇ »ç°¢
-	ÇüÀÌ ÇÑ ÁÙ¿¡¼­ ¸î °³°¡ ÀÖ´øÁö »ó°ü¾øÀÌ ÇÑ ÁÙÀÇ ¸¶Áö¸· »ï°¢ÇüÀº Â¦¼ö ¹øÂ° »ï°¢ÇüÀÌ°í ¿ÍÀÎµù ¼ø¼­´Â ¹Ý½Ã°è ¹æÇâ
-	ÀÌ´Ù. ¿Ö³ÄÇÏ¸é »ç°¢ÇüÀº µÎ °³ÀÇ »ï°¢ÇüÀ¸·Î ³ª´©¾îÁö±â ¶§¹®ÀÌ´Ù. Ã¹ ¹øÂ° ÁÙ¿¡¼­ µÎ ¹øÂ° ÁÙÀÇ ÀÎµ¦½º ³ª¿­°ú ½ÇÁ¦
-	±×·ÁÁö´Â »ï°¢ÇüµéÀÇ ÀÎµ¦½º¸¦ »ìÆìº¸ÀÚ. ..., 4, 10, 5, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12, ...
-	..., (4, 10, 5), (5, 10, 11), (5, 11, 11), (11, 11, 17), (11, 17, 10), ... »ï°¢Çü (5, 10, 11)Àº Ã¹ ¹øÂ° ÁÙÀÇ ¸¶Áö¸· »ï°¢ÇüÀÌ°í Â¦¼ö ¹øÂ°ÀÌ´Ù. »ï°¢Çü (11, 17, 10)Àº µÎ ¹øÂ° ÁÙÀÇ Ã¹ ¹øÂ°
-	»ï°¢ÇüÀÌ°í È¦¼ö ¹øÂ°ÀÌ´Ù. È¦¼ö ¹øÂ°ÀÌ¹Ç·Î ¿ÍÀÎµù ¼ø¼­°¡ ½Ã°è¹æÇâÀÌ¾î¾ß ÇÏ´Âµ¥ ½ÇÁ¦ ¿ÍÀÎµù ¼ø¼­´Â ¹Ý½Ã°è¹æÇâÀÌ
-	¹Ç·Î ±×·ÁÁöÁö ¾ÊÀ» °ÍÀÌ´Ù. ´ç¿¬È÷ ´ÙÀ½ »ï°¢Çüµµ ¿ÍÀÎµù ¼ø¼­°¡ ¸ÂÁö ¾ÊÀ¸¹Ç·Î ±×·ÁÁöÁö ¾ÊÀ» °ÍÀÌ´Ù. »ï°¢Çü (11,
-	17, 10)ÀÇ ¿ÍÀÎµù ¼ø¼­°¡ ¹Ý½Ã°è¹æÇâÀÌ¹Ç·Î ±×·ÁÁöµµ·Ï ÇÏ·Á¸é ÀÌ »ï°¢ÇüÀÌ Â¦¼ö ¹øÂ° »ï°¢ÇüÀÌ µÇµµ·Ï ÇØ¾ß ÇÑ´Ù. ÀÌ
-	¸¦ À§ÇØ¼­ ÁÙÀÌ ¹Ù²ð ¶§¸¶´Ù ¸¶Áö¸· Á¤Á¡ÀÇ ÀÎµ¦½º¸¦ Ãß°¡ÇÏµµ·Ï ÇÏÀÚ. ±×·¯¸é ÁÙÀÌ ¹Ù²ï Ã¹ ¹øÂ° »ï°¢ÇüÀº Â¦¼ö ¹øÂ°
-	»ï°¢ÇüÀÌ µÈ´Ù. ´ÙÀ½ÀÇ ¿¹¿¡¼­´Â 11ÀÌ Ãß°¡µÈ ¸¶Áö¸· Á¤Á¡ÀÇ ÀÎµ¦½ºÀÌ´Ù. ÀÌ·¸°Ô ÇÏ¸é »ï°¢ÇüÀ» ±¸¼ºÇÒ ¼ö ¾ø¾î¼­ ±×
-	·ÁÁöÁö ¾Ê´Â »ï°¢ÇüÀÌ °¢ ÁÙ¸¶´Ù 3°³¾¿ »ý±â°Ô µÈ´Ù. ..., 4, 10, 5, 11, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12, ...
-	..., (5, 10, 11), (5, 11, 11), (11, 11, 11), (11, 11, 17), (11, 17, 10), ... ¼¼ °³ÀÇ »ï°¢Çü (5, 11, 11), (11, 11, 11), (11, 11, 17)Àº »ï°¢ÇüÀ» ±¸¼ºÇÒ ¼ö ¾øÀ¸¹Ç·Î ½ÇÁ¦·Î ±×·ÁÁöÁö ¾Ê´Â´Ù.*/
-	/*ÀÌ·¸°Ô ÀÎµ¦½º¸¦ ³ª¿­ÇÏ¸é ÀÎµ¦½º ¹öÆÛ´Â ((nWidth*2)*(nLength-1))+((nLength-1)-1)°³ÀÇ ÀÎµ¦½º¸¦ °®´Â´Ù. »ç°¢
-	Çü ÁÙÀÇ °³¼ö´Â (nLength-1)ÀÌ°í ÇÑ ÁÙ¿¡¼­ (nWidth*2)°³ÀÇ ÀÎµ¦½º¸¦ °®´Â´Ù. ±×¸®°í ÁÙÀÌ ¹Ù²ð ¶§¸¶´Ù ÀÎµ¦½º¸¦ ÇÏ
-	³ª Ãß°¡ÇÏ¹Ç·Î (nLength-1)-1°³ÀÇ ÀÎµ¦½º°¡ Ãß°¡·Î ÇÊ¿äÇÏ´Ù.*/
+	/*ê²©ìžëŠ” ì‚¬ê°í˜•ë“¤ì˜ ì§‘í•©ì´ê³  ì‚¬ê°í˜•ì€ ë‘ ê°œì˜ ì‚¼ê°í˜•ìœ¼ë¡œ êµ¬ì„±ë˜ë¯€ë¡œ ê²©ìžëŠ” ë‹¤ìŒ ê·¸ë¦¼ê³¼ ê°™ì´ ì‚¼ê°í˜•ë“¤ì˜ ì§‘í•©ì´
+	ë¼ê³  í•  ìˆ˜ ìžˆë‹¤. ê²©ìžë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•˜ì—¬ ê²©ìžì˜ ì‚¼ê°í˜•ë“¤ì„ ì •ì  ë²„í¼ì˜ ì¸ë±ìŠ¤ë¡œ í‘œí˜„í•´ì•¼ í•œë‹¤. ì‚¼ê°í˜• ìŠ¤íŠ¸ë¦½ì„
+	ì‚¬ìš©í•˜ì—¬ ì‚¼ê°í˜•ë“¤ì„ í‘œí˜„í•˜ê¸° ìœ„í•˜ì—¬ ì‚¼ê°í˜•ë“¤ì€ ì‚¬ê°í˜•ì˜ ì¤„ ë‹¨ìœ„ë¡œ ì•„ëž˜ì—ì„œ ìœ„ìª½ ë°©í–¥ìœ¼ë¡œ(z-ì¶•) ë‚˜ì—´í•œë‹¤. ì²« ë²ˆ
+	ì§¸ ì‚¬ê°í˜• ì¤„ì˜ ì‚¼ê°í˜•ë“¤ì€ ì™¼ìª½ì—ì„œ ì˜¤ë¥¸ìª½ìœ¼ë¡œ(x-ì¶•) ë‚˜ì—´í•œë‹¤. ë‘ ë²ˆì§¸ ì¤„ì˜ ì‚¼ê°í˜•ë“¤ì€ ì˜¤ë¥¸ìª½ì—ì„œ ì™¼ìª½ ë°©í–¥ìœ¼ë¡œ
+	ë‚˜ì—´í•œë‹¤. ì¦‰, ì‚¬ê°í˜•ì˜ ì¤„ì´ ë°”ë€” ë•Œë§ˆë‹¤ ë‚˜ì—´ ìˆœì„œê°€ ë°”ë€Œë„ë¡ í•œë‹¤. ë‹¤ìŒ ê·¸ë¦¼ì˜ ê²©ìžì— ëŒ€í•˜ì—¬ ì‚¼ê°í˜• ìŠ¤íŠ¸ë¦½ì„ ì‚¬
+	ìš©í•˜ì—¬ ì‚¼ê°í˜•ë“¤ì„ í‘œí˜„í•˜ê¸° ìœ„í•œ ì¸ë±ìŠ¤ì˜ ë‚˜ì—´ì€ ë‹¤ìŒê³¼ ê°™ì´ ê²©ìžì˜ më²ˆì§¸ ì¤„ê³¼ (m+1)ë²ˆì§¸ ì¤„ì˜ ì •ì  ë²ˆí˜¸ë¥¼ ì‚¬
+	ê°í˜•ì˜ ë‚˜ì—´ ë°©í–¥ì— ë”°ë¼ ë²ˆê°ˆì•„ ì•„ëž˜, ìœ„, ì•„ëž˜, ìœ„, ... ìˆœì„œë¡œ ë‚˜ì—´í•˜ë©´ ëœë‹¤. 0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12
+	ì´ë ‡ê²Œ ì¸ë±ìŠ¤ë¥¼ ë‚˜ì—´í•˜ë©´ ì‚¼ê°í˜• ìŠ¤íŠ¸ë¦½ì„ ì‚¬ìš©í•  ê²ƒì´ë¯€ë¡œ ì‹¤ì œ ê·¸ë ¤ì§€ëŠ” ì‚¼ê°í˜•ë“¤ì˜ ì¸ë±ìŠ¤ëŠ” ë‹¤ìŒê³¼ ê°™ë‹¤. (0, 6, 1), (1, 6, 7), (1, 7, 2), (2, 7, 8), (2, 8, 3), (3, 8, 9), ... ê·¸ëŸ¬ë‚˜ ì´ëŸ¬í•œ ì¸ë±ìŠ¤ë¥¼ ì‚¬ìš©í•˜ë©´ ì²« ë²ˆì§¸ ì¤„ì„ ì œì™¸í•˜ê³  ì‚¼ê°í˜•ë“¤ì´ ì œëŒ€ë¡œ ê·¸ë ¤ì§€ì§€ ì•ŠëŠ”ë‹¤. ì™œëƒí•˜ë©´ ì‚¼ê°í˜• ìŠ¤íŠ¸
+	ë¦½ì—ì„œëŠ” ë§ˆì§€ë§‰ 2ê°œì˜ ì •ì ê³¼ ìƒˆë¡œìš´ í•˜ë‚˜ì˜ ì •ì ì„ ì‚¬ìš©í•˜ì—¬ ìƒˆë¡œìš´ ì‚¼ê°í˜•ì„ ê·¸ë¦°ë‹¤. ê·¸ë¦¬ê³  í™€ìˆ˜ ë²ˆì§¸ ì‚¼ê°í˜•ì˜
+	ì •ì  ë‚˜ì—´ ìˆœì„œ(ì™€ì¸ë”© ìˆœì„œ)ëŠ” ì‹œê³„ë°©í–¥ì´ê³  ì§ìˆ˜ ë²ˆì§¸ ì‚¼ê°í˜•ì˜ ì™€ì¸ë”© ìˆœì„œëŠ” ë°˜ì‹œê³„ë°©í–¥ì´ì–´ì•¼ í•œë‹¤. ê²©ìžì˜ ì‚¬ê°
+	í˜•ì´ í•œ ì¤„ì—ì„œ ëª‡ ê°œê°€ ìžˆë˜ì§€ ìƒê´€ì—†ì´ í•œ ì¤„ì˜ ë§ˆì§€ë§‰ ì‚¼ê°í˜•ì€ ì§ìˆ˜ ë²ˆì§¸ ì‚¼ê°í˜•ì´ê³  ì™€ì¸ë”© ìˆœì„œëŠ” ë°˜ì‹œê³„ ë°©í–¥
+	ì´ë‹¤. ì™œëƒí•˜ë©´ ì‚¬ê°í˜•ì€ ë‘ ê°œì˜ ì‚¼ê°í˜•ìœ¼ë¡œ ë‚˜ëˆ„ì–´ì§€ê¸° ë•Œë¬¸ì´ë‹¤. ì²« ë²ˆì§¸ ì¤„ì—ì„œ ë‘ ë²ˆì§¸ ì¤„ì˜ ì¸ë±ìŠ¤ ë‚˜ì—´ê³¼ ì‹¤ì œ
+	ê·¸ë ¤ì§€ëŠ” ì‚¼ê°í˜•ë“¤ì˜ ì¸ë±ìŠ¤ë¥¼ ì‚´íŽ´ë³´ìž. ..., 4, 10, 5, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12, ...
+	..., (4, 10, 5), (5, 10, 11), (5, 11, 11), (11, 11, 17), (11, 17, 10), ... ì‚¼ê°í˜• (5, 10, 11)ì€ ì²« ë²ˆì§¸ ì¤„ì˜ ë§ˆì§€ë§‰ ì‚¼ê°í˜•ì´ê³  ì§ìˆ˜ ë²ˆì§¸ì´ë‹¤. ì‚¼ê°í˜• (11, 17, 10)ì€ ë‘ ë²ˆì§¸ ì¤„ì˜ ì²« ë²ˆì§¸
+	ì‚¼ê°í˜•ì´ê³  í™€ìˆ˜ ë²ˆì§¸ì´ë‹¤. í™€ìˆ˜ ë²ˆì§¸ì´ë¯€ë¡œ ì™€ì¸ë”© ìˆœì„œê°€ ì‹œê³„ë°©í–¥ì´ì–´ì•¼ í•˜ëŠ”ë° ì‹¤ì œ ì™€ì¸ë”© ìˆœì„œëŠ” ë°˜ì‹œê³„ë°©í–¥ì´
+	ë¯€ë¡œ ê·¸ë ¤ì§€ì§€ ì•Šì„ ê²ƒì´ë‹¤. ë‹¹ì—°ížˆ ë‹¤ìŒ ì‚¼ê°í˜•ë„ ì™€ì¸ë”© ìˆœì„œê°€ ë§žì§€ ì•Šìœ¼ë¯€ë¡œ ê·¸ë ¤ì§€ì§€ ì•Šì„ ê²ƒì´ë‹¤. ì‚¼ê°í˜• (11,
+	17, 10)ì˜ ì™€ì¸ë”© ìˆœì„œê°€ ë°˜ì‹œê³„ë°©í–¥ì´ë¯€ë¡œ ê·¸ë ¤ì§€ë„ë¡ í•˜ë ¤ë©´ ì´ ì‚¼ê°í˜•ì´ ì§ìˆ˜ ë²ˆì§¸ ì‚¼ê°í˜•ì´ ë˜ë„ë¡ í•´ì•¼ í•œë‹¤. ì´
+	ë¥¼ ìœ„í•´ì„œ ì¤„ì´ ë°”ë€” ë•Œë§ˆë‹¤ ë§ˆì§€ë§‰ ì •ì ì˜ ì¸ë±ìŠ¤ë¥¼ ì¶”ê°€í•˜ë„ë¡ í•˜ìž. ê·¸ëŸ¬ë©´ ì¤„ì´ ë°”ë€ ì²« ë²ˆì§¸ ì‚¼ê°í˜•ì€ ì§ìˆ˜ ë²ˆì§¸
+	ì‚¼ê°í˜•ì´ ëœë‹¤. ë‹¤ìŒì˜ ì˜ˆì—ì„œëŠ” 11ì´ ì¶”ê°€ëœ ë§ˆì§€ë§‰ ì •ì ì˜ ì¸ë±ìŠ¤ì´ë‹¤. ì´ë ‡ê²Œ í•˜ë©´ ì‚¼ê°í˜•ì„ êµ¬ì„±í•  ìˆ˜ ì—†ì–´ì„œ ê·¸
+	ë ¤ì§€ì§€ ì•ŠëŠ” ì‚¼ê°í˜•ì´ ê° ì¤„ë§ˆë‹¤ 3ê°œì”© ìƒê¸°ê²Œ ëœë‹¤. ..., 4, 10, 5, 11, 11, 11, 17, 10, 16, 9, 15, 8, 14, 7, 13, 6, 12, ...
+	..., (5, 10, 11), (5, 11, 11), (11, 11, 11), (11, 11, 17), (11, 17, 10), ... ì„¸ ê°œì˜ ì‚¼ê°í˜• (5, 11, 11), (11, 11, 11), (11, 11, 17)ì€ ì‚¼ê°í˜•ì„ êµ¬ì„±í•  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ ì‹¤ì œë¡œ ê·¸ë ¤ì§€ì§€ ì•ŠëŠ”ë‹¤.*/
+	/*ì´ë ‡ê²Œ ì¸ë±ìŠ¤ë¥¼ ë‚˜ì—´í•˜ë©´ ì¸ë±ìŠ¤ ë²„í¼ëŠ” ((nWidth*2)*(nLength-1))+((nLength-1)-1)ê°œì˜ ì¸ë±ìŠ¤ë¥¼ ê°–ëŠ”ë‹¤. ì‚¬ê°
+	í˜• ì¤„ì˜ ê°œìˆ˜ëŠ” (nLength-1)ì´ê³  í•œ ì¤„ì—ì„œ (nWidth*2)ê°œì˜ ì¸ë±ìŠ¤ë¥¼ ê°–ëŠ”ë‹¤. ê·¸ë¦¬ê³  ì¤„ì´ ë°”ë€” ë•Œë§ˆë‹¤ ì¸ë±ìŠ¤ë¥¼ í•˜
+	ë‚˜ ì¶”ê°€í•˜ë¯€ë¡œ (nLength-1)-1ê°œì˜ ì¸ë±ìŠ¤ê°€ ì¶”ê°€ë¡œ í•„ìš”í•˜ë‹¤.*/
 	m_nIndices = ((nWidth * 2)*(nLength - 1)) + ((nLength - 1) - 1);
 	UINT *pnIndices = new UINT[m_nIndices];
 	for (int j = 0, z = 0; z < nLength - 1; z++) {
 		if ((z % 2) == 0) {
-			//È¦¼ö ¹øÂ° ÁÙÀÌ¹Ç·Î(z = 0, 2, 4, ...) ÀÎµ¦½ºÀÇ ³ª¿­ ¼ø¼­´Â ¿ÞÂÊ¿¡¼­ ¿À¸¥ÂÊ ¹æÇâÀÌ´Ù.
+			//í™€ìˆ˜ ë²ˆì§¸ ì¤„ì´ë¯€ë¡œ(z = 0, 2, 4, ...) ì¸ë±ìŠ¤ì˜ ë‚˜ì—´ ìˆœì„œëŠ” ì™¼ìª½ì—ì„œ ì˜¤ë¥¸ìª½ ë°©í–¥ì´ë‹¤.
 			for (int x = 0; x < nWidth; x++) {
-				//Ã¹ ¹øÂ° ÁÙÀ» Á¦¿ÜÇÏ°í ÁÙÀÌ ¹Ù²ð ¶§¸¶´Ù(x == 0) Ã¹ ¹øÂ° ÀÎµ¦½º¸¦ Ãß°¡ÇÑ´Ù. 
+				//ì²« ë²ˆì§¸ ì¤„ì„ ì œì™¸í•˜ê³  ì¤„ì´ ë°”ë€” ë•Œë§ˆë‹¤(x == 0) ì²« ë²ˆì§¸ ì¸ë±ìŠ¤ë¥¼ ì¶”ê°€í•œë‹¤. 
 				if ((x == 0) && (z > 0)) pnIndices[j++] = (UINT)(x + (z * nWidth));
-				//¾Æ·¡(x, z), À§(x, z+1)ÀÇ ¼ø¼­·Î ÀÎµ¦½º¸¦ Ãß°¡ÇÑ´Ù. 
+				//ì•„ëž˜(x, z), ìœ„(x, z+1)ì˜ ìˆœì„œë¡œ ì¸ë±ìŠ¤ë¥¼ ì¶”ê°€í•œë‹¤. 
 				pnIndices[j++] = (UINT)(x + (z * nWidth));
 				pnIndices[j++] = (UINT)((x + (z * nWidth)) + nWidth);
 			}
 		} else {
-			//Â¦¼ö ¹øÂ° ÁÙÀÌ¹Ç·Î(z = 1, 3, 5, ...) ÀÎµ¦½ºÀÇ ³ª¿­ ¼ø¼­´Â ¿À¸¥ÂÊ¿¡¼­ ¿ÞÂÊ ¹æÇâÀÌ´Ù. 
+			//ì§ìˆ˜ ë²ˆì§¸ ì¤„ì´ë¯€ë¡œ(z = 1, 3, 5, ...) ì¸ë±ìŠ¤ì˜ ë‚˜ì—´ ìˆœì„œëŠ” ì˜¤ë¥¸ìª½ì—ì„œ ì™¼ìª½ ë°©í–¥ì´ë‹¤. 
 			for (int x = nWidth - 1; x >= 0; x--) {
-				//ÁÙÀÌ ¹Ù²ð ¶§¸¶´Ù(x == (nWidth-1)) Ã¹ ¹øÂ° ÀÎµ¦½º¸¦ Ãß°¡ÇÑ´Ù. 
+				//ì¤„ì´ ë°”ë€” ë•Œë§ˆë‹¤(x == (nWidth-1)) ì²« ë²ˆì§¸ ì¸ë±ìŠ¤ë¥¼ ì¶”ê°€í•œë‹¤. 
 				if (x == (nWidth - 1)) pnIndices[j++] = (UINT)(x + (z * nWidth));
-				//¾Æ·¡(x, z), À§(x, z+1)ÀÇ ¼ø¼­·Î ÀÎµ¦½º¸¦ Ãß°¡ÇÑ´Ù. 
+				//ì•„ëž˜(x, z), ìœ„(x, z+1)ì˜ ìˆœì„œë¡œ ì¸ë±ìŠ¤ë¥¼ ì¶”ê°€í•œë‹¤. 
 				pnIndices[j++] = (UINT)(x + (z * nWidth));
 				pnIndices[j++] = (UINT)((x + (z * nWidth)) + nWidth);
 			}
@@ -486,7 +490,9 @@ float CHeightMapImage::GetHeight(float fx, float fz) {
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
 	delete[] pnIndices;
-}CHeightMapGridMesh::~CHeightMapGridMesh(){ }//³ôÀÌ ¸Ê ÀÌ¹ÌÁöÀÇ ÇÈ¼¿ °ªÀ» ÁöÇüÀÇ ³ôÀÌ·Î ¹ÝÈ¯ÇÑ´Ù. 
+}
+CHeightMapGridMesh::~CHeightMapGridMesh(){ }
+//ë†’ì´ ë§µ ì´ë¯¸ì§€ì˜ í”½ì…€ ê°’ì„ ì§€í˜•ì˜ ë†’ì´ë¡œ ë°˜í™˜í•œë‹¤. 
 float CHeightMapGridMesh::OnGetHeight(int x, int z, void *pContext) {
 	CHeightMapImage *pHeightMapImage = (CHeightMapImage *)pContext;
 	BYTE *pHeightMapPixels = pHeightMapImage->GetHeightMapPixels();
@@ -496,14 +502,14 @@ float CHeightMapGridMesh::OnGetHeight(int x, int z, void *pContext) {
 	return(fHeight);
 }
 XMFLOAT4 CHeightMapGridMesh::OnGetColor(int x, int z, void *pContext) {
-	//Á¶¸íÀÇ ¹æÇâ º¤ÅÍ(Á¤Á¡¿¡¼­ Á¶¸í±îÁöÀÇ º¤ÅÍ)ÀÌ´Ù.
+	//ì¡°ëª…ì˜ ë°©í–¥ ë²¡í„°(ì •ì ì—ì„œ ì¡°ëª…ê¹Œì§€ì˜ ë²¡í„°)ì´ë‹¤.
 	XMFLOAT3 xmf3LightDirection = XMFLOAT3(-1.0f, 1.0f, 1.0f);
 	xmf3LightDirection = Vector3::Normalize(xmf3LightDirection);
 	CHeightMapImage *pHeightMapImage = (CHeightMapImage *)pContext;
 	XMFLOAT3 xmf3Scale = pHeightMapImage->GetScale();
-	//Á¶¸íÀÇ »ö»ó(¼¼±â, ¹à±â)ÀÌ´Ù. 
+	//ì¡°ëª…ì˜ ìƒ‰ìƒ(ì„¸ê¸°, ë°ê¸°)ì´ë‹¤. 
 	XMFLOAT4 xmf4IncidentLightColor(0.9f, 0.8f, 0.4f, 1.0f);
-	/*Á¤Á¡ (x, z)¿¡¼­ Á¶¸íÀÌ ¹Ý»çµÇ´Â ¾ç(ºñÀ²)Àº Á¤Á¡ (x, z)ÀÇ ¹ý¼± º¤ÅÍ¿Í Á¶¸íÀÇ ¹æÇâ º¤ÅÍÀÇ ³»Àû(cos)°ú ÀÎÁ¢ÇÑ 3°³ÀÇ Á¤Á¡ (x+1, z), (x, z+1), (x+1, z+1)ÀÇ ¹ý¼± º¤ÅÍ¿Í Á¶¸íÀÇ ¹æÇâ º¤ÅÍÀÇ ³»ÀûÀ» Æò±ÕÇÏ¿© ±¸ÇÑ´Ù. Á¤Á¡ (x, z)ÀÇ »ö»óÀº Á¶¸í »ö»ó(¼¼±â)°ú ¹Ý»çµÇ´Â ¾ç(ºñÀ²)À» °öÇÑ °ªÀÌ´Ù.*/
+	/*ì •ì  (x, z)ì—ì„œ ì¡°ëª…ì´ ë°˜ì‚¬ë˜ëŠ” ì–‘(ë¹„ìœ¨)ì€ ì •ì  (x, z)ì˜ ë²•ì„  ë²¡í„°ì™€ ì¡°ëª…ì˜ ë°©í–¥ ë²¡í„°ì˜ ë‚´ì (cos)ê³¼ ì¸ì ‘í•œ 3ê°œì˜ ì •ì  (x+1, z), (x, z+1), (x+1, z+1)ì˜ ë²•ì„  ë²¡í„°ì™€ ì¡°ëª…ì˜ ë°©í–¥ ë²¡í„°ì˜ ë‚´ì ì„ í‰ê· í•˜ì—¬ êµ¬í•œë‹¤. ì •ì  (x, z)ì˜ ìƒ‰ìƒì€ ì¡°ëª… ìƒ‰ìƒ(ì„¸ê¸°)ê³¼ ë°˜ì‚¬ë˜ëŠ” ì–‘(ë¹„ìœ¨)ì„ ê³±í•œ ê°’ì´ë‹¤.*/
 
 	float fScale = Vector3::DotProduct(pHeightMapImage->GetHeightMapNormal(x, z),
 		xmf3LightDirection);
@@ -516,7 +522,7 @@ XMFLOAT4 CHeightMapGridMesh::OnGetColor(int x, int z, void *pContext) {
 	fScale = (fScale / 4.0f) + 0.05f;
 	if (fScale > 1.0f) fScale = 1.0f;
 	if (fScale < 0.25f) fScale = 0.25f;
-	//fScaleÀº Á¶¸í »ö»ó(¹à±â)ÀÌ ¹Ý»çµÇ´Â ºñÀ²ÀÌ´Ù. 
+	//fScaleì€ ì¡°ëª… ìƒ‰ìƒ(ë°ê¸°)ì´ ë°˜ì‚¬ë˜ëŠ” ë¹„ìœ¨ì´ë‹¤. 
 	XMFLOAT4 xmf4Color = Vector4::Multiply(fScale, xmf4IncidentLightColor);
 	return(xmf4Color);
 }

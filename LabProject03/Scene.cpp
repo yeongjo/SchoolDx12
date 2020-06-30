@@ -14,14 +14,14 @@ CScene::~CScene() {
 void CScene::ReleaseObjects() {
 	if (m_pd3dGraphicsRootSignature) m_pd3dGraphicsRootSignature->Release();
 	for (int i = 0; i < m_nShaders; i++) {
-		m_pShaders[i].ReleaseShaderVariables();
-		m_pShaders[i].ReleaseObjects();
+		m_pShaders[i]->ReleaseShaderVariables();
+		m_pShaders[i]->ReleaseObjects();
 	}
 	if (m_pShaders) delete[] m_pShaders;
 	if (m_pTerrain) delete m_pTerrain;
 }
 void CScene::ReleaseUploadBuffers() {
-	for (int i = 0; i < m_nShaders; i++) m_pShaders[i].ReleaseUploadBuffers();
+	for (int i = 0; i < m_nShaders; i++) m_pShaders[i]->ReleaseUploadBuffers();
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
 }
 ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice) {
@@ -63,16 +63,17 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 }
 void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext) {
 	// 인스턴스
-	/*m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
-	m_nShaders = 1;
-	m_pShaders = new CInstancingShader[m_nShaders];
-	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList);*/
+	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
+	m_nShaders = 2;
+	m_pShaders = new CObjectsShader*[m_nShaders];
+	m_pShaders[0] = new CInstancingShader;
+	m_pShaders[0]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	m_pShaders[0]->BuildObjects(pd3dDevice, pd3dCommandList, NULL);
 
 	// 터레인
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 	//지형을 확대할 스케일 벡터이다. x-축과 z-축은 8배, y-축은 2배 확대한다.
-	XMFLOAT3 xmf3Scale(8.0f, 2.0f, 8.0f);
+	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(0.0f, 0.2f, 0.0f, 0.0f);
 	//지형을 높이 맵 이미지 파일(HeightMap.raw)을 사용하여 생성한다. 높이 맵의 크기는 가로x세로(257x257)이다. 
 #ifdef _WITH_TERRAIN_PARTITION
@@ -83,17 +84,16 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		17, xmf3Scale, xmf4Color);
 #else
 //지형을 하나의 격자 메쉬(257x257)로 생성한다. 
-	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("map.png"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
+	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("map.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 #endif
-m_nShaders = 1;
-m_pShaders = new CObjectsShader[m_nShaders];
-m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList, m_pTerrain);
+	m_pShaders[1] = new CObjectsShader;
+	m_pShaders[1]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	m_pShaders[1]->BuildObjects(pd3dDevice, pd3dCommandList, m_pTerrain);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed) {
-	for (int i = 0; i < m_nShaders; i++) {
-		m_pShaders[i].AnimateObjects(fTimeElapsed);
+	for (int i = 1; i < m_nShaders; i++) {
+		m_pShaders[i]->AnimateObjects(fTimeElapsed);
 	}
 }
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
@@ -103,8 +103,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
 
-	for (int i = 0; i < m_nShaders; i++) {
-		m_pShaders[i].Render(pd3dCommandList, pCamera);
+	for (int i = 1; i < m_nShaders; i++) {
+		m_pShaders[i]->Render(pd3dCommandList, pCamera);
 	}
 }ID3D12RootSignature *CScene::GetGraphicsRootSignature() {
 	return(m_pd3dGraphicsRootSignature);

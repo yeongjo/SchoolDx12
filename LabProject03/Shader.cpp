@@ -251,7 +251,7 @@ void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 	float fyPitch = 12.0f * 3.5f;
 	float fzPitch = 12.0f * 3.5f;
 	//직육면체를 지형 표면에 그리고 지형보다 높은 위치에 일정한 간격으로 배치한다. 
-	int xObjects = int(fTerrainWidth / fxPitch), yObjects = 2, zObjects =
+	int xObjects = int(fTerrainWidth / fxPitch), yObjects = 1, zObjects =
 	int(fTerrainLength / fzPitch);
 	m_nObjects = xObjects * yObjects * zObjects;
 	m_ppObjects = new CGameObject*[m_nObjects];
@@ -358,7 +358,7 @@ void CInstancingShader::UpdateShaderVariables(ID3D12GraphicsCommandList
 			XMMatrixTranspose(XMLoadFloat4x4(&m_ppObjects[j]->m_xmf4x4World)));
 	}
 }
-void CInstancingShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {
+void CInstancingShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext) {
 	int xObjects = 10, yObjects = 10, zObjects = 10, i = 0;
 	m_nObjects = (xObjects * 2 + 1) * (yObjects * 2 + 1) * (zObjects * 2 + 1);
 	m_ppObjects = new CGameObject*[m_nObjects];
