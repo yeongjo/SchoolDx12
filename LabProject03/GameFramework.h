@@ -57,6 +57,8 @@ public:
 	CPlayer *m_pPlayer = NULL;
 	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
 	POINT m_ptOldCursorPos; 
+
+	CGameObject *m_pSelectedObject = NULL;
 public:
 	CGameFramework();
 	~CGameFramework(){
@@ -91,4 +93,8 @@ public:
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam,
 		LPARAM lParam);
 	//윈도우의 메시지(키보드, 마우스 입력)를 처리하는 함수이다. 
+
+public:
+	void ProcessSelectedObject(DWORD dwDirection, float cxDelta, float cyDelta);
+
 };

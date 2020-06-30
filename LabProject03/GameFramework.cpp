@@ -331,6 +331,9 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	switch (nMessageID) {
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
+		//마우스가 눌려지면 마우스 픽킹을 하여 선택한 게임 객체를 찾는다. 
+		m_pSelectedObject = m_pScene->PickObjectPointedByCursor(LOWORD(lParam),
+		HIWORD(lParam), m_pCamera);
 		//마우스 캡쳐를 하고 현재 마우스 위치를 가져온다. 
 		::SetCapture(hWnd);
 		::GetCursorPos(&m_ptOldCursorPos);
@@ -417,16 +420,20 @@ void CGameFramework::ProcessInput() {
 	}
 	//마우스 또는 키 입력이 있으면 플레이어를 이동하거나(dwDirection) 회전한다(cxDelta 또는 cyDelta).
 	if ((dwDirection != 0) || (cxDelta != 0.0f) || (cyDelta != 0.0f)) {
-		if (cxDelta || cyDelta) {
-			/*cxDelta는 y-축의 회전을 나타내고 cyDelta는 x-축의 회전을 나타낸다. 오른쪽 마우스 버튼이 눌려진 경우 cxDelta는 z-축의 회전을 나타낸다.*/
-			if (pKeyBuffer[VK_RBUTTON] & 0xF0)
-				m_pPlayer->Rotate(cyDelta, 0.0f, -cxDelta);
-			else
-				m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
+		if (m_pSelectedObject) {
+			ProcessSelectedObject(dwDirection, cxDelta, cyDelta);
+		} else {
+			if (cxDelta || cyDelta) {
+				/*cxDelta는 y-축의 회전을 나타내고 cyDelta는 x-축의 회전을 나타낸다. 오른쪽 마우스 버튼이 눌려진 경우 cxDelta는 z-축의 회전을 나타낸다.*/
+				if (pKeyBuffer[VK_RBUTTON] & 0xF0)
+					m_pPlayer->Rotate(cyDelta, 0.0f, -cxDelta);
+				else
+					m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
+			}
+			/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 이동 거리는 시간에 비례하도록 한다. 플레이어의 이동 속력은 (50/초)로 가정한다.*/
+			if (dwDirection)
+				m_pPlayer->Move(dwDirection, 500.0f * m_GameTimer.GetTimeElapsed(), true);
 		}
-		/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 이동 거리는 시간에 비례하도록 한다. 플레이어의 이동 속력은 (50/초)로 가정한다.*/
-		if (dwDirection) 
-			m_pPlayer->Move(dwDirection, 500.0f * m_GameTimer.GetTimeElapsed(), true);
 	}
 	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
 }
@@ -503,4 +510,19 @@ void CGameFramework::FrameAdvance() {
 	MoveToNextFrame();
 	m_GameTimer.GetFrameRate(m_pszFrameRate + 12, 37);
 	::SetWindowText(m_hWnd, m_pszFrameRate);
+}
+void CGameFramework::ProcessSelectedObject(DWORD dwDirection, float cxDelta, float
+	cyDelta) {
+	//픽킹으로 선택한 게임 객체가 있으면 키보드를 누르거나 마우스를 움직이면 게임 개체를 이동 또는 회전한다. 
+	if (dwDirection != 0)
+		{
+			if (dwDirection & DIR_FORWARD) m_pSelectedObject->MoveForward(+1.0f);
+			if (dwDirection & DIR_BACKWARD) m_pSelectedObject->MoveForward(-1.0f);
+			if (dwDirection & DIR_LEFT) m_pSelectedObject->MoveStrafe(+1.0f);
+			if (dwDirection & DIR_RIGHT) m_pSelectedObject->MoveStrafe(-1.0f);
+			if (dwDirection & DIR_UP) m_pSelectedObject->MoveUp(+1.0f);
+			if (dwDirection & DIR_DOWN) m_pSelectedObject->MoveUp(-1.0f);
+		} else if ((cxDelta != 0.0f) || (cyDelta != 0.0f)) {
+			m_pSelectedObject->Rotate(cyDelta, cxDelta, 0.0f);
+		}
 }
