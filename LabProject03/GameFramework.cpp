@@ -37,6 +37,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd) {
 	CreateRenderTargetViews();
 	CreateDepthStencilView();
 	BuildObjects();
+	_tcscpy_s(m_pszFrameRate, _T("LabProject ("));
 	//렌더링할 게임 객체를 생성한다. 
 	return(true);
 }

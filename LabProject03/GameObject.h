@@ -18,10 +18,10 @@ public:
 		if (--m_nReferences <= 0) delete this;
 	}
 protected:
-	XMFLOAT4X4 m_xmf4x4World;
 	CMesh *m_pMesh = NULL;
 	CShader *m_pShader = NULL;
 public:
+	XMFLOAT4X4 m_xmf4x4World;
 	void Rotate(XMFLOAT3 *pxmf3Axis, float fAngle);
 	void ReleaseUploadBuffers();
 	virtual void SetMesh(CMesh *pMesh);
@@ -29,7 +29,8 @@ public:
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT
+		nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 public:
 	//상수 버퍼를 생성한다. 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList

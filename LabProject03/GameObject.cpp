@@ -78,6 +78,13 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
 	if (m_pMesh) m_pMesh->Render(pd3dCommandList);
 }
+//인스턴싱 정점 버퍼 뷰를 사용하여 메쉬를 렌더링한다. 
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera,
+UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView)
+{
+OnPrepareRender();
+if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
+}
 void CGameObject::SetPosition(float x, float y, float z) {
 	m_xmf4x4World._41 = x;
 	m_xmf4x4World._42 = y;
