@@ -138,12 +138,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam){
 	case WM_RBUTTONDOWN:
 	case WM_RBUTTONUP:
 	case WM_MOUSEMOVE:
+		CGameFramework::getInstance().OnProcessingMouseMessage(hWnd, message, wParam, lParam);
+		break;
 	case WM_KEYDOWN:
 	case WM_KEYUP:
-		CGameFramework::getInstance().OnProcessingWindowMessage(hWnd, message, wParam,
-			lParam);
+		CGameFramework::getInstance().OnProcessingKeyboardMessage(hWnd, message, wParam, lParam);
 		break;
 	case WM_DESTROY:
+		CGameFramework::getInstance().OnProcessingWindowMessage(hWnd, message, wParam,
+			lParam);
 		::PostQuitMessage(0);
 		break;
 	default:

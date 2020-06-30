@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Scene.h"
+#include "Player.h"
 
 class CCamera;
 
@@ -51,6 +52,11 @@ private:
 	_TCHAR m_pszFrameRate[50];
 public:
 	CCamera *m_pCamera = NULL;
+public:
+	//플레이어 객체에 대한 포인터이다.
+	CPlayer *m_pPlayer = NULL;
+	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
+	POINT m_ptOldCursorPos; 
 public:
 	CGameFramework();
 	~CGameFramework(){
