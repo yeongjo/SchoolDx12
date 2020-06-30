@@ -21,6 +21,9 @@ protected:
 	CMesh *m_pMesh = NULL;
 	CShader *m_pShader = NULL;
 public:
+	//게임 객체가 카메라에 보인는 가를 검사한다. 
+	bool IsVisible(CCamera *pCamera=NULL);
+public:
 	XMFLOAT4X4 m_xmf4x4World;
 	void Rotate(XMFLOAT3 *pxmf3Axis, float fAngle);
 	void ReleaseUploadBuffers();

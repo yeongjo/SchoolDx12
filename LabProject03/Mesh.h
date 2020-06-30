@@ -71,7 +71,13 @@ protected:
 	//인덱스 버퍼에서 메쉬를 그리기 위해 사용되는 시작 인덱스이다. 
 	int m_nBaseVertex = 0;
 	//인덱스 버퍼의 인덱스에 더해질 인덱스이다. 
+protected:
+	//모델 좌표계의 OOBB 바운딩 박스이다. 
+	BoundingOrientedBox m_xmBoundingBox;
 public:
+	BoundingOrientedBox GetBoundingBox() {
+		return(m_xmBoundingBox);
+	}
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances,
