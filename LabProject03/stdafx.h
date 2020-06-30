@@ -153,13 +153,13 @@ namespace Vector3
 				XMLoadFloat3(&xmf3Vector2)));
 		return(xmf3Result);
 	}
-	inline XMFLOAT3 Normalize(XMFLOAT3& xmf3Vector)
+	inline XMFLOAT3 Normalize(const XMFLOAT3& xmf3Vector)
 	{
 		XMFLOAT3 m_xmf3Normal;
 		XMStoreFloat3(&m_xmf3Normal, XMVector3Normalize(XMLoadFloat3(&xmf3Vector)));
 		return(m_xmf3Normal);
 	}
-	inline float Length(XMFLOAT3& xmf3Vector)
+	inline float Length(const XMFLOAT3& xmf3Vector)
 	{
 		XMFLOAT3 xmf3Result;
 		XMStoreFloat3(&xmf3Result, XMVector3Length(XMLoadFloat3(&xmf3Vector)));
@@ -174,7 +174,7 @@ namespace Vector3
 	{
 		return(Angle(XMLoadFloat3(&xmf3Vector1), XMLoadFloat3(&xmf3Vector2)));
 	}
-	inline XMFLOAT3 TransformNormal(XMFLOAT3& xmf3Vector, XMMATRIX& xmmtxTransform)
+	inline XMFLOAT3 TransformNormal(const XMFLOAT3& xmf3Vector, const XMMATRIX& xmmtxTransform)
 	{
 		XMFLOAT3 xmf3Result;
 		XMStoreFloat3(&xmf3Result, XMVector3TransformNormal(XMLoadFloat3(&xmf3Vector),
@@ -196,7 +196,7 @@ namespace Vector3
 //4차원 벡터의 연산
 namespace Vector4
 {
-	inline XMFLOAT4 Add(XMFLOAT4& xmf4Vector1, XMFLOAT4& xmf4Vector2)
+	inline XMFLOAT4 Add(const XMFLOAT4& xmf4Vector1, const XMFLOAT4& xmf4Vector2)
 	{
 		XMFLOAT4 xmf4Result;
 		XMStoreFloat4(&xmf4Result, XMLoadFloat4(&xmf4Vector1) +
