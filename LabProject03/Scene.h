@@ -16,8 +16,7 @@ public:
 	lParam);
 	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM
 		lParam);
-	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList);
+	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	void ReleaseObjects();
 	bool ProcessInput(UCHAR *pKeysBuffer);
 	void AnimateObjects(float fTimeElapsed);
@@ -32,7 +31,13 @@ protected:
 	int m_nObjects = 0;
 	ID3D12RootSignature *m_pd3dGraphicsRootSignature = NULL;
 protected:
+	CHeightMapTerrain *m_pTerrain = NULL;
+public:
+	CHeightMapTerrain *GetTerrain() {
+		return(m_pTerrain);
+	}
+protected:
 	//배치(Batch) 처리를 하기 위하여 씬을 셰이더들의 리스트로 표현한다. 
-	CInstancingShader *m_pShaders = NULL;
+	CObjectsShader *m_pShaders = NULL;
 	int m_nShaders = 0;
 };

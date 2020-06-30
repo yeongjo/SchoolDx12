@@ -55,6 +55,20 @@ using Microsoft::WRL::ComPtr;
 /*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
 
+#define EPSILON 1.0e-10f
+inline bool IsZero(float fValue) {
+	return((fabsf(fValue) < EPSILON));
+}
+inline bool IsEqual(float fA, float fB) {
+	return(::IsZero(fA - fB));
+}
+inline float InverseSqrt(float fValue) {
+	return 1.0f / sqrtf(fValue);
+}
+inline void Swap(float *pfS, float *pfT) {
+	float fTemp = *pfS; *pfS = *pfT; *pfT = fTemp;
+}
+
 namespace Matrix4x4{
 	XMFLOAT4X4 Identity();
 }
@@ -192,6 +206,13 @@ namespace Vector3
 	{
 		return(TransformCoord(xmf3Vector, XMLoadFloat4x4(&xmmtx4x4Matrix)));
 	}
+	//3-차원 벡터가 영벡터인 가를 반환하는 함수이다. 
+	inline bool IsZero(XMFLOAT3& xmf3Vector)
+	{
+		if (::IsZero(xmf3Vector.x) && ::IsZero(xmf3Vector.y) && ::IsZero(xmf3Vector.z))
+			return(true);
+		return(false);
+	}
 }
 //4차원 벡터의 연산
 namespace Vector4
@@ -201,6 +222,13 @@ namespace Vector4
 		XMFLOAT4 xmf4Result;
 		XMStoreFloat4(&xmf4Result, XMLoadFloat4(&xmf4Vector1) +
 			XMLoadFloat4(&xmf4Vector2));
+		return(xmf4Result);
+	}
+	//4-차원 벡터와 스칼라(실수)의 곱을 반환하는 함수이다.
+	inline XMFLOAT4 Multiply(float fScalar, XMFLOAT4& xmf4Vector)
+	{
+		XMFLOAT4 xmf4Result;
+		XMStoreFloat4(&xmf4Result, fScalar * XMLoadFloat4(&xmf4Vector));
 		return(xmf4Result);
 	}
 }
