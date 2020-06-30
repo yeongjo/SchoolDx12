@@ -208,6 +208,7 @@ void CGameFramework::CreateCommandQueueAndList(){
 	//명령 리스트는 생성되면 열린(Open) 상태이므로 닫힌(Closed) 상태로 만든다.
 }
 
+// 전체화면으로 바꿈
 void CGameFramework::ChangeSwapChainState(){
 	WaitForGpuComplete();
 	BOOL bFullScreenState = FALSE;
@@ -240,7 +241,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps(){
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
 	::ZeroMemory(&d3dDescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	d3dDescriptorHeapDesc.NumDescriptors = m_nSwapChainBuffers;
-	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // Render Target View
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
 	HRESULT hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc,
@@ -249,7 +250,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps(){
 	m_nRtvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	//렌더 타겟 서술자 힙의 원소의 크기를 저장한다. 
 	d3dDescriptorHeapDesc.NumDescriptors = 1;
-	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV; // Depth Stencil View
 	hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc,
 		__uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
 	//깊이-스텐실 서술자 힙(서술자의 개수는 1)을 생성한다.
@@ -313,7 +314,7 @@ void CGameFramework::BuildObjects()
 	m_pCamera->SetScissorRect(0, 0, m_nWndClientWidth, m_nWndClientHeight);
 	m_pCamera->GenerateProjectionMatrix(1.0f, 500.0f, float(m_nWndClientWidth) /
 		float(m_nWndClientHeight), 90.0f);
-	m_pCamera->GenerateViewMatrix(XMFLOAT3(0.0f, 0.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
+	m_pCamera->GenerateViewMatrix(XMFLOAT3(0.0f, 15.0f, -25.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
 		XMFLOAT3(0.0f, 1.0f, 0.0f));
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
 	m_pScene = new CScene();
@@ -398,17 +399,6 @@ void CGameFramework::AnimateObjects(){
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
 }
 void CGameFramework::WaitForGpuComplete(){
-	//m_nFenceValue++;
-	////CPU 펜스의 값을 증가한다. 
-	//const UINT64 nFence = m_nFenceValue;
-	//HRESULT hResult = m_pd3dCommandQueue->Signal(m_pd3dFence, nFence);
-	////GPU가 펜스의 값을 설정하는 명령을 명령 큐에 추가한다. 
-	//if(m_pd3dFence->GetCompletedValue()<nFence){
-	//	//펜스의 현재 값이 설정한 값보다 작으면 펜스의 현재 값이 설정한 값이 될 때까지 기다린다.
-	//	hResult = m_pd3dFence->SetEventOnCompletion(nFence, m_hFenceEvent);
-	//	::WaitForSingleObject(m_hFenceEvent, INFINITE);
-	//}
-
 	UINT64 nFenceValue = ++m_nFenceValues[m_nSwapChainBufferIndex];
 	HRESULT hResult = m_pd3dCommandQueue->Signal(m_pd3dFence, nFenceValue);
 	if (m_pd3dFence->GetCompletedValue() < nFenceValue)
@@ -436,8 +426,6 @@ void CGameFramework::FrameAdvance(){
 	AnimateObjects();
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
-	//m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
-	//m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
 	D3D12_RESOURCE_BARRIER d3dResourceBarrier;
 	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
 	d3dResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
