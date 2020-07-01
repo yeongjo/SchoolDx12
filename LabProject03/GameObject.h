@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Mesh.h"
 class CShader;
 class CCamera;
@@ -19,11 +19,10 @@ public:
 	}
 protected:
 	CShader *m_pShader = NULL;
-	//°ÔÀÓ °´Ã¼´Â ¿©·¯ °³ÀÇ ¸Ş½¬¸¦ Æ÷ÇÔÇÏ´Â °æ¿ì °ÔÀÓ °´Ã¼°¡ °¡Áö´Â ¸Ş½¬µé¿¡ ´ëÇÑ Æ÷ÀÎÅÍ¿Í ±× °³¼öÀÌ´Ù. 
+	//ê²Œì„ ê°ì²´ëŠ” ì—¬ëŸ¬ ê°œì˜ ë©”ì‰¬ë¥¼ í¬í•¨í•˜ëŠ” ê²½ìš° ê²Œì„ ê°ì²´ê°€ ê°€ì§€ëŠ” ë©”ì‰¬ë“¤ì— ëŒ€í•œ í¬ì¸í„°ì™€ ê·¸ ê°œìˆ˜ì´ë‹¤. 
 	CMesh *m_pMesh = NULL;
-	//int m_nMeshes = 0;
 public:
-	//°ÔÀÓ °´Ã¼°¡ Ä«¸Ş¶ó¿¡ º¸ÀÎ´Â °¡¸¦ °Ë»çÇÑ´Ù. 
+	//ê²Œì„ ê°ì²´ê°€ ì¹´ë©”ë¼ì— ë³´ì¸ëŠ” ê°€ë¥¼ ê²€ì‚¬í•œë‹¤. 
 	bool IsVisible(CCamera *pCamera=NULL);
 public:
 	XMFLOAT4X4 m_xmf4x4World;
@@ -37,42 +36,47 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT
 		nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 public:
-	//»ó¼ö ¹öÆÛ¸¦ »ı¼ºÇÑ´Ù. 
+	//ìƒìˆ˜ ë²„í¼ë¥¼ ìƒì„±í•œë‹¤. 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList);
-	//»ó¼ö ¹öÆÛÀÇ ³»¿ëÀ» °»½ÅÇÑ´Ù. 
+	//ìƒìˆ˜ ë²„í¼ì˜ ë‚´ìš©ì„ ê°±ì‹ í•œë‹¤. 
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
-	//°ÔÀÓ °´Ã¼ÀÇ ¿ùµå º¯È¯ Çà·Ä¿¡¼­ À§Ä¡ º¤ÅÍ¿Í ¹æÇâ(x-Ãà, y-Ãà, z-Ãà) º¤ÅÍ¸¦ ¹İÈ¯ÇÑ´Ù. 
+	//ê²Œì„ ê°ì²´ì˜ ì›”ë“œ ë³€í™˜ í–‰ë ¬ì—ì„œ ìœ„ì¹˜ ë²¡í„°ì™€ ë°©í–¥(x-ì¶•, y-ì¶•, z-ì¶•) ë²¡í„°ë¥¼ ë°˜í™˜í•œë‹¤. 
 	XMFLOAT3 GetPosition();
 		XMFLOAT3 GetLook();
 	XMFLOAT3 GetUp();
 	XMFLOAT3 GetRight();
-	//°ÔÀÓ °´Ã¼ÀÇ À§Ä¡¸¦ ¼³Á¤ÇÑ´Ù. 
+	//ê²Œì„ ê°ì²´ì˜ ìœ„ì¹˜ë¥¼ ì„¤ì •í•œë‹¤. 
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3 xmf3Position);
-	//°ÔÀÓ °´Ã¼¸¦ ·ÎÄÃ x-Ãà, y-Ãà, z-Ãà ¹æÇâÀ¸·Î ÀÌµ¿ÇÑ´Ù.
+	//ê²Œì„ ê°ì²´ë¥¼ ë¡œì»¬ x-ì¶•, y-ì¶•, z-ì¶• ë°©í–¥ìœ¼ë¡œ ì´ë™í•œë‹¤.
 	void MoveStrafe(float fDistance = 1.0f);
 	void MoveUp(float fDistance = 1.0f);
 	void MoveForward(float fDistance = 1.0f);
-	//°ÔÀÓ °´Ã¼¸¦ È¸Àü(x-Ãà, y-Ãà, z-Ãà)ÇÑ´Ù. 
+	//ê²Œì„ ê°ì²´ë¥¼ íšŒì „(x-ì¶•, y-ì¶•, z-ì¶•)í•œë‹¤. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 public:
-	//¸ğµ¨ ÁÂÇ¥°èÀÇ ÇÈÅ· ±¤¼±À» »ı¼ºÇÑ´Ù. 
+	//ëª¨ë¸ ì¢Œí‘œê³„ì˜ í”½í‚¹ ê´‘ì„ ì„ ìƒì„±í•œë‹¤. 
 	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
 	XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
-	//Ä«¸Ş¶ó ÁÂÇ¥°èÀÇ ÇÑ Á¡¿¡ ´ëÇÑ ¸ğµ¨ ÁÂÇ¥°èÀÇ ÇÈÅ· ±¤¼±À» »ı¼ºÇÏ°í °´Ã¼¿ÍÀÇ ±³Â÷¸¦ °Ë»çÇÑ´Ù. 
-	int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
-	float *pfHitDistance);
-};class CRotatingObject : public CGameObject
+	//ì¹´ë©”ë¼ ì¢Œí‘œê³„ì˜ í•œ ì ì— ëŒ€í•œ ëª¨ë¸ ì¢Œí‘œê³„ì˜ í”½í‚¹ ê´‘ì„ ì„ ìƒì„±í•˜ê³  ê°ì²´ì™€ì˜ êµì°¨ë¥¼ ê²€ì‚¬í•œë‹¤. 
+	int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
+	float GetDistance(const XMFLOAT3& position) {
+		return Vector3::Length(Vector3::Subtract(position, GetPosition()));
+	}
+};
+
+class CRotatingObject : public CGameObject
 {
 public:
 	CRotatingObject(int nMeshes = 1);
 	virtual ~CRotatingObject();
-private:
+protected:
 	XMFLOAT3 m_xmf3RotationAxis;
-	float m_fRotationSpeed;
 public:
+	float m_fRotationSpeed;
+
 	void SetRotationSpeed(float fRotationSpeed) {
 		m_fRotationSpeed = fRotationSpeed;
 	}
@@ -80,6 +84,14 @@ public:
 		m_xmf3RotationAxis =
 			xmf3RotationAxis;
 	}
+	virtual void Animate(float fTimeElapsed);
+};
+
+class CMovingObject : public CRotatingObject {
+public:
+	CMovingObject():CRotatingObject(){ }
+	virtual ~CMovingObject(){ }
+
 	virtual void Animate(float fTimeElapsed);
 };
 
@@ -91,20 +103,20 @@ public:
 		xmf4Color);
 	virtual ~CHeightMapTerrain();
 private:
-	//ÁöÇüÀÇ ³ôÀÌ ¸ÊÀ¸·Î »ç¿ëÇÒ ÀÌ¹ÌÁöÀÌ´Ù. 
+	//ì§€í˜•ì˜ ë†’ì´ ë§µìœ¼ë¡œ ì‚¬ìš©í•  ì´ë¯¸ì§€ì´ë‹¤. 
 	CHeightMapImage *m_pHeightMapImage;
-	//³ôÀÌ ¸ÊÀÇ °¡·Î¿Í ¼¼·Î Å©±âÀÌ´Ù. 
+	//ë†’ì´ ë§µì˜ ê°€ë¡œì™€ ì„¸ë¡œ í¬ê¸°ì´ë‹¤. 
 	int m_nWidth;
 	int m_nLength;
-	//ÁöÇüÀ» ½ÇÁ¦·Î ¸î ¹è È®´ëÇÒ °ÍÀÎ°¡¸¦ ³ªÅ¸³»´Â ½ºÄÉÀÏ º¤ÅÍÀÌ´Ù. 
+	//ì§€í˜•ì„ ì‹¤ì œë¡œ ëª‡ ë°° í™•ëŒ€í•  ê²ƒì¸ê°€ë¥¼ ë‚˜íƒ€ë‚´ëŠ” ìŠ¤ì¼€ì¼ ë²¡í„°ì´ë‹¤. 
 	XMFLOAT3 m_xmf3Scale;
 
 public:
-	//ÁöÇüÀÇ ³ôÀÌ¸¦ °è»êÇÏ´Â ÇÔ¼öÀÌ´Ù(¿ùµå ÁÂÇ¥°è). ³ôÀÌ ¸ÊÀÇ ³ôÀÌ¿¡ ½ºÄÉÀÏÀÇ y¸¦ °öÇÑ °ªÀÌ´Ù. 
+	//ì§€í˜•ì˜ ë†’ì´ë¥¼ ê³„ì‚°í•˜ëŠ” í•¨ìˆ˜ì´ë‹¤(ì›”ë“œ ì¢Œí‘œê³„). ë†’ì´ ë§µì˜ ë†’ì´ì— ìŠ¤ì¼€ì¼ì˜ yë¥¼ ê³±í•œ ê°’ì´ë‹¤. 
 	float GetHeight(float x, float z) { return(m_pHeightMapImage->GetHeight(x /
 	m_xmf3Scale.x, z / m_xmf3Scale.z) * m_xmf3Scale.y);
 }
-//ÁöÇüÀÇ ¹ı¼± º¤ÅÍ¸¦ °è»êÇÏ´Â ÇÔ¼öÀÌ´Ù(¿ùµå ÁÂÇ¥°è). ³ôÀÌ ¸ÊÀÇ ¹ı¼± º¤ÅÍ¸¦ »ç¿ëÇÑ´Ù. 
+//ì§€í˜•ì˜ ë²•ì„  ë²¡í„°ë¥¼ ê³„ì‚°í•˜ëŠ” í•¨ìˆ˜ì´ë‹¤(ì›”ë“œ ì¢Œí‘œê³„). ë†’ì´ ë§µì˜ ë²•ì„  ë²¡í„°ë¥¼ ì‚¬ìš©í•œë‹¤. 
 	XMFLOAT3 GetNormal(float x, float z) {
 return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z /
 	m_xmf3Scale.z))); }
@@ -117,9 +129,40 @@ return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z /
 	XMFLOAT3 GetScale() {
 		return(m_xmf3Scale);
 	}
-	//ÁöÇüÀÇ Å©±â(°¡·Î/¼¼·Î)¸¦ ¹İÈ¯ÇÑ´Ù. ³ôÀÌ ¸ÊÀÇ Å©±â¿¡ ½ºÄÉÀÏÀ» °öÇÑ °ªÀÌ´Ù. 
+	//ì§€í˜•ì˜ í¬ê¸°(ê°€ë¡œ/ì„¸ë¡œ)ë¥¼ ë°˜í™˜í•œë‹¤. ë†’ì´ ë§µì˜ í¬ê¸°ì— ìŠ¤ì¼€ì¼ì„ ê³±í•œ ê°’ì´ë‹¤. 
 	float GetWidth() { return(m_nWidth * m_xmf3Scale.x); }
 	float GetLength() {
 		return(m_nLength * m_xmf3Scale.z);
 	}
+};
+
+class CExplosibleObject : public CRotatingObject {
+public:
+	bool isExploed = false;
+	float elapsedTime = 0;
+	vector<CMovingObject> children;
+	bool firstExplosion = true;
+	XMFLOAT3 direction;
+	CExplosibleObject(CMesh* mesh){
+		m_pMesh = mesh;
+		direction = XMFLOAT3(random()*1.0f, random()*1.0f, random()*1.0f);
+	}
+	virtual ~CExplosibleObject(){ }
+
+	virtual void Animate(float fTimeElapsed);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
+		if (isExploed) {
+			for (size_t i = 0; i < children.size(); i++) {
+				children[i].Render(pd3dCommandList, pCamera);
+			}
+			return;
+		}
+		CRotatingObject::Render(pd3dCommandList, pCamera);
+	}
+};
+class CMapObject : public CGameObject, public Singleton<CMapObject> {
+public:
+	CMapObject():CGameObject(){ }
+	virtual ~CMapObject(){ }
+
 };

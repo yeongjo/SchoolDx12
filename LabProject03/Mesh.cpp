@@ -654,4 +654,66 @@ int CMesh::CheckRayIntersection(XMFLOAT3& xmf3RayOrigin, XMFLOAT3& xmf3RayDirect
 }
 }
 return(nIntersections);
-}
+}void CMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName) {
+	FILE *pFile = NULL;
+	::fopen_s(&pFile, pstrFileName, "rb");
+	::rewind(pFile);
+
+	char pstrToken[64] = { '\0' };
+
+	BYTE nStrLength = 0;
+	UINT nReads = 0;
+
+	nReads = (UINT)::fread(&nStrLength, sizeof(BYTE), 1, pFile);
+	nReads = (UINT)::fread(pstrToken, sizeof(char), 14, pFile); //"<BoundingBox>:"
+	nReads = (UINT)::fread(&m_xmBoundingBox.Center, sizeof(float), 3, pFile);
+	nReads = (UINT)::fread(&m_xmBoundingBox.Extents, sizeof(float), 3, pFile);
+
+	nReads = (UINT)::fread(&nStrLength, sizeof(BYTE), 1, pFile);
+	nReads = (UINT)::fread(pstrToken, sizeof(char), 11, pFile); //"<Vertices>:"
+	nReads = (UINT)::fread(&m_nVertices, sizeof(int), 1, pFile);
+	auto m_pxmf3Positions = new XMFLOAT3[m_nVertices];
+	nReads = (UINT)::fread(m_pxmf3Positions, sizeof(float), 3 * m_nVertices, pFile);
+
+	nReads = (UINT)::fread(&nStrLength, sizeof(BYTE), 1, pFile);
+	nReads = (UINT)::fread(pstrToken, sizeof(char), 10, pFile); //"<Normals>:"
+	nReads = (UINT)::fread(&m_nVertices, sizeof(int), 1, pFile);
+	auto m_pxmf3Normals = new XMFLOAT3[m_nVertices];
+	nReads = (UINT)::fread(m_pxmf3Normals, sizeof(float), 3 * m_nVertices, pFile);
+
+	nReads = (UINT)::fread(&nStrLength, sizeof(BYTE), 1, pFile);
+	nReads = (UINT)::fread(pstrToken, sizeof(char), 16, pFile); //"<TextureCoords>:"
+	nReads = (UINT)::fread(&m_nVertices, sizeof(int), 1, pFile);
+	auto m_pxmf2TextureCoords = new XMFLOAT2[m_nVertices];
+	nReads = (UINT)::fread(m_pxmf2TextureCoords, sizeof(float), 2 * m_nVertices, pFile);
+
+	nReads = (UINT)::fread(&nStrLength, sizeof(BYTE), 1, pFile);
+	nReads = (UINT)::fread(pstrToken, sizeof(char), 10, pFile); //"<Indices>:"
+	nReads = (UINT)::fread(&m_nIndices, sizeof(int), 1, pFile);
+	m_pnIndices = new UINT[m_nIndices];
+	nReads = (UINT)::fread(m_pnIndices, sizeof(UINT), m_nIndices, pFile);
+
+	::fclose(pFile);
+
+	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
+
+
+	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
+	m_d3dVertexBufferView.StrideInBytes = sizeof(XMFLOAT3);
+	m_d3dVertexBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+
+	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
+
+	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
+	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+
+	m_pVertices = new CDiffusedVertex[m_nVertices];
+	for (size_t i = 0; i < m_nVertices; i++) {
+		m_pVertices[i] = CDiffusedVertex(m_pxmf3Positions[i], XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
+	}
+}
+
+CFileMesh::CFileMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* fileName) : CMesh(pd3dDevice, pd3dCommandList){
+	LoadMeshFromFile(pd3dDevice, pd3dCommandList, fileName);
+}

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Player.h"
 #include "Shader.h"
+#include "GameObject.h"
 
 CPlayer::CPlayer(int nMeshes) : CGameObject(nMeshes) {
 	m_pCamera = NULL;
@@ -73,7 +74,7 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity) {
 void CPlayer::Rotate(float x, float y, float z) {
 	DWORD nCameraMode = m_pCamera->GetMode();
 	//1인칭 카메라 또는 3인칭 카메라의 경우 플레이어의 회전은 약간의 제약이 따른다. 
-	if ((nCameraMode == FIRST_PERSON_CAMERA) || (nCameraMode == THIRD_PERSON_CAMERA)) {
+	if ((nCameraMode == FIRST_PERSON_CAMERA)) {
 		/*로컬 x-축을 중심으로 회전하는 것은 고개를 앞뒤로 숙이는 동작에 해당한다. 그러므로 x-축을 중심으로 회전하는 각도는 -89.0~+89.0도 사이로 제한한다. x는 현재의 m_fPitch에서 실제 회전하는 각도이므로 x만큼 회전한 다음 Pitch가 +89도 보다 크거나 -89도 보다 작으면 m_fPitch가 +89도 또는 -89도가 되도록 회전각도(x)를 수정한다.*/
 		if (x != 0.0f) {
 			m_fPitch += x;
@@ -109,7 +110,7 @@ void CPlayer::Rotate(float x, float y, float z) {
 			m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
 			m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 		}
-	} else if (nCameraMode == SPACESHIP_CAMERA) {
+	} else if (nCameraMode == SPACESHIP_CAMERA || (nCameraMode == THIRD_PERSON_CAMERA)) {
 		/*스페이스-쉽 카메라에서 플레이어의 회전은 회전 각도의 제한이 없다. 그리고 모든 축을 중심으로 회전을 할 수 있
 		다.*/
 		m_pCamera->Rotate(x, y, z);
@@ -148,13 +149,13 @@ void CPlayer::Update(float fTimeElapsed) {
 		m_xmf3Velocity.z);
 	float fMaxVelocityXZ = m_fMaxVelocityXZ * fTimeElapsed;
 	if (fLength > m_fMaxVelocityXZ) {
-		m_xmf3Velocity.x *= (fMaxVelocityXZ / fLength);
-		m_xmf3Velocity.z *= (fMaxVelocityXZ / fLength);
+		m_xmf3Velocity.x *= (m_fMaxVelocityXZ / fLength);
+		m_xmf3Velocity.z *= (m_fMaxVelocityXZ / fLength);
 	}
 	/*플레이어의 속도 벡터의 y-성분의 크기를 구한다. 이것이 y-축 방향의 최대 속력보다 크면 속도 벡터의 y-방향 성분을 조정한다.*/
 	float fMaxVelocityY = m_fMaxVelocityY * fTimeElapsed;
 	fLength = sqrtf(m_xmf3Velocity.y * m_xmf3Velocity.y);
-	if (fLength > m_fMaxVelocityY) m_xmf3Velocity.y *= (fMaxVelocityY / fLength);
+	if (fLength > m_fMaxVelocityY) m_xmf3Velocity.y *= (m_fMaxVelocityY / fLength);
 	//플레이어를 속도 벡터 만큼 실제로 이동한다(카메라도 이동될 것이다).
 	XMFLOAT3 xmf3Velocity = Vector3::ScalarProduct(m_xmf3Velocity, fTimeElapsed, false);
 	Move(xmf3Velocity, false);
@@ -243,8 +244,9 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 CAirplanePlayer::CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, int nMeshes) :
 	CPlayer(nMeshes) {
-	CMesh *pAirplaneMesh = new CAirplaneMeshDiffused(pd3dDevice, pd3dCommandList, 20.0f,
-		20.0f, 4.0f, XMFLOAT4(0.5f, 0.0f, 0.0f, 0.0f));
+	/*CMesh *pAirplaneMesh = new CAirplaneMeshDiffused(pd3dDevice, pd3dCommandList, 20.0f,
+		20.0f, 4.0f, XMFLOAT4(0.5f, 0.0f, 0.0f, 0.0f));*/
+	CMesh *pAirplaneMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/FlyerPlayership.bin");
 	SetMesh(pAirplaneMesh);
 	m_pCamera = ChangeCamera(SPACESHIP_CAMERA/*THIRD_PERSON_CAMERA*/, 0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -252,15 +254,39 @@ CAirplanePlayer::CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CObjectsShader *pShader = new CObjectsShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetShader(pShader);
+
+	//bulletMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/FlyerPlayership.bin");
+	bulletMesh = pAirplaneMesh;
 }
 CAirplanePlayer::~CAirplanePlayer() {
 }
 void CAirplanePlayer::OnPrepareRender() {
 	CPlayer::OnPrepareRender();
 	//비행기 모델을 그리기 전에 x-축으로 90도 회전한다. 
-	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(90.0f), 0.0f,
+	/*XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(90.0f), 0.0f,
 		0.0f);
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);*/
+}
+void CAirplanePlayer::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera) {
+	CPlayer::Render(pd3dCommandList, pCamera);
+	for (size_t i = 0; i < child.size(); i++) {
+		child[i]->Render(pd3dCommandList, pCamera);
+	}
+}
+void CAirplanePlayer::Shot() {
+	OutputDebugStringA("Shot\n");
+	auto t = new CMovingObject();
+	t->SetRotationSpeed(100);
+	t->SetMesh(bulletMesh);
+	//t->SetPosition(GetPosition());
+	t->m_xmf4x4World = m_xmf4x4World;
+	child.push_back(t);
+}
+void CAirplanePlayer::Update(float fTimeElapsed) {
+	CPlayer::Update(fTimeElapsed);
+	for (size_t i = 0; i < child.size(); i++) {
+		child[i]->Animate(fTimeElapsed);
+	}
 }
 /*3인칭 카메라일 때 플레이어 메쉬를 로컬 x-축을 중심으로 +90도 회전하고 렌더링한다. 왜냐하면 비행기 모델 메쉬는 다음 그림과 같이 y-축 방향이 비행기의 앞쪽이 되도록 모델링이 되었기 때문이다. 그리고 이 메쉬를 카메라의 z- 축 방향으로 향하도록 그릴 것이기 때문이다.*/
 //카메라를 변경할 때 호출되는 함수이다. nNewCameraMode는 새로 설정할 카메라 모드이다. 
@@ -300,7 +326,7 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 		//플레이어의 특성을 3인칭 카메라 모드에 맞게 변경한다. 지연 효과와 카메라 오프셋을 설정한다. 
 		SetFriction(250.0f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		SetMaxVelocityXZ(125.0f);
+		SetMaxVelocityXZ(400.0f);
 		SetMaxVelocityY(400.0f);
 		m_pCamera = OnChangeCamera(THIRD_PERSON_CAMERA, nCurrentCameraMode);
 		//3인칭 카메라의 지연 효과를 설정한다. 값을 0.25f 대신에 0.0f와 1.0f로 설정한 결과를 비교하기 바란다. 

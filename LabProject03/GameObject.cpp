@@ -180,10 +180,10 @@ void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
 	//카메라 좌표계의 원점을 모델 좌표계로 변환한다.
 	*pxmf3PickRayOrigin = Vector3::TransformCoord(xmf3CameraOrigin, xmf4x4Inverse);
 	//카메라 좌표계의 점(마우스 좌표를 역변환하여 구한 점)을 모델 좌표계로 변환한다. 
-	*pxmf3PickRayDirection= Vector3::TransformCoord(xmf3PickPosition, xmf4x4Inverse);
+	*pxmf3PickRayDirection = Vector3::TransformCoord(xmf3PickPosition, xmf4x4Inverse);
 	//광선의 방향 벡터를 구한다. 
 	*pxmf3PickRayDirection = Vector3::Normalize(Vector3::Subtract(*pxmf3PickRayDirection,
-	*pxmf3PickRayOrigin));
+		*pxmf3PickRayOrigin));
 }
 int CGameObject::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
 	xmf4x4View, float *pfHitDistance) {
@@ -192,10 +192,68 @@ int CGameObject::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT
 		XMFLOAT3 xmf3PickRayOrigin, xmf3PickRayDirection;
 		//모델 좌표계의 광선을 생성한다. 
 		GenerateRayForPicking(xmf3PickPosition, xmf4x4View, &xmf3PickRayOrigin,
-		&xmf3PickRayDirection);
+			&xmf3PickRayDirection);
 		//모델 좌표계의 광선과 메쉬의 교차를 검사한다. 
 		nIntersected = m_pMesh->CheckRayIntersection(xmf3PickRayOrigin,
-		xmf3PickRayDirection, pfHitDistance);
+			xmf3PickRayDirection, pfHitDistance);
 	}
 	return(nIntersected);
+}
+
+void CMovingObject::Animate(float fTimeElapsed) {
+	CGameObject::MoveForward(m_fRotationSpeed * fTimeElapsed);
+}
+
+void CExplosibleObject::Animate(float fTimeElapsed) {
+	if (isExploed) {
+		if (firstExplosion) {
+			firstExplosion = false;
+			children.resize(50);
+			for (size_t i = 0; i < 50; i++) {
+				children[i].SetMesh(m_pMesh);
+				for (size_t i = 0; i < children.size(); i++) {
+					children[i].SetPosition(GetPosition());
+				}
+				children[i].Rotate(random()*180.0f, random()*180.0f, random()*180.0f);
+				children[i].m_fRotationSpeed = 100;
+			}
+		}
+		for (size_t i = 0; i < children.size(); i++) {
+			children[i].Animate(fTimeElapsed);
+		}
+		elapsedTime += fTimeElapsed;
+		if (elapsedTime > 2) {
+			elapsedTime = 0;
+			isExploed = false;
+			for (size_t i = 0; i < children.size(); i++) {
+				children[i].SetPosition(GetPosition());
+			}
+		}
+		return;
+	}
+	CRotatingObject::Animate(fTimeElapsed);
+	SetPosition(Vector3::Add(GetPosition(), direction));
+
+	auto pos = CMapObject::getInstance().GetPosition();
+	auto x = m_xmf4x4World._41;
+	auto y = m_xmf4x4World._42;
+	auto z = m_xmf4x4World._43;
+	if ((x < -20 + pos.x && direction.x < 0) || (20 + pos.x < x&& direction.x>0)) {
+		direction.x = -direction.x;
+		SetPosition(m_xmf4x4World._41 + direction.x * 2,
+			m_xmf4x4World._42,
+			m_xmf4x4World._43);
+	}
+	if ((y < -20 + pos.y && direction.y < 0) || (20 + pos.y < y&& direction.y>0)) {
+		direction.y = -direction.y;
+		SetPosition(m_xmf4x4World._41,
+			m_xmf4x4World._42 + direction.y * 2,
+			m_xmf4x4World._43);
+	}
+	if ((z < -50 + pos.z && direction.z < 0) || (50 + pos.z < z&& direction.z>0)) {
+		direction.z = -direction.z;
+		SetPosition(m_xmf4x4World._41,
+			m_xmf4x4World._42,
+			m_xmf4x4World._43 + direction.z * 2);
+	}
 }

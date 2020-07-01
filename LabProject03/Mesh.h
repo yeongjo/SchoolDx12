@@ -91,6 +91,8 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances,
 		D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
+
+	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
 };
 
 class CTriangleMesh : public CMesh
@@ -175,4 +177,9 @@ public:
 	CSphereMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 		*pd3dCommandList, float fRadius = 2.0f, int nSlices = 20, int nStacks = 20);
 	virtual ~CSphereMeshDiffused();
+};
+class CFileMesh : public CMesh {
+public:
+	CFileMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* fileName);
+	virtual ~CFileMesh(){ }
 };

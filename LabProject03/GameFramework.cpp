@@ -342,7 +342,8 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_RBUTTONUP:
 		//마우스 캡쳐를 해제한다. 
 		::ReleaseCapture();
-		break;
+		break;
+
 	}
 }
 void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
@@ -355,6 +356,9 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 		case VK_F2:
 		case VK_F3:
 			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
+			break;
+		case VK_DELETE:
+			dynamic_cast<CAirplanePlayer*>(m_pPlayer)->Shot();
 			break;
 		default:
 			break;
@@ -392,7 +396,7 @@ void CGameFramework::ProcessInput() {
 	if (::GetKeyboardState(pKeyBuffer)) {
 		char buff[100];
 		sprintf_s(buff, "Tick : %x\n", pKeyBuffer[VK_UP]);
-		OutputDebugStringA(buff);
+		//OutputDebugStringA(buff);
 		if (pKeyBuffer[VK_UP] & 0x80) 
 			dwDirection |= DIR_FORWARD;
 		if (pKeyBuffer[VK_DOWN] & 0x80) dwDirection |= DIR_BACKWARD;
@@ -435,11 +439,28 @@ void CGameFramework::ProcessInput() {
 				m_pPlayer->Move(dwDirection, 500.0f * m_GameTimer.GetTimeElapsed(), true);
 		}
 	}
-	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
+	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 
+	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
+
 }
 void CGameFramework::AnimateObjects() {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
+	auto a = dynamic_cast<CAirplanePlayer*>(m_pPlayer);
+	float distance;
+	CGameObject* obj = NULL;
+	for (size_t i = 0; i < a->child.size(); i++) {
+		obj = m_pScene->GetIntersectObject(a->child[i]->GetPosition(), &distance);
+		if (obj) {
+			char buff[100];
+			sprintf_s(buff, "distance : %f\n", distance);
+			OutputDebugStringA(buff);
+			if (distance < 10) {
+				a->child.erase(a->child.begin() + i);
+				dynamic_cast<CExplosibleObject*>(obj)->isExploed = true;
+			}
+		}
+	}	
 }
 void CGameFramework::WaitForGpuComplete() {
 	UINT64 nFenceValue = ++m_nFenceValues[m_nSwapChainBufferIndex];
@@ -459,7 +480,7 @@ void CGameFramework::MoveToNextFrame() {
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
 }
-#define _WITH_PLAYER_TOP
+//#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {
 	m_GameTimer.Tick(0.0f);
 	ProcessInput();

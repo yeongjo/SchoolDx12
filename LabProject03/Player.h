@@ -95,7 +95,7 @@ public:
 	//플레이어를 회전하는 함수이다. 
 	void Rotate(float x, float y, float z);
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
-	void Update(float fTimeElapsed);
+	virtual void Update(float fTimeElapsed);
 	//플레이어의 위치가 바뀔 때마다 호출되는 함수와 그 함수에서 사용하는 정보를 설정하는 함수이다.
 	virtual void OnPlayerUpdateCallback(float fTimeElapsed) {
 	}
@@ -123,12 +123,20 @@ public:
 	NULL);
 };
 class CAirplanePlayer : public CPlayer {
+protected:
+	CMesh* bulletMesh;
+public:
+	vector<CGameObject*> child;
 public:
 	CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		ID3D12RootSignature *pd3dGraphicsRootSignature, int nMeshes = 1);
 	virtual ~CAirplanePlayer();
 	virtual CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed);
 	virtual void OnPrepareRender();
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+	void Shot();
+	virtual void Update(float fTimeElapsed);
 };
 
 class CTerrainPlayer : public CPlayer {

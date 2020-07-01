@@ -44,6 +44,7 @@ public:
 		XMFLOAT4X4 *pxmf4x4World);
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	
 protected:
 	ID3D12PipelineState **m_ppd3dPipelineStates = NULL;
 	int m_nPipelineStates = 0;
@@ -83,6 +84,16 @@ protected:
 public:
 	//셰이더에 포함되어 있는 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
 	virtual CGameObject *PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfNearHitDistance);
+
+	virtual CGameObject* GetIntersectObject(const XMFLOAT3& xmf3Position, float *pfNearHitDistance);
+	bool RemoveObject(CGameObject* obj) {
+		for (int j = 0; j < m_nObjects; j++) {
+			if (m_ppObjects[j] == obj) {
+
+			}
+		}
+		return false;
+	}
 };
 
 class CInstancingShader : public CObjectsShader {

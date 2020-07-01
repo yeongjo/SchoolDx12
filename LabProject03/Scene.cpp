@@ -64,9 +64,9 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext) {
 	// 인스턴스
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
-	m_nShaders = 2;
+	m_nShaders = 1;
 	m_pShaders = new CObjectsShader*[m_nShaders];
-	m_pShaders[0] = new CInstancingShader;
+	m_pShaders[0] = new CObjectsShader;
 	m_pShaders[0]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0]->BuildObjects(pd3dDevice, pd3dCommandList, NULL);
 
@@ -86,13 +86,13 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 //지형을 하나의 격자 메쉬(257x257)로 생성한다. 
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("map.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 #endif
-	m_pShaders[1] = new CObjectsShader;
-	m_pShaders[1]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pShaders[1]->BuildObjects(pd3dDevice, pd3dCommandList, m_pTerrain);
+	//m_pShaders[1] = new CObjectsShader;
+	//m_pShaders[1]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	//m_pShaders[1]->BuildObjects(pd3dDevice, pd3dCommandList, m_pTerrain);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed) {
-	for (int i = 1; i < m_nShaders; i++) {
+	for (int i = 0; i < m_nShaders; i++) {
 		m_pShaders[i]->AnimateObjects(fTimeElapsed);
 	}
 }
@@ -101,11 +101,11 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
 	pCamera->UpdateShaderVariables(pd3dCommandList);
 
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
 
-	for (int i = 1; i < m_nShaders; i++) {
+	for (int i = 0; i < m_nShaders; i++) {
 		m_pShaders[i]->Render(pd3dCommandList, pCamera);
 	}
+	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
 }ID3D12RootSignature *CScene::GetGraphicsRootSignature() {
 	return(m_pd3dGraphicsRootSignature);
 }
@@ -122,6 +122,7 @@ bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPar
 	LPARAM lParam) {
 	return(false);
 }
+
 CGameObject *CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera
 	*pCamera) {
 	if (!pCamera) return(NULL);
@@ -148,4 +149,25 @@ CGameObject *CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera
 		}
 	}
 	return(pNearestObject);
+}
+
+CGameObject * CScene::GetIntersectObject(const XMFLOAT3 & xmf3Position, float * pfNearHitDistance) {
+	float fHitDistance = FLT_MAX;
+	CGameObject *pFinalSelectedObject = NULL;
+	for (size_t i = 0; i < m_nShaders; i++) {
+		CGameObject *pSelectedObject = m_pShaders[i]->GetIntersectObject(xmf3Position, pfNearHitDistance);
+		if (fHitDistance > *pfNearHitDistance) {
+			fHitDistance = *pfNearHitDistance;
+			pFinalSelectedObject = pSelectedObject;
+		}
+	}
+	*pfNearHitDistance = fHitDistance;
+	return pFinalSelectedObject;
+}
+
+bool CScene::RemoveGameObject(CGameObject* obj) {
+	for (size_t i = 0; i < m_nShaders; i++) {
+		if (m_pShaders[i]->RemoveObject(obj)) return true;
+	}
+	return false;
 }
