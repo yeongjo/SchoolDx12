@@ -3,10 +3,9 @@
 class CShader;
 class CCamera;
 
-class CGameObject
-{
+class CGameObject {
 public:
-	CGameObject(int nMeshes=1);
+	CGameObject(int nMeshes = 1);
 	virtual ~CGameObject();
 private:
 	int m_nReferences = 0;
@@ -23,7 +22,7 @@ protected:
 	CMesh *m_pMesh = NULL;
 public:
 	//게임 객체가 카메라에 보인는 가를 검사한다. 
-	bool IsVisible(CCamera *pCamera=NULL);
+	bool IsVisible(CCamera *pCamera = NULL);
 public:
 	XMFLOAT4X4 m_xmf4x4World;
 	void Rotate(XMFLOAT3 *pxmf3Axis, float fAngle);
@@ -38,13 +37,13 @@ public:
 public:
 	//상수 버퍼를 생성한다. 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-	*pd3dCommandList);
+		*pd3dCommandList);
 	//상수 버퍼의 내용을 갱신한다. 
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
 	XMFLOAT3 GetPosition();
-		XMFLOAT3 GetLook();
+	XMFLOAT3 GetLook();
 	XMFLOAT3 GetUp();
 	XMFLOAT3 GetRight();
 	//게임 객체의 위치를 설정한다. 
@@ -60,7 +59,7 @@ public:
 public:
 	//모델 좌표계의 픽킹 광선을 생성한다. 
 	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
-	XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
+		XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
 	//카메라 좌표계의 한 점에 대한 모델 좌표계의 픽킹 광선을 생성하고 객체와의 교차를 검사한다. 
 	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
 	virtual float GetDistance(const XMFLOAT3& position) {
@@ -68,8 +67,7 @@ public:
 	}
 };
 
-class CRotatingObject : public CGameObject
-{
+class CRotatingObject : public CGameObject {
 public:
 	CRotatingObject(int nMeshes = 1);
 	virtual ~CRotatingObject();
@@ -93,8 +91,10 @@ public:
 	float elapsedTime = 0;
 
 	CGameObject* followObj = NULL;
-	CMovingObject():CRotatingObject(){ }
-	virtual ~CMovingObject(){ }
+	CMovingObject() :CRotatingObject() {
+	}
+	virtual ~CMovingObject() {
+	}
 
 	virtual void Animate(float fTimeElapsed);
 };
@@ -106,6 +106,7 @@ public:
 		nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4
 		xmf4Color);
 	virtual ~CHeightMapTerrain();
+	virtual void Animate(float fTimeElapsed);
 private:
 	//지형의 높이 맵으로 사용할 이미지이다. 
 	CHeightMapImage *m_pHeightMapImage;
@@ -117,13 +118,15 @@ private:
 
 public:
 	//지형의 높이를 계산하는 함수이다(월드 좌표계). 높이 맵의 높이에 스케일의 y를 곱한 값이다. 
-	float GetHeight(float x, float z) { return(m_pHeightMapImage->GetHeight(x /
-	m_xmf3Scale.x, z / m_xmf3Scale.z) * m_xmf3Scale.y);
-}
-//지형의 법선 벡터를 계산하는 함수이다(월드 좌표계). 높이 맵의 법선 벡터를 사용한다. 
+	float GetHeight(float x, float z) {
+		auto t = GetPosition();
+		return(m_pHeightMapImage->GetHeight((x - t.x) / m_xmf3Scale.x , (z - t.z) / m_xmf3Scale.z )  * m_xmf3Scale.y + t.y);
+	}
+	//지형의 법선 벡터를 계산하는 함수이다(월드 좌표계). 높이 맵의 법선 벡터를 사용한다. 
 	XMFLOAT3 GetNormal(float x, float z) {
-return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z /
-	m_xmf3Scale.z))); }
+		auto t = GetPosition();
+		return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x - t.x), int(z / m_xmf3Scale.z - t.z)));
+	}
 	int GetHeightMapWidth() {
 		return(m_pHeightMapImage->GetHeightMapWidth());
 	}
@@ -134,10 +137,13 @@ return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z /
 		return(m_xmf3Scale);
 	}
 	//지형의 크기(가로/세로)를 반환한다. 높이 맵의 크기에 스케일을 곱한 값이다. 
-	float GetWidth() { return(m_nWidth * m_xmf3Scale.x); }
+	float GetWidth() {
+		return(m_nWidth * m_xmf3Scale.x);
+	}
 	float GetLength() {
 		return(m_nLength * m_xmf3Scale.z);
 	}
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 };
 
 class CExplosibleObject : public CRotatingObject {
@@ -147,11 +153,12 @@ public:
 	vector<CMovingObject> children;
 	bool firstExplosion = true;
 	XMFLOAT3 direction;
-	CExplosibleObject(CMesh* mesh){
+	CExplosibleObject(CMesh* mesh) {
 		m_pMesh = mesh;
 		direction = XMFLOAT3(random()*0.2f, random()*0.2f, random()*0.2f);
 	}
-	virtual ~CExplosibleObject(){ }
+	virtual ~CExplosibleObject() {
+	}
 
 	virtual void Animate(float fTimeElapsed);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
@@ -166,8 +173,10 @@ public:
 };
 class CMapObject : public CGameObject, public Singleton<CMapObject> {
 public:
-	CMapObject():CGameObject(){ }
-	virtual ~CMapObject(){ }
+	CMapObject() :CGameObject() {
+	}
+	virtual ~CMapObject() {
+	}
 	virtual void Animate(float fTimeElapsed);
 	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance) {
 		return 0;

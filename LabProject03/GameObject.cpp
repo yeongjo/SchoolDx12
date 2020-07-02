@@ -71,7 +71,8 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView) {
 	OnPrepareRender();
 	//if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
-}
+}
+
 void CGameObject::SetPosition(float x, float y, float z) {
 	m_xmf4x4World._41 = x;
 	m_xmf4x4World._42 = y;
@@ -176,6 +177,40 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 }
 CHeightMapTerrain::~CHeightMapTerrain(void) {
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
+}
+void CHeightMapTerrain::Animate(float fTimeElapsed) {
+	auto player = CGameFramework::getInstance().m_pPlayer;
+	auto x = m_xmf3Scale.x * m_nWidth*0.5f;
+	auto z = m_xmf3Scale.z * m_nLength*0.5f;
+	auto pos = GetPosition();
+	auto direction = Vector3::Subtract(player->GetPosition(), pos);
+	if (abs(direction.x) >= x) {
+		MoveStrafe((direction.x>0?x:-x) * 2);
+	}
+	if (abs(direction.z) >= z) {
+		MoveForward((direction.z > 0 ? z:-z) * 2);
+	}
+}
+void CHeightMapTerrain::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera) {
+	CHeightMapTerrain::Animate(0);
+	CGameObject::Render(pd3dCommandList, pCamera);
+	auto t = m_xmf4x4World;
+	auto x = m_xmf3Scale.x * m_nWidth ;
+	auto z = m_xmf3Scale.z * m_nLength;
+	MoveForward(-z);
+	MoveStrafe(-x);
+	for (size_t _x = 0; _x < 3; _x++) {
+		for (size_t _z = 0; _z < 3; _z++) {
+			UpdateShaderVariables(pd3dCommandList);
+			//if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+			//게임 객체가 포함하는 모든 메쉬를 렌더링한다.
+			if (m_pMesh) m_pMesh->Render(pd3dCommandList);
+			MoveForward(z);
+		}
+		MoveStrafe(x);
+		MoveForward(z*-3);
+	}
+	m_xmf4x4World = t;
 }
 void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
 	xmf4x4View, XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection) {
@@ -300,3 +335,5 @@ void CMapObject::Animate(float fTimeElapsed) {
 		SetPosition(player->GetPosition());
 	}
 }
+
+

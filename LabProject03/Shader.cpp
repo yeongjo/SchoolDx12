@@ -263,6 +263,9 @@ void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 				pRotatingObject = new CExplosibleObject((i % 2) ? (CMesh *)pCubeMesh : (CMesh *)pSphereMesh);
 				//직육면체와 구 메쉬를 교대로 배치한다. 
 				//pRotatingObject->SetMesh();
+				if (i % 2) {
+					pRotatingObject->Scale(10, 10, 10);
+				}
 				pRotatingObject->SetPosition(fxPitch*x, fyPitch*y, fzPitch*z);
 				pRotatingObject->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
 				pRotatingObject->SetRotationSpeed(10.0f*(i % 10));

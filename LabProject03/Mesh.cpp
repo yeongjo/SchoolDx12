@@ -365,9 +365,16 @@ XMFLOAT3 CHeightMapImage::GetHeightMapNormal(int x, int z) {
 
 #define _WITH_APPROXIMATE_OPPOSITE_CORNER
 
+float mod(float a, float b) {
+	return a - b * floorf(a / b);
+}
+
 float CHeightMapImage::GetHeight(float fx, float fz) {
 	/*지형의 좌표 (fx, fz)는 이미지 좌표계이다. 높이 맵의 x-좌표와 z-좌표가 높이 맵의 범위를 벗어나면 지형의 높이는 0이다.*/
-	if ((fx < 0.0f) || (fz < 0.0f) || (fx >= m_nWidth) || (fz >= m_nLength)) return(0.0f);
+	
+	fx = mod(fx, m_nWidth);
+	fz = mod(fz, m_nLength);
+	if ((fx < 0.0f) || (fz < 0.0f) || (fx >= m_nWidth) || (fz >= m_nLength)) return(-FLT_MAX);
 	//높이 맵의 좌표의 정수 부분과 소수 부분을 계산한다. 
 	int x = (int)fx;
 	int z = (int)fz;
