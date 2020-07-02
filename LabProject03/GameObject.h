@@ -22,7 +22,7 @@ protected:
 	CMesh *m_pMesh = NULL;
 public:
 	//게임 객체가 카메라에 보인는 가를 검사한다. 
-	bool IsVisible(CCamera *pCamera = NULL);
+	virtual bool IsVisible(CCamera *pCamera = NULL);
 public:
 	XMFLOAT4X4 m_xmf4x4World;
 	void Rotate(XMFLOAT3 *pxmf3Axis, float fAngle);
@@ -144,6 +144,9 @@ public:
 		return(m_nLength * m_xmf3Scale.z);
 	}
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual bool IsVisible(CCamera *pCamera = NULL) {
+		return true;
+	}
 };
 
 class CExplosibleObject : public CRotatingObject {
@@ -183,5 +186,8 @@ public:
 	}
 	virtual float GetDistance(const XMFLOAT3& position) {
 		return FLT_MAX;
+	}
+	virtual bool IsVisible(CCamera *pCamera = NULL) {
+		return true;
 	}
 };

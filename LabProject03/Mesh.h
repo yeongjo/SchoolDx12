@@ -55,6 +55,16 @@ protected:
 	ID3D12Resource *m_pd3dVertexBuffer = NULL;
 	ID3D12Resource *m_pd3dVertexUploadBuffer = NULL;
 	D3D12_VERTEX_BUFFER_VIEW m_d3dVertexBufferView;
+
+	ID3D12Resource					*m_pd3dNormalBuffer = NULL;
+	ID3D12Resource					*m_pd3dNormalUploadBuffer = NULL;
+
+	ID3D12Resource					*m_pd3dTextureCoordBuffer = NULL;
+	ID3D12Resource					*m_pd3dTextureCoordUploadBuffer = NULL;
+
+	UINT							m_nVertexBufferViews = 0;
+	D3D12_VERTEX_BUFFER_VIEW		*m_pd3dVertexBufferViews = NULL;
+
 	D3D12_PRIMITIVE_TOPOLOGY m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	UINT m_nSlot = 0;
 

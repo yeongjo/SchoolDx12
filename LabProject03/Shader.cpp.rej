@@ -1,0 +1,13 @@
+diff a/LabProject03/Shader.cpp b/LabProject03/Shader.cpp	(rejected hunks)
+@@ -128,7 +128,11 @@
+ 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+ 	d3dPipelineStateDesc.SampleDesc.Count = 1;
+ 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
++	auto r = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc,
+ 		__uuidof(ID3D12PipelineState), (void **)&m_ppd3dPipelineStates[0]);
++	if (FAILED(r)) {
++
++	}
+ 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
+ 	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
+ 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[]
