@@ -61,10 +61,11 @@ void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandLi
 }
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
 	OnPrepareRender();
-	UpdateShaderVariables(pd3dCommandList);
-	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
-	//게임 객체가 포함하는 모든 메쉬를 렌더링한다.
-	if (m_pMesh) m_pMesh->Render(pd3dCommandList);
+	if (IsVisible(pCamera)) {
+		UpdateShaderVariables(pd3dCommandList);
+		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+		if (m_pMesh) m_pMesh->Render(pd3dCommandList);
+	}
 }
 //인스턴싱 정점 버퍼 뷰를 사용하여 메쉬를 렌더링한다. 
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera,
@@ -127,7 +128,7 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll) {
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
 void CGameObject::Scale(float x, float y, float z) {
-	auto s = XMMatrixScaling(x,y,z);
+	auto s = XMMatrixScaling(x, y, z);
 	m_xmf4x4World = Matrix4x4::Multiply(s, m_xmf4x4World);
 }
 bool CGameObject::IsVisible(CCamera *pCamera) {
@@ -185,17 +186,17 @@ void CHeightMapTerrain::Animate(float fTimeElapsed) {
 	auto pos = GetPosition();
 	auto direction = Vector3::Subtract(player->GetPosition(), pos);
 	if (abs(direction.x) >= x) {
-		MoveStrafe((direction.x>0?x:-x) * 2);
+		MoveStrafe((direction.x > 0 ? x : -x) * 2);
 	}
 	if (abs(direction.z) >= z) {
-		MoveForward((direction.z > 0 ? z:-z) * 2);
+		MoveForward((direction.z > 0 ? z : -z) * 2);
 	}
 }
 void CHeightMapTerrain::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera) {
 	CHeightMapTerrain::Animate(0);
 	CGameObject::Render(pd3dCommandList, pCamera);
 	auto t = m_xmf4x4World;
-	auto x = m_xmf3Scale.x * m_nWidth ;
+	auto x = m_xmf3Scale.x * m_nWidth;
 	auto z = m_xmf3Scale.z * m_nLength;
 	MoveForward(-z);
 	MoveStrafe(-x);
@@ -256,7 +257,7 @@ void CMovingObject::Animate(float fTimeElapsed) {
 		direcVec = XMVector3Normalize(direcVec);
 		XMFLOAT3 m_xmf3MovingDirection;
 		XMStoreFloat3(&m_xmf3MovingDirection, direcVec);
-		m_xmf4x4World._31 = m_xmf3MovingDirection.x, m_xmf4x4World._32 =m_xmf3MovingDirection.y,
+		m_xmf4x4World._31 = m_xmf3MovingDirection.x, m_xmf4x4World._32 = m_xmf3MovingDirection.y,
 			m_xmf4x4World._33 = m_xmf3MovingDirection.z;
 		XMFLOAT3 m_xmf3Up(0, 1, 0);
 		XMFLOAT3 m_xmf3Right;
@@ -265,8 +266,8 @@ void CMovingObject::Animate(float fTimeElapsed) {
 		m_xmf3Up = Vector3::CrossProduct(m_xmf3MovingDirection, m_xmf3Right, true);
 		m_xmf4x4World._11 = m_xmf3Right.x, m_xmf4x4World._12 = m_xmf3Right.y,
 			m_xmf4x4World._13 = m_xmf3Right.z;
-		m_xmf4x4World._21= m_xmf3Up.x, m_xmf4x4World._22= m_xmf3Up.y,
-			m_xmf4x4World._23= m_xmf3Up.z;
+		m_xmf4x4World._21 = m_xmf3Up.x, m_xmf4x4World._22 = m_xmf3Up.y,
+			m_xmf4x4World._23 = m_xmf3Up.z;
 	}
 	CGameObject::MoveForward(m_fRotationSpeed * fTimeElapsed);
 }
@@ -305,7 +306,7 @@ void CExplosibleObject::Animate(float fTimeElapsed) {
 	auto x = m_xmf4x4World._41;
 	auto y = m_xmf4x4World._42;
 	auto z = m_xmf4x4World._43;
-	const float width = 900/2;
+	const float width = 900 / 2;
 	if ((x < -width + pos.x && direction.x < 0) || (width + pos.x < x&& direction.x>0)) {
 		direction.x = -direction.x;
 		SetPosition(m_xmf4x4World._41 + direction.x * 2,
@@ -328,7 +329,7 @@ void CExplosibleObject::Animate(float fTimeElapsed) {
 
 void CMapObject::Animate(float fTimeElapsed) {
 	auto player = CGameFramework::getInstance().m_pPlayer;
-	auto width = 900/2;
+	auto width = 900 / 2;
 	auto direction = Vector3::Subtract(player->GetPosition(), GetPosition());
 	auto distance = Vector3::Length(direction);
 	if (distance > width) {
