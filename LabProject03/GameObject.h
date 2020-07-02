@@ -56,13 +56,14 @@ public:
 	void MoveForward(float fDistance = 1.0f);
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
+	void Scale(float x, float y, float z);
 public:
 	//모델 좌표계의 픽킹 광선을 생성한다. 
 	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
 	XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
 	//카메라 좌표계의 한 점에 대한 모델 좌표계의 픽킹 광선을 생성하고 객체와의 교차를 검사한다. 
-	int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
-	float GetDistance(const XMFLOAT3& position) {
+	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
+	virtual float GetDistance(const XMFLOAT3& position) {
 		return Vector3::Length(Vector3::Subtract(position, GetPosition()));
 	}
 };
@@ -89,6 +90,9 @@ public:
 
 class CMovingObject : public CRotatingObject {
 public:
+	float elapsedTime = 0;
+
+	CGameObject* followObj = NULL;
 	CMovingObject():CRotatingObject(){ }
 	virtual ~CMovingObject(){ }
 
@@ -145,7 +149,7 @@ public:
 	XMFLOAT3 direction;
 	CExplosibleObject(CMesh* mesh){
 		m_pMesh = mesh;
-		direction = XMFLOAT3(random()*1.0f, random()*1.0f, random()*1.0f);
+		direction = XMFLOAT3(random()*0.2f, random()*0.2f, random()*0.2f);
 	}
 	virtual ~CExplosibleObject(){ }
 
@@ -164,5 +168,11 @@ class CMapObject : public CGameObject, public Singleton<CMapObject> {
 public:
 	CMapObject():CGameObject(){ }
 	virtual ~CMapObject(){ }
-
+	virtual void Animate(float fTimeElapsed);
+	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance) {
+		return 0;
+	}
+	virtual float GetDistance(const XMFLOAT3& position) {
+		return FLT_MAX;
+	}
 };

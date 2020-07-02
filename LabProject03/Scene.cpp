@@ -71,7 +71,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pShaders[0]->BuildObjects(pd3dDevice, pd3dCommandList, NULL);
 
 	// 터레인
-	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
+	//m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 	//지형을 확대할 스케일 벡터이다. x-축과 z-축은 8배, y-축은 2배 확대한다.
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(0.0f, 0.2f, 0.0f, 0.0f);
@@ -85,6 +85,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 #else
 //지형을 하나의 격자 메쉬(257x257)로 생성한다. 
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("map.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
+	m_pTerrain->MoveForward(-500);
+	m_pTerrain->MoveStrafe(-500);
+	m_pTerrain->MoveUp(-500);
 #endif
 	//m_pShaders[1] = new CObjectsShader;
 	//m_pShaders[1]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -106,7 +109,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		m_pShaders[i]->Render(pd3dCommandList, pCamera);
 	}
 	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
-}ID3D12RootSignature *CScene::GetGraphicsRootSignature() {
+}
+ID3D12RootSignature *CScene::GetGraphicsRootSignature() {
 	return(m_pd3dGraphicsRootSignature);
 }
 

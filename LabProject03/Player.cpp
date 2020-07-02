@@ -54,6 +54,8 @@ void CPlayer::Move(DWORD dwDirection, float fDistance, bool bUpdateVelocity) {
 		if (dwDirection & DIR_UP) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
 		if (dwDirection & DIR_DOWN) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up,
 			-fDistance);
+
+
 		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
 		Move(xmf3Shift, bUpdateVelocity);
 	}
@@ -148,14 +150,14 @@ void CPlayer::Update(float fTimeElapsed) {
 	float fLength = sqrtf(m_xmf3Velocity.x * m_xmf3Velocity.x + m_xmf3Velocity.z *
 		m_xmf3Velocity.z);
 	float fMaxVelocityXZ = m_fMaxVelocityXZ * fTimeElapsed;
-	if (fLength > m_fMaxVelocityXZ) {
-		m_xmf3Velocity.x *= (m_fMaxVelocityXZ / fLength);
-		m_xmf3Velocity.z *= (m_fMaxVelocityXZ / fLength);
+	if (fLength > fMaxVelocityXZ) {
+		m_xmf3Velocity.x *= (fMaxVelocityXZ / fLength);
+		m_xmf3Velocity.z *= (fMaxVelocityXZ / fLength);
 	}
 	/*플레이어의 속도 벡터의 y-성분의 크기를 구한다. 이것이 y-축 방향의 최대 속력보다 크면 속도 벡터의 y-방향 성분을 조정한다.*/
 	float fMaxVelocityY = m_fMaxVelocityY * fTimeElapsed;
 	fLength = sqrtf(m_xmf3Velocity.y * m_xmf3Velocity.y);
-	if (fLength > m_fMaxVelocityY) m_xmf3Velocity.y *= (m_fMaxVelocityY / fLength);
+	if (fLength > fMaxVelocityY) m_xmf3Velocity.y *= (fMaxVelocityY / fLength);
 	//플레이어를 속도 벡터 만큼 실제로 이동한다(카메라도 이동될 것이다).
 	XMFLOAT3 xmf3Velocity = Vector3::ScalarProduct(m_xmf3Velocity, fTimeElapsed, false);
 	Move(xmf3Velocity, false);
@@ -235,6 +237,7 @@ void CPlayer::OnPrepareRender() {
 }
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
 	DWORD nCameraMode = (pCamera) ? pCamera->GetMode() : 0x00;
+	CPlayer::OnPrepareRender();
 	//카메라 모드가 3인칭이면 플레이어 객체를 렌더링한다.
 	if (nCameraMode == THIRD_PERSON_CAMERA) {
 		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
@@ -273,11 +276,12 @@ void CAirplanePlayer::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamer
 		child[i]->Render(pd3dCommandList, pCamera);
 	}
 }
-void CAirplanePlayer::Shot() {
+void CAirplanePlayer::Shot(CGameObject* obj) {
 	OutputDebugStringA("Shot\n");
 	auto t = new CMovingObject();
 	t->SetRotationSpeed(100);
 	t->SetMesh(bulletMesh);
+	t->followObj = obj;
 	//t->SetPosition(GetPosition());
 	t->m_xmf4x4World = m_xmf4x4World;
 	child.push_back(t);
@@ -324,10 +328,10 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 		break;
 	case THIRD_PERSON_CAMERA:
 		//플레이어의 특성을 3인칭 카메라 모드에 맞게 변경한다. 지연 효과와 카메라 오프셋을 설정한다. 
-		SetFriction(250.0f);
+		SetFriction(125.0f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		SetMaxVelocityXZ(400.0f);
-		SetMaxVelocityY(400.0f);
+		SetMaxVelocityXZ(1000000.0f);
+		SetMaxVelocityY(1000000.0f);
 		m_pCamera = OnChangeCamera(THIRD_PERSON_CAMERA, nCurrentCameraMode);
 		//3인칭 카메라의 지연 효과를 설정한다. 값을 0.25f 대신에 0.0f와 1.0f로 설정한 결과를 비교하기 바란다. 
 		m_pCamera->SetTimeLag(0.25f);

@@ -246,11 +246,12 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 }
 void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, void *pContext) {
-	CFileMesh *pCubeMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/Cube.bin");
+	//auto pCubeMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 12.0f, 12.0f, 12.0f);
+	auto pCubeMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/Cube.bin");
 	//구 메쉬를 생성한다. 
-	CFileMesh *pSphereMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/ams_house5.bin");
+	auto pSphereMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/ams_house5.bin");
 	int xObjects = 5, yObjects = 5, zObjects = 5, i = 0;
-	m_nObjects = (xObjects * 2 + 1) * (yObjects * 2 + 1) * (zObjects * 2 + 1);
+	m_nObjects = (xObjects * 2 + 1) * (yObjects * 2 + 1) * (zObjects * 2 + 1) + 1;
 	m_ppObjects = new CGameObject*[m_nObjects];
 	float fxPitch = 12.0f * 2.5f;
 	float fyPitch = 12.0f * 2.5f;
@@ -269,6 +270,10 @@ void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 			}
 		}
 	}
+	auto t = CMapObject::getPointer();
+	t->SetMesh(pCubeMesh);
+	t->Scale(-1000, -1000, -1000);
+	m_ppObjects[i++] = t;
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 CInstancingShader::CInstancingShader() {
@@ -430,7 +435,8 @@ CGameObject * CObjectsShader::GetIntersectObject(const XMFLOAT3 & xmf3Position, 
 	float fHitDistance = FLT_MAX;
 	CGameObject *pSelectedObject = NULL;
 	for (int j = 0; j < m_nObjects; j++) {
-		if (dynamic_cast<CExplosibleObject*>(m_ppObjects[j])->isExploed) continue;
+		auto t = dynamic_cast<CExplosibleObject*>(m_ppObjects[j]);
+		if (t&&t->isExploed) continue;
 		fHitDistance = m_ppObjects[j]->GetDistance(xmf3Position);
 		if (fHitDistance < *pfNearHitDistance) {
 			*pfNearHitDistance = fHitDistance;

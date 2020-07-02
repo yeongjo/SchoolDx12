@@ -310,8 +310,7 @@ void CGameFramework::BuildObjects() {
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 	m_pScene = new CScene();
 	if (m_pScene) m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, NULL);
-	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice,
-		m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
+	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
 	m_pPlayer = pAirplanePlayer;
 	/*m_pPlayer = new CTerrainPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain(), 1);*/
 	m_pCamera = m_pPlayer->GetCamera();
@@ -332,14 +331,14 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
 		//마우스가 눌려지면 마우스 픽킹을 하여 선택한 게임 객체를 찾는다. 
-		m_pSelectedObject = m_pScene->PickObjectPointedByCursor(LOWORD(lParam),
-		HIWORD(lParam), m_pCamera);
+		m_pSelectedObject = m_pScene->PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam), m_pCamera);
 		//마우스 캡쳐를 하고 현재 마우스 위치를 가져온다. 
 		::SetCapture(hWnd);
 		::GetCursorPos(&m_ptOldCursorPos);
 		break;
 	case WM_LBUTTONUP:
 	case WM_RBUTTONUP:
+		m_pSelectedObject = NULL;
 		//마우스 캡쳐를 해제한다. 
 		::ReleaseCapture();
 		break;
@@ -358,7 +357,7 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
 			break;
 		case VK_DELETE:
-			dynamic_cast<CAirplanePlayer*>(m_pPlayer)->Shot();
+			dynamic_cast<CAirplanePlayer*>(m_pPlayer)->Shot(m_pSelectedObject);
 			break;
 		default:
 			break;
@@ -456,8 +455,10 @@ void CGameFramework::AnimateObjects() {
 			sprintf_s(buff, "distance : %f\n", distance);
 			OutputDebugStringA(buff);
 			if (distance < 10) {
+				delete a->child[i];
 				a->child.erase(a->child.begin() + i);
-				dynamic_cast<CExplosibleObject*>(obj)->isExploed = true;
+				auto t = dynamic_cast<CExplosibleObject*>(obj);
+				if(t) t->isExploed = true;
 			}
 		}
 	}	

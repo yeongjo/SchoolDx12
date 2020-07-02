@@ -2,6 +2,7 @@
 #include "Shader.h"
 #include "GameObject.h"
 #include "Camera.h"
+#include "GameFramework.h"
 
 CGameObject::CGameObject(int nMeshes) {
 	m_xmf4x4World = Matrix4x4::Identity();
@@ -124,6 +125,10 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll) {
 		XMConvertToRadians(fYaw), XMConvertToRadians(fRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
+void CGameObject::Scale(float x, float y, float z) {
+	auto s = XMMatrixScaling(x,y,z);
+	m_xmf4x4World = Matrix4x4::Multiply(s, m_xmf4x4World);
+}
 bool CGameObject::IsVisible(CCamera *pCamera) {
 	OnPrepareRender();
 	bool bIsVisible = true;
@@ -201,6 +206,33 @@ int CGameObject::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT
 }
 
 void CMovingObject::Animate(float fTimeElapsed) {
+	elapsedTime += fTimeElapsed;
+	if (8 < elapsedTime) {
+		elapsedTime = 0;
+	}
+	if (followObj) {
+		auto followObjPos = XMVectorSet(followObj->m_xmf4x4World._41, followObj->m_xmf4x4World._42, followObj->m_xmf4x4World._43, 0);
+		auto pos = XMVectorSet(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43, 0);
+		auto direc = XMVector3Normalize(followObjPos - pos);
+		auto direcVec = XMLoadFloat3(&Vector3::Normalize(XMFLOAT3(m_xmf4x4World._31, m_xmf4x4World._32,
+			m_xmf4x4World._33)));
+		auto off = direc - direcVec;
+		direcVec += off * fTimeElapsed * 5 * elapsedTime*elapsedTime;
+		direcVec = XMVector3Normalize(direcVec);
+		XMFLOAT3 m_xmf3MovingDirection;
+		XMStoreFloat3(&m_xmf3MovingDirection, direcVec);
+		m_xmf4x4World._31 = m_xmf3MovingDirection.x, m_xmf4x4World._32 =m_xmf3MovingDirection.y,
+			m_xmf4x4World._33 = m_xmf3MovingDirection.z;
+		XMFLOAT3 m_xmf3Up(0, 1, 0);
+		XMFLOAT3 m_xmf3Right;
+		m_xmf3MovingDirection = Vector3::Normalize(m_xmf3MovingDirection);
+		m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3MovingDirection, true);
+		m_xmf3Up = Vector3::CrossProduct(m_xmf3MovingDirection, m_xmf3Right, true);
+		m_xmf4x4World._11 = m_xmf3Right.x, m_xmf4x4World._12 = m_xmf3Right.y,
+			m_xmf4x4World._13 = m_xmf3Right.z;
+		m_xmf4x4World._21= m_xmf3Up.x, m_xmf4x4World._22= m_xmf3Up.y,
+			m_xmf4x4World._23= m_xmf3Up.z;
+	}
 	CGameObject::MoveForward(m_fRotationSpeed * fTimeElapsed);
 }
 
@@ -238,22 +270,33 @@ void CExplosibleObject::Animate(float fTimeElapsed) {
 	auto x = m_xmf4x4World._41;
 	auto y = m_xmf4x4World._42;
 	auto z = m_xmf4x4World._43;
-	if ((x < -20 + pos.x && direction.x < 0) || (20 + pos.x < x&& direction.x>0)) {
+	const float width = 900/2;
+	if ((x < -width + pos.x && direction.x < 0) || (width + pos.x < x&& direction.x>0)) {
 		direction.x = -direction.x;
 		SetPosition(m_xmf4x4World._41 + direction.x * 2,
 			m_xmf4x4World._42,
 			m_xmf4x4World._43);
 	}
-	if ((y < -20 + pos.y && direction.y < 0) || (20 + pos.y < y&& direction.y>0)) {
+	if ((y < -width + pos.y && direction.y < 0) || (width + pos.y < y&& direction.y>0)) {
 		direction.y = -direction.y;
 		SetPosition(m_xmf4x4World._41,
 			m_xmf4x4World._42 + direction.y * 2,
 			m_xmf4x4World._43);
 	}
-	if ((z < -50 + pos.z && direction.z < 0) || (50 + pos.z < z&& direction.z>0)) {
+	if ((z < -width + pos.z && direction.z < 0) || (width + pos.z < z&& direction.z>0)) {
 		direction.z = -direction.z;
 		SetPosition(m_xmf4x4World._41,
 			m_xmf4x4World._42,
 			m_xmf4x4World._43 + direction.z * 2);
+	}
+}
+
+void CMapObject::Animate(float fTimeElapsed) {
+	auto player = CGameFramework::getInstance().m_pPlayer;
+	auto width = 900/2;
+	auto direction = Vector3::Subtract(player->GetPosition(), GetPosition());
+	auto distance = Vector3::Length(direction);
+	if (distance > width) {
+		SetPosition(player->GetPosition());
 	}
 }

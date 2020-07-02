@@ -48,7 +48,7 @@ public:
 		m_nReferences++;
 	}
 	void Release() {
-		if (--m_nReferences <= 0) delete this;
+		//if (--m_nReferences <= 0) delete this;
 	}
 	void ReleaseUploadBuffers();
 protected:

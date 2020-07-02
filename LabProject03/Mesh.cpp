@@ -642,18 +642,18 @@ int CMesh::CheckRayIntersection(XMFLOAT3& xmf3RayOrigin, XMFLOAT3& xmf3RayDirect
 				(m_pnIndices[(i*nOffset) + 1]) : ((i*nOffset) + 1)) * m_nStride));
 			XMVECTOR v2 = XMLoadFloat3((XMFLOAT3 *)(pbPositions + ((m_nIndices) ?
 				(m_pnIndices[(i*nOffset) + 2]) : ((i*nOffset) + 2)) * m_nStride));
-	float fHitDistance;
-	BOOL bIntersected = TriangleTests::Intersects(xmRayOrigin, xmRayDirection, v0,
-		v1, v2, fHitDistance);
-	if (bIntersected) {
-		if (fHitDistance < fNearHitDistance) {
-			*pfNearHitDistance = fNearHitDistance = fHitDistance;
+			float fHitDistance;
+			BOOL bIntersected = TriangleTests::Intersects(xmRayOrigin, xmRayDirection, v0,
+				v1, v2, fHitDistance);
+			if (bIntersected) {
+				if (fHitDistance < fNearHitDistance) {
+					*pfNearHitDistance = fNearHitDistance = fHitDistance;
+				}
+				nIntersections++;
+			}
 		}
-		nIntersections++;
 	}
-}
-}
-return(nIntersections);
+	return(nIntersections);
 }void CMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName) {
 	FILE *pFile = NULL;
 	::fopen_s(&pFile, pstrFileName, "rb");
@@ -708,12 +708,18 @@ return(nIntersections);
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
 
+	//m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;;;
+
 	m_pVertices = new CDiffusedVertex[m_nVertices];
 	for (size_t i = 0; i < m_nVertices; i++) {
 		m_pVertices[i] = CDiffusedVertex(m_pxmf3Positions[i], XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
 	}
+
+	m_xmBoundingBox.Orientation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	m_nStride = sizeof(CDiffusedVertex);
 }
 
-CFileMesh::CFileMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* fileName) : CMesh(pd3dDevice, pd3dCommandList){
+CFileMesh::CFileMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* fileName) : CMesh(pd3dDevice, pd3dCommandList) {
 	LoadMeshFromFile(pd3dDevice, pd3dCommandList, fileName);
 }

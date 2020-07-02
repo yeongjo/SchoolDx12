@@ -135,7 +135,7 @@ public:
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
-	void Shot();
+	void Shot(CGameObject* obj);
 	virtual void Update(float fTimeElapsed);
 };
 
