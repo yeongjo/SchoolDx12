@@ -94,7 +94,7 @@ static float3 gf3AmbientLightColor = float3(0.0f, 0.0f, 0.0f);
 static float3 gf3AmbientSpecularColor = float3(0.5f, 0.5f, 0.5f);
 
 static float3 gf3LightDirection = float3(1.4142f, 1.4142f * 0.5f, 1.4142f * 0.5f);
-static float3 gf3LightColor = float3(0.98f, 0.93f, 0.85f);
+static float3 gf3LightColor = float3(0.98f/2.0f, 0.93f / 2.0f, 0.85f / 2.0f);
 static float3 gf3SpecularColor = float3(0.85f, 0.85f, 0.85f);
 
 static float gfSpecular = 2.0f;

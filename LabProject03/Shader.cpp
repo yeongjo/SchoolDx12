@@ -282,10 +282,10 @@ void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 			}
 		}
 	}
-	auto t = CMapObject::getPointer();
+	/*auto t = CMapObject::getPointer();
 	t->SetMesh(pCubeMesh);
 	t->Scale(-1000, -1000, -1000);
-	m_ppObjects[i++] = t;
+	m_ppObjects[i++] = t;*/
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 CInstancingShader::CInstancingShader() {
@@ -334,17 +334,16 @@ void CInstancingShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignatu
 }
 void CInstancingShader::CreateShaderVariables(ID3D12Device *pd3dDevice,
 	ID3D12GraphicsCommandList *pd3dCommandList) {
+	UINT ncbElementBytes = ((sizeof(VS_VB_INSTANCE) + 255) & ~255); //256의 배수
+	//UINT ncbElementBytes = sizeof(VS_VB_INSTANCE);
 	//인스턴스 정보를 저장할 정점 버퍼를 업로드 힙 유형으로 생성한다.
-	m_pd3dcbGameObjects = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL,
-		sizeof(VS_VB_INSTANCE) * m_nObjects, D3D12_HEAP_TYPE_UPLOAD,
-		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbGameObjects = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes * m_nObjects, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 	//정점 버퍼(업로드 힙)에 대한 포인터를 저장한다. 
 	m_pd3dcbGameObjects->Map(0, NULL, (void **)&m_pcbMappedGameObjects);
 	//정점 버퍼에 대한 뷰를 생성한다. 
-	m_d3dInstancingBufferView.BufferLocation =
-		m_pd3dcbGameObjects->GetGPUVirtualAddress();
-	m_d3dInstancingBufferView.StrideInBytes = sizeof(VS_VB_INSTANCE);
-	m_d3dInstancingBufferView.SizeInBytes = sizeof(VS_VB_INSTANCE) * m_nObjects;
+	m_d3dInstancingBufferView.BufferLocation = m_pd3dcbGameObjects->GetGPUVirtualAddress();
+	m_d3dInstancingBufferView.StrideInBytes = ncbElementBytes;
+	m_d3dInstancingBufferView.SizeInBytes = ncbElementBytes * m_nObjects;
 }
 void CInstancingShader::ReleaseShaderVariables() {
 	if (m_pd3dcbGameObjects) m_pd3dcbGameObjects->Unmap(0, NULL);
@@ -353,9 +352,11 @@ void CInstancingShader::ReleaseShaderVariables() {
 //인스턴싱 정보(객체의 월드 변환 행렬과 색상)를 정점 버퍼에 복사한다. 
 void CInstancingShader::UpdateShaderVariables(ID3D12GraphicsCommandList
 	*pd3dCommandList) {
+	UINT ncbElementBytes = ((sizeof(VS_VB_INSTANCE) + 255) & ~255); //256의 배수
 	for (int j = 0; j < m_nObjects; j++) {
-		m_pcbMappedGameObjects[j].m_xmcColor = (j % 2) ? XMFLOAT4(0.5f, 0.0f, 0.0f, 0.0f) : XMFLOAT4(0.0f, 0.0f, 0.5f, 0.0f);
-		XMStoreFloat4x4(&m_pcbMappedGameObjects[j].m_xmf4x4Transform,
+		VS_VB_INSTANCE *pbMappedcbGameObject = (VS_VB_INSTANCE *)((UINT8 *)m_pcbMappedGameObjects + (j * ncbElementBytes));
+		pbMappedcbGameObject->m_xmcColor = (j % 2) ? XMFLOAT4(0.5f, 0.0f, 0.0f, 0.0f) : XMFLOAT4(0.0f, 0.0f, 0.5f, 0.0f);
+		XMStoreFloat4x4(&pbMappedcbGameObject->m_xmf4x4Transform,
 			XMMatrixTranspose(XMLoadFloat4x4(&m_ppObjects[j]->m_xmf4x4World)));
 	}
 }

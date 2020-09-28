@@ -48,7 +48,9 @@ public:
 protected:
 	ID3D12PipelineState **m_ppd3dPipelineStates = NULL;
 	int m_nPipelineStates = 0;
-};class CDiffusedShader : public CShader
+};
+
+class CDiffusedShader : public CShader
 {
 public:
 	CDiffusedShader();
@@ -119,7 +121,14 @@ protected:
 	ID3D12Resource *m_pd3dcbGameObjects = NULL;
 	VS_VB_INSTANCE *m_pcbMappedGameObjects = NULL;
 	D3D12_VERTEX_BUFFER_VIEW m_d3dInstancingBufferView;
-};class CTerrainShader : public CShader {
+};
+class CInstancingShader2 : public CInstancingShader {
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	//m_d3dInstancingBufferView´Â ¾È¾¸
+};
+class CTerrainShader : public CShader {
 public:
 	CTerrainShader();
 	virtual ~CTerrainShader();

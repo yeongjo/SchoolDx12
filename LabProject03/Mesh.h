@@ -54,7 +54,6 @@ public:
 protected:
 	ID3D12Resource *m_pd3dVertexBuffer = NULL;
 	ID3D12Resource *m_pd3dVertexUploadBuffer = NULL;
-	D3D12_VERTEX_BUFFER_VIEW m_d3dVertexBufferView;
 
 	ID3D12Resource					*m_pd3dNormalBuffer = NULL;
 	ID3D12Resource					*m_pd3dNormalUploadBuffer = NULL;
@@ -97,8 +96,7 @@ public:
 	BoundingOrientedBox GetBoundingBox() {
 		return(m_xmBoundingBox);
 	}
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances=1);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances,
 		D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 
