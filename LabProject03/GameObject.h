@@ -31,7 +31,7 @@ public:
 	virtual void SetShader(CShader *pShader);
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances=1);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT
 		nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 public:

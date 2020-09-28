@@ -97,7 +97,8 @@ public:
 		return false;
 	}
 };
-
+// 따라하기 13
+// 입력 레이아웃과 정정 버퍼 이용
 class CInstancingShader : public CObjectsShader {
 public:
 	CInstancingShader();
@@ -107,8 +108,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
 		*pd3dGraphicsRootSignature);
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList);
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
@@ -122,11 +122,16 @@ protected:
 	VS_VB_INSTANCE *m_pcbMappedGameObjects = NULL;
 	D3D12_VERTEX_BUFFER_VIEW m_d3dInstancingBufferView;
 };
+// 따라하기 14
+// 구조화된 버퍼 이용
 class CInstancingShader2 : public CInstancingShader {
+	//m_d3dInstancingBufferView는 안씀
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-	//m_d3dInstancingBufferView는 안씀
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 };
 class CTerrainShader : public CShader {
 public:

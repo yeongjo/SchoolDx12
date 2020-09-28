@@ -20,35 +20,6 @@ struct VS_OUTPUT {
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 };
-//정점 셰이더의 입력을 위한 구조체를 선언한다. 
-struct VS_INPUT_LIGHT
-{
-	float3		position : POSITION;
-	float3		normal : NORMAL;
-	float2		uv : TEXTURECOORD;
-};
-//정점 셰이더의 출력(픽셀 셰이더의 입력)을 위한 구조체를 선언한다. 
-struct VS_OUTPUT_LIGHT
-{
-	float4		positionH : SV_POSITION;
-	float3		positionW : POSITION;
-	float3		normal : NORMAL0;
-	float3		normalW : NORMAL1;
-	float2		uv : TEXTURECOORD;
-};
-//정점 데이터와 인스턴싱 데이터를 위한 구조체이다. 
-struct VS_INSTANCING_INPUT
-{
-	float3 position : POSITION;
-	float4 color : COLOR;
-	float4x4 mtxTransform : WORLDMATRIX;
-	float4 instanceColor : INSTANCECOLOR;
-};
-struct VS_INSTANCING_OUTPUT {
-	float4 position : SV_POSITION;
-	float4 color : COLOR;
-};
-
 //정점 셰이더를 정의한다. 
 VS_OUTPUT VSDiffused(VS_INPUT input) {
 	VS_OUTPUT output;
@@ -65,6 +36,17 @@ float4 PSDiffused(VS_OUTPUT input) : SV_TARGET
 	return(input.color);
 }
 
+// ====================인스턴싱========================== 
+struct VS_INSTANCING_INPUT {
+	float3 position : POSITION;
+	float4 color : COLOR;
+	float4x4 mtxTransform : WORLDMATRIX;
+	float4 instanceColor : INSTANCECOLOR;
+};
+struct VS_INSTANCING_OUTPUT {
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+};
 VS_INSTANCING_OUTPUT VSInstancing(VS_INSTANCING_INPUT input) {
 	VS_INSTANCING_OUTPUT output;
 	output.position = mul(mul(mul(float4(input.position, 1.0f), input.mtxTransform),
@@ -76,7 +58,38 @@ float4 PSInstancing(VS_INSTANCING_OUTPUT input) : SV_TARGET
 {
 	return(input.color);
 }
-//정점 셰이더를 정의한다. 
+
+// ====================인스턴싱2==========================
+struct INSTANCEDGAMEOBJECTINFO {
+	matrix	m_mtxGameObject;
+	float4	m_cColor;
+};
+
+StructuredBuffer<INSTANCEDGAMEOBJECTINFO> gGameObjectInfos : register(t0);
+VS_INSTANCING_OUTPUT VSInstancing2(VS_INPUT input, uint nInstanceID : SV_InstanceID) {
+	VS_INSTANCING_OUTPUT output;
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectInfos[nInstanceID].m_mtxGameObject),
+		gmtxView), gmtxProjection);
+	output.color = input.color + gGameObjectInfos[nInstanceID].m_cColor;
+	return output;
+}
+// ==============================================
+
+//정점 셰이더의 입력을 위한 구조체를 선언한다. 
+struct VS_INPUT_LIGHT {
+	float3		position : POSITION;
+	float3		normal : NORMAL;
+	float2		uv : TEXTURECOORD;
+};
+//정점 셰이더의 출력(픽셀 셰이더의 입력)을 위한 구조체를 선언한다. 
+struct VS_OUTPUT_LIGHT {
+	float4		positionH : SV_POSITION;
+	float3		positionW : POSITION;
+	float3		normal : NORMAL0;
+	float3		normalW : NORMAL1;
+	float2		uv : TEXTURECOORD;
+};
+
 VS_OUTPUT_LIGHT VSLighting(VS_INPUT_LIGHT input)
 {
 	VS_OUTPUT_LIGHT output;

@@ -26,7 +26,7 @@ void CScene::ReleaseUploadBuffers() {
 }
 ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice) {
 	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
-	D3D12_ROOT_PARAMETER pd3dRootParameters[2];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[3];
 	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	pd3dRootParameters[0].Constants.Num32BitValues = 16;
 	pd3dRootParameters[0].Constants.ShaderRegister = 0;
@@ -38,6 +38,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[1].Constants.ShaderRegister = 1;
 	pd3dRootParameters[1].Constants.RegisterSpace = 0;
 	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dRootParameters[2].Descriptor.ShaderRegister = 0;
+	pd3dRootParameters[2].Descriptor.RegisterSpace = 0;
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
@@ -66,7 +71,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	/*m_pShaders = new CObjectsShader*[m_nShaders];
 	m_pShaders[0] = new CObjectsShader;*/
 	m_pShaders = new CObjectsShader*[m_nShaders];
-	m_pShaders[0] = new CInstancingShader;
+	m_pShaders[0] = new CInstancingShader2;
 	m_pShaders[0]->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0]->BuildObjects(pd3dDevice, pd3dCommandList, NULL);
 

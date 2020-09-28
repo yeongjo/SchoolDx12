@@ -59,13 +59,13 @@ void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandLi
 	//객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
 	pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
 }
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances) {
 	OnPrepareRender(); //Nothing
-	if (IsVisible(pCamera)) {
+	//if (IsVisible(pCamera)) {
 		UpdateShaderVariables(pd3dCommandList);
-		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
-		if (m_pMesh) m_pMesh->Render(pd3dCommandList);
-	}
+		//if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+		if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances);
+	//}
 }
 //인스턴싱 정점 버퍼 뷰를 사용하여 메쉬를 렌더링한다. 
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView) {
