@@ -41,8 +41,7 @@ void CGameTimer::Tick(float fLockFPS) {
 	}
 	//현재 시간을 m_nLastTime에 저장한다.
 	m_nLastPerformanceCounter = m_nCurrentPerformanceCounter;
-	/* 마지막 프레임 처리 시간과 현재 프레임 처리 시간의 차이가 1초보다 작으면 현재 프레임 처리 시간
-	을 m_fFrameTime[0]에 저장한다. */
+	/* 마지막 프레임 처리 시간과 현재 프레임 처리 시간의 차이가 1초보다 작으면 현재 프레임 처리 시간을 m_fFrameTime[0]에 저장한다. */
 	if (fabsf(fTimeElapsed - m_fTimeElapsed) < 1.0f) {
 		::memmove(&m_fFrameTime[1], m_fFrameTime, (MAX_SAMPLE_COUNT - 1) *
 			sizeof(float));
@@ -69,6 +68,10 @@ unsigned long CGameTimer::GetFrameRate(LPTSTR lpszString, int nCharacters) {
 		//현재 프레임 레이트를 문자열로 변환하여 lpszString 버퍼에 쓰고 “ FPS”와 결합한다. 
 		::_itow_s(m_nCurrentFrameRate, lpszString, nCharacters, 10);
 		::wcscat_s(lpszString, nCharacters, _T(" FPS)"));
+		auto size = wcslen(lpszString);
+		_snwprintf_s(lpszString + size, 50, 50, L"%f", m_fTimeElapsed);
+		::wcscat_s(lpszString, 50, _T(" ms)"));
+
 	}
 	return(m_nCurrentFrameRate);
 }

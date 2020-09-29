@@ -43,7 +43,8 @@ CCamera::CCamera(CCamera *pCamera) {
 		m_nMode = 0x00;
 		m_pPlayer = NULL;
 	}
-}
+}
+
 CCamera::~CCamera() {
 }
 void CCamera::SetViewport(int xTopLeft, int yTopLeft, int nWidth, int nHeight, float
@@ -102,17 +103,15 @@ bool CCamera::IsInFrustum(BoundingOrientedBox& xmBoundingBox) {
 }
 void CCamera::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList) {
+	UINT ncbBytes = ((sizeof(VS_CB_CAMERA_INFO) + 255) & ~255); //256의 배수
+	m_pd3dcbCameraInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_pd3dcbCameraInfo->Map(0, NULL, (void **)&m_pCameraInfo);
 }
 void CCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {
-	XMFLOAT4X4 xmf4x4View;
-	XMStoreFloat4x4(&xmf4x4View, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4View)));
-	//루트 파라메터 인덱스 1의
-	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 16, &xmf4x4View, 0);
-	XMFLOAT4X4 xmf4x4Projection;
-	XMStoreFloat4x4(&xmf4x4Projection,
-		XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4Projection)));
-	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 16, &xmf4x4Projection, 16);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 3, &xmf4x4Projection, 16+16);
+	XMStoreFloat4x4(&m_pCameraInfo->m_xmf4x4View, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4View)));
+	XMStoreFloat4x4(&m_pCameraInfo->m_xmf4x4Projection, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4Projection)));
+	pd3dCommandList->SetGraphicsRootConstantBufferView(1, m_pd3dcbCameraInfo->GetGPUVirtualAddress());
 }
 void CCamera::ReleaseShaderVariables() {
 }

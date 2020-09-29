@@ -23,7 +23,8 @@ struct VS_CB_CAMERA_INFO
 	XMFLOAT4X4 m_xmf4x4View;
 	XMFLOAT4X4 m_xmf4x4Projection;
 };
-class CCamera {
+
+class CCamera {
 protected:
 	//카메라의 위치(월드좌표계) 벡터이다. 
 	XMFLOAT3 m_xmf3Position;
@@ -52,6 +53,8 @@ protected:
 	//절두체(월드 좌표계)
 protected:
 	BoundingFrustum m_xmFrustum;
+	VS_CB_CAMERA_INFO* m_pCameraInfo;
+	ID3D12Resource* m_pd3dcbCameraInfo;
 public:
 	CCamera();
 	CCamera(CCamera *pCamera);

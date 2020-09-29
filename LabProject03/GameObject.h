@@ -3,9 +3,36 @@
 class CShader;
 class CCamera;
 
+struct MATERIAL {
+	XMFLOAT4						m_xmf4Ambient;
+	XMFLOAT4						m_xmf4Diffuse;
+	XMFLOAT4						m_xmf4Specular; //(r,g,b,a=power)
+	XMFLOAT4						m_xmf4Emissive;
+};
+
+class CMaterial {
+public:
+	CMaterial();
+	virtual ~CMaterial();
+public:
+	void AddRef()						{ m_nReferences++; }
+	void Release()						{ if (--m_nReferences <= 0) delete this; }
+
+	void SetAlbedo(XMFLOAT4& xmf4Albedo) { m_xmf4Albedo = xmf4Albedo; }
+	void SetReflection(UINT nReflection) { m_nReflection = nReflection; }
+	void SetShader(CShader *pShader);
+
+public:
+	int								m_nReferences = 0;
+	XMFLOAT4						m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	UINT							m_nReflection = 0;
+	CShader							*m_pShader = NULL;
+};
+
+
 class CGameObject {
 public:
-	CGameObject(int nMeshes = 1);
+	CGameObject();
 	virtual ~CGameObject();
 private:
 	int m_nReferences = 0;
@@ -16,25 +43,24 @@ public:
 	void Release() {
 		if (--m_nReferences <= 0) delete this;
 	}
-protected:
-	CShader *m_pShader = NULL;
-	//게임 객체는 여러 개의 메쉬를 포함하는 경우 게임 객체가 가지는 메쉬들에 대한 포인터와 그 개수이다. 
-	CMesh *m_pMesh = NULL;
 public:
 	//게임 객체가 카메라에 보인는 가를 검사한다. 
 	virtual bool IsVisible(CCamera *pCamera = NULL);
-public:
+	CMesh				*m_pMesh = NULL;
+	CMaterial			*m_pMaterial = NULL;
 	XMFLOAT4X4 m_xmf4x4World;
 	void Rotate(XMFLOAT3 *pxmf3Axis, float fAngle);
 	void ReleaseUploadBuffers();
 	void SetMesh(CMesh *pMesh);
 	virtual void SetShader(CShader *pShader);
+	void SetMaterial(CMaterial *pMaterial);
+	void SetMaterial(UINT nReflection);
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances=1);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT
 		nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
-public:
+
 	//상수 버퍼를 생성한다. 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 		*pd3dCommandList);

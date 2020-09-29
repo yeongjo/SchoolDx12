@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "GameObject.h"
 
-CPlayer::CPlayer(int nMeshes) : CGameObject(nMeshes) {
+CPlayer::CPlayer(int nMeshes) : CGameObject() {
 	m_pCamera = NULL;
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
@@ -240,7 +240,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	CPlayer::OnPrepareRender();
 	//카메라 모드가 3인칭이면 플레이어 객체를 렌더링한다.
 	if (nCameraMode == THIRD_PERSON_CAMERA) {
-		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+		if (m_pMaterial) m_pMaterial->m_pShader->Render(pd3dCommandList, pCamera);
 		CGameObject::Render(pd3dCommandList, pCamera);
 	}
 }
@@ -254,8 +254,9 @@ CAirplanePlayer::CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_pCamera = ChangeCamera(SPACESHIP_CAMERA/*THIRD_PERSON_CAMERA*/, 0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
-	CObjectsShader *pShader = new CObjectsShader();
+	auto *pShader = new CPlayerShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	pShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	SetShader(pShader);
 
 	//bulletMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/FlyerPlayership.bin");
@@ -348,7 +349,8 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 	//플레이어를 시간의 경과에 따라 갱신(위치와 방향을 변경: 속도, 마찰력, 중력 등을 처리)한다. 
 	Update(fTimeElapsed);
 	return(m_pCamera);
-}CTerrainPlayer::CTerrainPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
+}
+CTerrainPlayer::CTerrainPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int
 	nMeshes) : CPlayer(nMeshes) {
 	m_pCamera = ChangeCamera(THIRD_PERSON_CAMERA, 0.0f);
@@ -372,7 +374,8 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 CTerrainPlayer::~CTerrainPlayer() {
-}CCamera *CTerrainPlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed) {
+}
+CCamera *CTerrainPlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed) {
 	DWORD nCurrentCameraMode = (m_pCamera) ? m_pCamera->GetMode() : 0x00;
 	if (nCurrentCameraMode == nNewCameraMode) return(m_pCamera);
 	switch (nNewCameraMode) {
@@ -414,7 +417,8 @@ CTerrainPlayer::~CTerrainPlayer() {
 	}
 	Update(fTimeElapsed);
 	return(m_pCamera);
-}void CTerrainPlayer::OnPlayerUpdateCallback(float fTimeElapsed) {
+}
+void CTerrainPlayer::OnPlayerUpdateCallback(float fTimeElapsed) {
 	XMFLOAT3 xmf3PlayerPosition = GetPosition();
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)m_pPlayerUpdatedContext;
 	/*지형에서 플레이어의 현재 위치 (x, z)의 지형 높이(y)를 구한다. 그리고 플레이어 메쉬의 높이가 12이고 플레이어의
@@ -432,7 +436,10 @@ CTerrainPlayer::~CTerrainPlayer() {
 		SetVelocity(xmf3PlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
-	}}void CTerrainPlayer::OnCameraUpdateCallback(float fTimeElapsed) {
+	}
+}
+
+void CTerrainPlayer::OnCameraUpdateCallback(float fTimeElapsed) {
 	XMFLOAT3 xmf3CameraPosition = m_pCamera->GetPosition();
 	/*높이 맵에서 카메라의 현재 위치 (x, z)에 대한 지형의 높이(y 값)를 구한다. 이 값이 카메라의 위치 벡터의 y-값 보
 	다 크면 카메라가 지형의 아래에 있게 된다. 이렇게 되면 다음 그림의 왼쪽과 같이 지형이 그려지지 않는 경우가 발생

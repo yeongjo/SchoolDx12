@@ -1,8 +1,7 @@
 #pragma once
-
-#include "stdafx.h"
-#include "Scene.h"
+#include "Timer.h"
 #include "Player.h"
+#include "Scene.h"
 
 class CCamera;
 
@@ -49,7 +48,7 @@ private:
 
 	CScene *m_pScene;
 
-	_TCHAR m_pszFrameRate[50];
+	_TCHAR m_pszFrameRate[128];
 public:
 	CCamera *m_pCamera = NULL;
 public:

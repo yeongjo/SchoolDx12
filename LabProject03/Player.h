@@ -1,3 +1,4 @@
+#pragma once
 #define DIR_FORWARD 0x01
 #define DIR_BACKWARD 0x02
 #define DIR_LEFT 0x04
@@ -128,8 +129,7 @@ protected:
 public:
 	vector<CGameObject*> child;
 public:
-	CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
-		ID3D12RootSignature *pd3dGraphicsRootSignature, int nMeshes = 1);
+	CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, int nMeshes = 1);
 	virtual ~CAirplanePlayer();
 	virtual CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed);
 	virtual void OnPrepareRender();
@@ -153,7 +153,10 @@ public:
 			SetVelocity(xmf3PlayerVelocity);
 			xmf3PlayerPosition.y = fHeight;
 			SetPosition(xmf3PlayerPosition);
-		}	}	void OnCameraUpdateCallback(float fTimeElapsed) {
+		}
+	}
+
+	void OnCameraUpdateCallback(float fTimeElapsed) {
 		XMFLOAT3 xmf3CameraPosition = m_pCamera->GetPosition();
 		/*높이 맵에서 카메라의 현재 위치 (x, z)에 대한 지형의 높이(y 값)를 구한다. 이 값이 카메라의 위치 벡터의 y-값 보
 		다 크면 카메라가 지형의 아래에 있게 된다. 이렇게 되면 다음 그림의 왼쪽과 같이 지형이 그려지지 않는 경우가 발생

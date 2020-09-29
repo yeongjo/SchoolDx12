@@ -3,27 +3,68 @@
 #include "GameObject.h"
 #include "Camera.h"
 #include "GameFramework.h"
+#include "Mesh.h"
 
-CGameObject::CGameObject(int nMeshes) {
-	m_xmf4x4World = Matrix4x4::Identity();
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CMaterial::CMaterial() {
+	m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
-CGameObject::~CGameObject() {
-	if (m_pMesh) m_pMesh->Release();
+
+CMaterial::~CMaterial() {
 	if (m_pShader) {
 		m_pShader->ReleaseShaderVariables();
 		m_pShader->Release();
 	}
 }
 
-void CGameObject::SetShader(CShader *pShader) {
+void CMaterial::SetShader(CShader *pShader) {
 	if (m_pShader) m_pShader->Release();
 	m_pShader = pShader;
 	if (m_pShader) m_pShader->AddRef();
 }
-void CGameObject::SetMesh(CMesh *pMesh) {
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CGameObject::CGameObject()
+{
+	m_xmf4x4World = Matrix4x4::Identity();
+}
+
+CGameObject::~CGameObject()
+{
+	if (m_pMesh) m_pMesh->Release();
+	if (m_pMaterial) m_pMaterial->Release();
+}
+
+void CGameObject::SetMesh(CMesh *pMesh)
+{
 	if (m_pMesh) m_pMesh->Release();
 	m_pMesh = pMesh;
 	if (m_pMesh) m_pMesh->AddRef();
+}
+
+void CGameObject::SetShader(CShader *pShader)
+{
+	if (!m_pMaterial)
+	{
+		m_pMaterial = new CMaterial();
+		m_pMaterial->AddRef();
+	}
+	if (m_pMaterial) m_pMaterial->SetShader(pShader);
+}
+
+void CGameObject::SetMaterial(CMaterial *pMaterial)
+{
+	if (m_pMaterial) m_pMaterial->Release();
+	m_pMaterial = pMaterial;
+	if (m_pMaterial) m_pMaterial->AddRef();
+}
+
+void CGameObject::SetMaterial(UINT nReflection)
+{
+	if (!m_pMaterial) m_pMaterial = new CMaterial();
+	m_pMaterial->m_nReflection = nReflection;
 }
 
 void CGameObject::ReleaseUploadBuffers() {
@@ -38,7 +79,7 @@ void CGameObject::Rotate(XMFLOAT3 *pxmf3Axis, float fAngle) {
 		XMConvertToRadians(fAngle));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
-CRotatingObject::CRotatingObject(int nMeshes) : CGameObject(nMeshes) {
+CRotatingObject::CRotatingObject(int nMeshes) : CGameObject() {
 	m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_fRotationSpeed = 15.0f;
 }
@@ -54,24 +95,28 @@ void CGameObject::ReleaseShaderVariables() {
 }
 
 void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {
-	XMFLOAT4X4 xmf4x4World;
-	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
-	//객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
-	pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
+	//XMFLOAT4X4 xmf4x4World;
+	//XMStoreFloat4x4(&m_pcb, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+	////객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
+	//pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
 }
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances) {
 	OnPrepareRender(); //Nothing
 	//if (IsVisible(pCamera)) {
-		UpdateShaderVariables(pd3dCommandList);
-		//if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
-		if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances);
+	if (m_pMaterial) {
+		if (m_pMaterial->m_pShader) {
+			m_pMaterial->m_pShader->Render(pd3dCommandList, pCamera);
+			m_pMaterial->m_pShader->UpdateShaderVariable(pd3dCommandList, &m_xmf4x4World);
+		}
+	}
+	if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances);
 	//}
 }
 //인스턴싱 정점 버퍼 뷰를 사용하여 메쉬를 렌더링한다. 
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView) {
 	OnPrepareRender(); //Nothing
 	//if (IsVisible(pCamera)) {
-		if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
+	if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
 	//}
 }
 
@@ -145,7 +190,7 @@ bool CGameObject::IsVisible(CCamera *pCamera) {
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int
 	nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4
-	xmf4Color) : CGameObject(0) {
+	xmf4Color) : CGameObject() {
 	//지형에 사용할 높이 맵의 가로, 세로의 크기이다. 
 	m_nWidth = nWidth;
 	m_nLength = nLength;

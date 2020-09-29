@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "GameFramework.h"
-#include "Camera.h"
 
 CGameFramework::CGameFramework() {
 	m_pdxgiFactory = NULL;
@@ -311,7 +310,7 @@ void CGameFramework::BuildObjects() {
 	m_pScene = new CScene();
 	if (m_pScene) m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, NULL);
 	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
-	m_pPlayer = pAirplanePlayer;
+	m_pScene->m_pPlayer = m_pPlayer = pAirplanePlayer;
 	m_pPlayer->SetCameraUpdatedContext(m_pScene->GetTerrain());
 	m_pPlayer->SetPlayerUpdatedContext(m_pScene->GetTerrain());
 	/*m_pPlayer = new CTerrainPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain(), 1);*/
@@ -321,6 +320,7 @@ void CGameFramework::BuildObjects() {
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 	WaitForGpuComplete();
 	if (m_pScene) m_pScene->ReleaseUploadBuffers();
+	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
 	m_GameTimer.Reset();
 }
 void CGameFramework::ReleaseObjects() {
@@ -356,7 +356,7 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 		case VK_F1:
 		case VK_F2:
 		case VK_F3:
-			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
+			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera(((DWORD)wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
 			break;
 		case VK_DELETE:
 			dynamic_cast<CAirplanePlayer*>(m_pPlayer)->Shot(m_pSelectedObject);
@@ -398,8 +398,7 @@ void CGameFramework::ProcessInput() {
 		char buff[100];
 		sprintf_s(buff, "Tick : %x\n", pKeyBuffer[VK_UP]);
 		//OutputDebugStringA(buff);
-		if (pKeyBuffer[VK_UP] & 0x80) 
-			dwDirection |= DIR_FORWARD;
+		if (pKeyBuffer[VK_UP] & 0x80) dwDirection |= DIR_FORWARD;
 		if (pKeyBuffer[VK_DOWN] & 0x80) dwDirection |= DIR_BACKWARD;
 		if (pKeyBuffer[VK_LEFT] & 0x80) dwDirection |= DIR_LEFT;
 		if (pKeyBuffer[VK_RIGHT] & 0x80) dwDirection |= DIR_RIGHT;
