@@ -647,6 +647,7 @@ CSphereMeshDiffused::~CSphereMeshDiffused() {
 }
 int CMesh::CheckRayIntersection(XMFLOAT3& xmf3RayOrigin, XMFLOAT3& xmf3RayDirection,
 	float *pfNearHitDistance) {
+	return false;
 	//하나의 메쉬에서 광선은 여러 개의 삼각형과 교차할 수 있다. 교차하는 삼각형들 중 가장 가까운 삼각형을 찾는다. 
 	int nIntersections = 0;
 	BYTE *pbPositions = (BYTE *)m_pVertices;

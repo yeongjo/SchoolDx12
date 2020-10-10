@@ -50,61 +50,36 @@ using Microsoft::WRL::ComPtr;
 #define FRAME_BUFFER_WIDTH 640
 #define FRAME_BUFFER_HEIGHT 480
 
+#define PARAMETER_STANDARD_TEXTURE		3
+
 #define DegreeToRadian(x) float((x)*3.141592654f/180.0f)
 
 /*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
 
 #define EPSILON 1.0e-10f
-inline bool IsZero(float fValue) {
-	return((fabsf(fValue) < EPSILON));
-}
-inline bool IsEqual(float fA, float fB) {
-	return(::IsZero(fA - fB));
-}
-inline float InverseSqrt(float fValue) {
-	return 1.0f / sqrtf(fValue);
-}
-inline void Swap(float *pfS, float *pfT) {
-	float fTemp = *pfS; *pfS = *pfT; *pfT = fTemp;
-}
+inline bool IsZero(float fValue) { return((fabsf(fValue) < EPSILON)); }
+inline bool IsEqual(float fA, float fB) { return(::IsZero(fA - fB)); }
+inline float InverseSqrt(float fValue) { return 1.0f / sqrtf(fValue); }
+inline void Swap(float *pfS, float *pfT) { float fTemp = *pfS; *pfS = *pfT; *pfT = fTemp; }
 
-namespace Matrix4x4{
-	XMFLOAT4X4 Identity();
-}
+void print(LPCTSTR pszStr, ...);
 
 // -1.0 ~ 1.0
 float random();
 
-void normalize(XMFLOAT3& t);
+extern UINT gnCbvSrvDescriptorIncrementSize;
+extern UINT	gnRtvDescriptorIncrementSize;
+extern UINT gnDsvDescriptorIncrementSize;
 
-void print(LPCTSTR pszStr, ...);
+extern void SynchronizeResourceTransition(ID3D12GraphicsCommandList* pd3dCommandList, ID3D12Resource* pd3dResource, D3D12_RESOURCE_STATES d3dStateBefore, D3D12_RESOURCE_STATES d3dStateAfter);
+extern void WaitForGpuComplete(ID3D12CommandQueue* pd3dCommandQueue, ID3D12Fence* pd3dFence, UINT64 nFenceValue, HANDLE hFenceEvent);
 
-template <class T>
-class Singleton{
-public:
-	static T& getInstance(){
-		static T object;
-		return object;
-	} 
-	static T* getPointer(){
-		return &getInstance();
-	} 
-	static const T& getConst(){
-		return getInstance();
-	} 
-protected: 
-	Singleton(){
-	} 
-	~Singleton(){
-	}
-};
+extern ID3D12Resource *CreateBufferResource(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pData, UINT nBytes, D3D12_HEAP_TYPE d3dHeapType = D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATES d3dResourceStates = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, ID3D12Resource **ppd3dUploadBuffer = NULL);
+extern ID3D12Resource* CreateTexture2DResource(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, UINT nWidth, UINT nHeight, UINT nElements, UINT nMipLevels, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE* pd3dClearValue);
+extern ID3D12Resource* CreateTextureResourceFromDDSFile(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, wchar_t* pszFileName, ID3D12Resource** ppd3dUploadBuffer, D3D12_RESOURCE_STATES d3dResourceStates = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+extern ID3D12Resource *CreateTextureResourceFromWICFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, ID3D12Resource **ppd3dUploadBuffer, D3D12_RESOURCE_STATES d3dResourceStates = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-extern ID3D12Resource *CreateBufferResource(ID3D12Device *pd3dDevice,
-	ID3D12GraphicsCommandList *pd3dCommandList, void *pData, UINT nBytes, D3D12_HEAP_TYPE
-	d3dHeapType = D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATES d3dResourceStates =
-	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, ID3D12Resource **ppd3dUploadBuffer =
-	NULL);
 
 //3차원 벡터의 연산
 namespace Vector3
@@ -291,3 +266,23 @@ namespace Matrix4x4
 		return(xmmtx4x4Result);
 	}
 }
+
+template <class T>
+class Singleton {
+public:
+	static T& getInstance() {
+		static T object;
+		return object;
+	}
+	static T* getPointer() {
+		return &getInstance();
+	}
+	static const T& getConst() {
+		return getInstance();
+	}
+protected:
+	Singleton() {
+	}
+	~Singleton() {
+	}
+};

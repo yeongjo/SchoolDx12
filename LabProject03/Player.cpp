@@ -279,7 +279,7 @@ void CAirplanePlayer::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamer
 }
 void CAirplanePlayer::Shot(CGameObject* obj) {
 	OutputDebugStringA("Shot\n");
-	auto t = new CMovingObject();
+	auto t = new CFollowObject();
 	t->SetRotationSpeed(100);
 	t->SetMesh(bulletMesh);
 	t->followObj = obj;

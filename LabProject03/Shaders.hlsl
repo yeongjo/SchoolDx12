@@ -90,14 +90,14 @@ VS_INSTANCING_OUTPUT VSInstancing2(VS_INPUT input, uint nInstanceID : SV_Instanc
 struct VS_INPUT_LIGHT {
 	float3		position : POSITION;
 	float3		normal : NORMAL;
-	float2		uv : TEXCOORD0;
+	float2		uv : TEXCOORD;
 };
 struct VS_OUTPUT_LIGHT {
 	float4		positionH : SV_POSITION;
 	float3		positionW : POSITION;
 	float3		normal : NORMAL0;
 	float3		normalW : NORMAL1;
-	float2		uv : TEXCOORD0;
+	float2		uv : TEXCOORD;
 };
 #include "Light.hlsl"
 

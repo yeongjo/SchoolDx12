@@ -64,7 +64,7 @@ float4 DirectionalLight(int nIndex, float3 f3Normal, float3 f3ToCamera) {
 #endif
 		}
 	}
-	return gLights[nIndex].test * 0.3;
+	//return gLights[nIndex].test * 0.3;
 	return((gLights[nIndex].m_f4Ambient * gMaterials[gnMaterial].m_f4Ambient) + (gLights[nIndex].m_f4Diffuse * fDiffuseFactor * gMaterials[gnMaterial].m_f4Diffuse) + (gLights[nIndex].m_f4Specular * fSpecularFactor * gMaterials[gnMaterial].m_f4Specular));
 }
 
@@ -92,7 +92,7 @@ float4 PointLight(int nIndex, float3 f3Position, float3 f3Normal, float3 f3ToCam
 		}
 		float fAttenuationFactor = 1.0f / dot(gLights[nIndex].m_f3Attenuation, float3(1.0f, fDistance, fDistance*fDistance));
 
-		return gLights[nIndex].test * 0.3;
+		//return gLights[nIndex].test * 0.3;
 		return(((gLights[nIndex].m_f4Ambient * gMaterials[gnMaterial].m_f4Ambient) + (gLights[nIndex].m_f4Diffuse * fDiffuseFactor * gMaterials[gnMaterial].m_f4Diffuse) + (gLights[nIndex].m_f4Specular * fSpecularFactor * gMaterials[gnMaterial].m_f4Specular)) * fAttenuationFactor);
 	}
 	return(float4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -128,7 +128,7 @@ float4 SpotLight(int nIndex, float3 f3Position, float3 f3Normal, float3 f3ToCame
 #endif
 		float fAttenuationFactor = 1.0f / dot(gLights[nIndex].m_f3Attenuation, float3(1.0f, fDistance, fDistance*fDistance));
 
-		return gLights[nIndex].test * 0.3;
+		//return gLights[nIndex].test * 0.3;
 		return(((gLights[nIndex].m_f4Ambient * gMaterials[gnMaterial].m_f4Ambient) + (gLights[nIndex].m_f4Diffuse * fDiffuseFactor * gMaterials[gnMaterial].m_f4Diffuse) + (gLights[nIndex].m_f4Specular * fSpecularFactor * gMaterials[gnMaterial].m_f4Specular)) * fAttenuationFactor * fSpotFactor);
 	}
 	return(float4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -151,8 +151,9 @@ float4 Lighting(float3 f3Position, float3 f3Normal) {
 		}
 	}
 	cColor += (gcGlobalAmbientLight * gMaterials[gnMaterial].m_f4Ambient);
+	cColor += (gMaterials[gnMaterial].m_f4Emissive);
 	cColor.a = gMaterials[gnMaterial].m_f4Diffuse.a;
-
+	//return gnMaterial*0.1;
 	return(cColor);
 }
 
