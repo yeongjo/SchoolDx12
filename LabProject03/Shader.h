@@ -20,7 +20,7 @@ public:
 		*pd3dGraphicsRootSignature);
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 		*pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, MATERIAL *pMaterial);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World);
 	virtual void ReleaseShaderVariables();
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState = 0);
@@ -76,12 +76,12 @@ public:
 		*pd3dGraphicsRootSignature);
 };
 ////////////////////////////////////////////////////////////////////////////////////
-//“CObjectsShader” 클래스는 게임 객체들을 포함하는 셰이더 객체이다. 
+// 게임 객체들을 포함하는 셰이더 객체이다. 
 class CObjectsShader : public CShader {
 public:
 	CObjectsShader();
 	virtual ~CObjectsShader();
-	virtual void					BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+	virtual void					BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext);
 	virtual void					ReleaseObjects();
 	virtual void					ReleaseUploadBuffers();
 	virtual void					ReleaseShaderVariables();

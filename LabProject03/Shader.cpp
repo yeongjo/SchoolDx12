@@ -259,12 +259,9 @@ void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 void CShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {
 }
-void CShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, MATERIAL *pMaterial) {
+void CShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {
 }
 void CShader::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World) {
-	XMFLOAT4X4 xmf4x4World;
-	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(pxmf4x4World)));
-	//::memcpy(&m_pcbMappedg->m_xmf4x4World, &xmf4x4World, sizeof(XMFLOAT4X4));
 }
 void CShader::ReleaseShaderVariables() {
 }
@@ -392,7 +389,7 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 }
 void CObjectsShader::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-	*pd3dCommandList, void *pContext) {
+	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) {
 	//auto pCubeMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 12.0f, 12.0f, 12.0f);
 	//auto pCubeMesh = new CFileMesh(pd3dDevice, pd3dCommandList, "Models/Cube.bin");
 	////구 메쉬를 생성한다. 
