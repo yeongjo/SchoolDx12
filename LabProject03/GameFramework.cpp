@@ -311,8 +311,8 @@ void CGameFramework::BuildObjects() {
 	if (m_pScene) m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, NULL);
 	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
 	m_pScene->m_pPlayer = m_pPlayer = pAirplanePlayer;
-	m_pPlayer->SetCameraUpdatedContext(m_pScene->GetTerrain());
-	m_pPlayer->SetPlayerUpdatedContext(m_pScene->GetTerrain());
+	//m_pPlayer->SetCameraUpdatedContext(m_pScene->GetTerrain());
+	//m_pPlayer->SetPlayerUpdatedContext(m_pScene->GetTerrain());
 	/*m_pPlayer = new CTerrainPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain(), 1);*/
 	m_pCamera = m_pPlayer->GetCamera();
 	m_pd3dCommandList->Close();
@@ -359,7 +359,6 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera(((DWORD)wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
 			break;
 		case VK_DELETE:
-			dynamic_cast<CAirplanePlayer*>(m_pPlayer)->Shot(m_pSelectedObject);
 			break;
 		default:
 			break;
@@ -392,12 +391,7 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 void CGameFramework::ProcessInput() {
 	static UCHAR pKeyBuffer[256];
 	DWORD dwDirection = 0;
-	/*키보드의 상태 정보를 반환한다. 화살표 키(‘→’, ‘←’, ‘↑’, ‘↓’)를 누르면 플레이어를 오른쪽/왼쪽(로컬 x-축), 앞/
-	뒤(로컬 z-축)로 이동한다. ‘Page Up’과 ‘Page Down’ 키를 누르면 플레이어를 위/아래(로컬 y-축)로 이동한다.*/
 	if (::GetKeyboardState(pKeyBuffer)) {
-		char buff[100];
-		sprintf_s(buff, "Tick : %x\n", pKeyBuffer[VK_UP]);
-		//OutputDebugStringA(buff);
 		if (pKeyBuffer[VK_UP] & 0x80) dwDirection |= DIR_FORWARD;
 		if (pKeyBuffer[VK_DOWN] & 0x80) dwDirection |= DIR_BACKWARD;
 		if (pKeyBuffer[VK_LEFT] & 0x80) dwDirection |= DIR_LEFT;
@@ -412,14 +406,11 @@ void CGameFramework::ProcessInput() {
 	것은 마우스 버튼이 눌려진 상태를 의미한다. 마우스 버튼이 눌려진 상태에서 마우스를 좌우 또는 상하로 움직이면 플
 	레이어를 x-축 또는 y-축으로 회전한다.*/
 	if (::GetCapture() == m_hWnd) {
-		//마우스 커서를 화면에서 없앤다(보이지 않게 한다).
 		::SetCursor(NULL);
-		//현재 마우스 커서의 위치를 가져온다. 
 		::GetCursorPos(&ptCursorPos);
 		//마우스 버튼이 눌린 상태에서 마우스가 움직인 양을 구한다. 
 		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / 3.0f;
 		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / 3.0f;
-		//마우스 커서의 위치를 마우스가 눌려졌던 위치로 설정한다. 
 		::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 	}
 	//마우스 또는 키 입력이 있으면 플레이어를 이동하거나(dwDirection) 회전한다(cxDelta 또는 cyDelta).
@@ -439,22 +430,17 @@ void CGameFramework::ProcessInput() {
 				m_pPlayer->Move(dwDirection, 500.0f * m_GameTimer.GetTimeElapsed(), true);
 		}
 	}
-	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
-
 }
 void CGameFramework::AnimateObjects() {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
-	auto a = dynamic_cast<CAirplanePlayer*>(m_pPlayer);
+	/*auto a = dynamic_cast<CAirplanePlayer*>(m_pPlayer);
 	float distance;
 	CGameObject* obj = NULL;
 	for (size_t i = 0; i < a->child.size(); i++) {
 		obj = m_pScene->GetIntersectObject(a->child[i]->GetPosition(), &distance);
 		if (obj) {
-			char buff[100];
-			sprintf_s(buff, "distance : %f\n", distance);
-			OutputDebugStringA(buff);
 			if (distance < 10) {
 				delete a->child[i];
 				a->child.erase(a->child.begin() + i);
@@ -462,7 +448,7 @@ void CGameFramework::AnimateObjects() {
 				if(t) t->isExploed = true;
 			}
 		}
-	}	
+	}	*/
 }
 void CGameFramework::WaitForGpuComplete() {
 	UINT64 nFenceValue = ++m_nFenceValues[m_nSwapChainBufferIndex];
@@ -493,16 +479,13 @@ void CGameFramework::FrameAdvance() {
 	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
 	d3dResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	d3dResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	d3dResourceBarrier.Transition.pResource =
-		m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
+	d3dResourceBarrier.Transition.pResource = m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =
-		m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex *
-		m_nRtvDescriptorIncrementSize);
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * m_nRtvDescriptorIncrementSize);
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle,
 		pfClearColor/*Colors::Azure*/, 0, NULL);

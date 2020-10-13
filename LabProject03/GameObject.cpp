@@ -119,11 +119,12 @@ int CTexture::LoadTextureFromFile(ID3D12Device* pd3dDevice, ID3D12GraphicsComman
 	if (strcmp(pstrTextureName, "null")) {
 		bLoaded = true;
 		char pstrFilePath[64] = { '\0' };
-		strcpy_s(pstrFilePath, 64, "../Model/Textures/");
-
+		strcpy_s(pstrFilePath, 64, ASSETPATH"/Textures/");
+		auto len = strlen(pstrFilePath);
 		bDuplicated = (pstrTextureName[0] == '@');
-		strcpy_s(pstrFilePath + 18, 64 - 18, (bDuplicated) ? (pstrTextureName + 1) : pstrTextureName);
-		strcpy_s(pstrFilePath + 18 + ((bDuplicated) ? (nStrLength - 1) : nStrLength), 64 - 18 - ((bDuplicated) ? (nStrLength - 1) : nStrLength), ".dds");
+		strcpy_s(pstrFilePath + len, 64 - len, (bDuplicated) ? (pstrTextureName + 1) : pstrTextureName);
+		auto fileNameLen = ((bDuplicated) ? (nStrLength - 1) : nStrLength);
+		strcpy_s(pstrFilePath + len + fileNameLen, 64 - len - fileNameLen, ".dds");
 
 		size_t nConverted = 0;
 		mbstowcs_s(&nConverted, m_ppstrTextureNames[nIndex], 64, pstrFilePath, _TRUNCATE);
@@ -305,7 +306,9 @@ void CGameObject::SetMaterial(int nMaterial, CMaterial *pMaterial) {
 void CGameObject::ReleaseUploadBuffers() {
 	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
 }
-void CGameObject::Animate(float fTimeElapsed) {
+void CGameObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
+	if (m_pSibling) m_pSibling->Animate(fTimeElapsed, pxmf4x4Parent);
+	if (m_pChild) m_pChild->Animate(fTimeElapsed, &m_xmf4x4World);
 }
 void CGameObject::OnPrepareRender() {
 }
@@ -314,6 +317,19 @@ void CGameObject::Rotate(XMFLOAT3 *pxmf3Axis, float fAngle) {
 		XMConvertToRadians(fAngle));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
+void CGameObject::SetChild(CGameObject *pChild) {
+	if (m_pChild) {
+		if (pChild) pChild->m_pSibling = m_pChild->m_pSibling;
+		m_pChild->m_pSibling = pChild;
+	} else {
+		m_pChild = pChild;
+	}
+	if (pChild) {
+		pChild->m_pParent = this;
+	}
+}
+////////////////////////////////////////////////////////////////////////
+//
 CRotatingObject::CRotatingObject(int nMeshes) : CGameObject() {
 	m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_fRotationSpeed = 15.0f;
@@ -335,6 +351,29 @@ void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandLi
 	////객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
 	//pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
 }
+void CGameObject::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World) {
+	XMFLOAT4X4 xmf4x4World;
+	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(pxmf4x4World)));
+	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 16, &xmf4x4World, 0);
+}
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
+	OnPrepareRender();
+
+	UpdateShaderVariable(pd3dCommandList, &m_xmf4x4World);
+
+	if (m_nMaterials > 0) {
+		for (int i = 0; i < m_nMaterials; i++) {
+			if (m_ppMaterials[i]) {
+				if (m_ppMaterials[i]->m_pShader) m_ppMaterials[i]->m_pShader->Render(pd3dCommandList, pCamera);
+				m_ppMaterials[i]->UpdateShaderVariables(pd3dCommandList);
+			}
+
+			if (m_pMesh) m_pMesh->Render(pd3dCommandList, i);
+		}
+	}
+	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera);
+	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera);
+}
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances) {
 	OnPrepareRender(); //Nothing
 	//if (IsVisible(pCamera)) {
@@ -351,7 +390,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView) {
 	OnPrepareRender(); //Nothing
 	//if (IsVisible(pCamera)) {
-	if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
+	//if (m_pMesh) m_pMesh->Render(pd3dCommandList, nInstances, d3dInstancingBufferView);
 	//}
 }
 
@@ -413,13 +452,14 @@ void CGameObject::Scale(float x, float y, float z) {
 	m_xmf4x4World = Matrix4x4::Multiply(s, m_xmf4x4World);
 }
 bool CGameObject::IsVisible(CCamera *pCamera) {
-	OnPrepareRender();
-	bool bIsVisible = true;
-	BoundingOrientedBox xmBoundingBox = m_pMesh->GetBoundingBox();
-	//모델 좌표계의 바운딩 박스를 월드 좌표계로 변환한다. 
-	xmBoundingBox.Transform(xmBoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
-	if (pCamera) bIsVisible = pCamera->IsInFrustum(xmBoundingBox);
-	return(bIsVisible);
+	return true;
+	//OnPrepareRender();
+	//bool bIsVisible = true;
+	//BoundingOrientedBox xmBoundingBox = m_pMesh->GetBoundingBox();
+	////모델 좌표계의 바운딩 박스를 월드 좌표계로 변환한다. 
+	//xmBoundingBox.Transform(xmBoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
+	//if (pCamera) bIsVisible = pCamera->IsInFrustum(xmBoundingBox);
+	//return(bIsVisible);
 }
 
 void CGameObject::UpdateTransform(XMFLOAT4X4 *pxmf4x4Parent) {
@@ -618,11 +658,154 @@ CGameObject *CGameObject::LoadGeometryFromFile(ID3D12Device *pd3dDevice, ID3D12G
 
 	return(pGameObject);
 }
+void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
+	xmf4x4View, XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection) {
+	XMFLOAT4X4 xmf4x4WorldView = Matrix4x4::Multiply(m_xmf4x4World, xmf4x4View);
+	XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(xmf4x4WorldView);
+	XMFLOAT3 xmf3CameraOrigin(0.0f, 0.0f, 0.0f);
+	//카메라 좌표계의 원점을 모델 좌표계로 변환한다.
+	*pxmf3PickRayOrigin = Vector3::TransformCoord(xmf3CameraOrigin, xmf4x4Inverse);
+	//카메라 좌표계의 점(마우스 좌표를 역변환하여 구한 점)을 모델 좌표계로 변환한다. 
+	*pxmf3PickRayDirection = Vector3::TransformCoord(xmf3PickPosition, xmf4x4Inverse);
+	//광선의 방향 벡터를 구한다. 
+	*pxmf3PickRayDirection = Vector3::Normalize(Vector3::Subtract(*pxmf3PickRayDirection,
+		*pxmf3PickRayOrigin));
+}
+int CGameObject::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
+	xmf4x4View, float *pfHitDistance) {
+	int nIntersected = 0;
+	if (m_pMesh) {
+		XMFLOAT3 xmf3PickRayOrigin, xmf3PickRayDirection;
+		//모델 좌표계의 광선을 생성한다. 
+		GenerateRayForPicking(xmf3PickPosition, xmf4x4View, &xmf3PickRayOrigin,
+			&xmf3PickRayDirection);
+		//모델 좌표계의 광선과 메쉬의 교차를 검사한다. 
+		nIntersected = m_pMesh->GetIntersectRayCount(xmf3PickRayOrigin,
+			xmf3PickRayDirection, pfHitDistance);
+	}
+	return(nIntersected);
+}
 
+inline float CGameObject::GetDistance(const XMFLOAT3 & position) {
+	return Vector3::Length(Vector3::Subtract(position, GetPosition()));
+}
 //========================================================================
-//========================================================================
-//========================================================================
+//
 
+CSuperCobraObject::CSuperCobraObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
+}
+
+CSuperCobraObject::~CSuperCobraObject() {
+}
+
+void CSuperCobraObject::PrepareAnimate() {
+	m_pMainRotorFrame = FindFrame("MainRotor");
+	m_pTailRotorFrame = FindFrame("TailRotor");
+}
+
+void CSuperCobraObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
+	if (m_pMainRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
+		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
+	}
+	if (m_pTailRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
+		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
+	}
+
+	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CGunshipObject::CGunshipObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
+}
+
+CGunshipObject::~CGunshipObject() {
+}
+
+void CGunshipObject::PrepareAnimate() {
+	m_pMainRotorFrame = FindFrame("Rotor");
+	m_pTailRotorFrame = FindFrame("Back_Rotor");
+}
+
+void CGunshipObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
+	if (m_pMainRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 2.0f) * fTimeElapsed);
+		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
+	}
+	if (m_pTailRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
+		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
+	}
+
+	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CMi24Object::CMi24Object(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
+}
+
+CMi24Object::~CMi24Object() {
+}
+
+void CMi24Object::PrepareAnimate() {
+	m_pMainRotorFrame = FindFrame("Top_Rotor");
+	m_pTailRotorFrame = FindFrame("Tail_Rotor");
+}
+
+void CMi24Object::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
+	if (m_pMainRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 2.0f) * fTimeElapsed);
+		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
+	}
+	if (m_pTailRotorFrame) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
+		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
+	}
+
+	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject(1) {
+	CSkyBoxMesh *pSkyBoxMesh = new CSkyBoxMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 20.0f);
+	SetMesh(pSkyBoxMesh);
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0, 1);
+	pSkyBoxTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, LASSETPATH L"/Model/Textures/earth-cubemap.dds", RESOURCE_TEXTURE_CUBE, 0);
+	//	pSkyBoxTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"SkyBox/SkyBox_1.dds", RESOURCE_TEXTURE_CUBE, 0);
+
+	CSkyBoxShader *pSkyBoxShader = new CSkyBoxShader();
+	pSkyBoxShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	pSkyBoxShader->CreateShaderVariables(pd3dDevice, pd3dCommandList); // 없음
+
+	pSkyBoxShader->CreateCbvSrvDescriptorHeaps(pd3dDevice, 0, 1);
+	pSkyBoxShader->CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, 0, PARAMETER_SKYBOX_CUBE_TEXTURE);
+
+	CMaterial *pSkyBoxMaterial = new CMaterial();
+	pSkyBoxMaterial->SetTexture(pSkyBoxTexture);
+	pSkyBoxMaterial->SetShader(pSkyBoxShader);
+
+	SetMaterial(0, pSkyBoxMaterial);
+}
+
+CSkyBox::~CSkyBox() {
+}
+
+void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
+	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
+	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
+
+	CGameObject::Render(pd3dCommandList, pCamera);
+}
+//========================================================================
+//========================================================================
+#ifdef HIGHTMAPTERRAINOBJ_ON
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int
 	nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4
@@ -695,38 +878,6 @@ void CHeightMapTerrain::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCam
 	}
 	m_xmf4x4World = t;
 }
-void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
-	xmf4x4View, XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection) {
-	XMFLOAT4X4 xmf4x4WorldView = Matrix4x4::Multiply(m_xmf4x4World, xmf4x4View);
-	XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(xmf4x4WorldView);
-	XMFLOAT3 xmf3CameraOrigin(0.0f, 0.0f, 0.0f);
-	//카메라 좌표계의 원점을 모델 좌표계로 변환한다.
-	*pxmf3PickRayOrigin = Vector3::TransformCoord(xmf3CameraOrigin, xmf4x4Inverse);
-	//카메라 좌표계의 점(마우스 좌표를 역변환하여 구한 점)을 모델 좌표계로 변환한다. 
-	*pxmf3PickRayDirection = Vector3::TransformCoord(xmf3PickPosition, xmf4x4Inverse);
-	//광선의 방향 벡터를 구한다. 
-	*pxmf3PickRayDirection = Vector3::Normalize(Vector3::Subtract(*pxmf3PickRayDirection,
-		*pxmf3PickRayOrigin));
-}
-int CGameObject::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
-	xmf4x4View, float *pfHitDistance) {
-	int nIntersected = 0;
-	if (m_pMesh) {
-		XMFLOAT3 xmf3PickRayOrigin, xmf3PickRayDirection;
-		//모델 좌표계의 광선을 생성한다. 
-		GenerateRayForPicking(xmf3PickPosition, xmf4x4View, &xmf3PickRayOrigin,
-			&xmf3PickRayDirection);
-		//모델 좌표계의 광선과 메쉬의 교차를 검사한다. 
-		nIntersected = m_pMesh->CheckRayIntersection(xmf3PickRayOrigin,
-			xmf3PickRayDirection, pfHitDistance);
-	}
-	return(nIntersected);
-}
-
-inline float CGameObject::GetDistance(const XMFLOAT3 & position) {
-	return Vector3::Length(Vector3::Subtract(position, GetPosition()));
-}
-
 void CFollowObject::Animate(float fTimeElapsed) {
 	elapsedTime += fTimeElapsed;
 	if (8 < elapsedTime) {
@@ -822,119 +973,4 @@ void CMapObject::Animate(float fTimeElapsed) {
 		SetPosition(player->GetPosition());
 	}
 }
-
-//========================================================================
-//========================================================================
-//========================================================================
-
-CSuperCobraObject::CSuperCobraObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
-}
-
-CSuperCobraObject::~CSuperCobraObject() {
-}
-
-void CSuperCobraObject::PrepareAnimate() {
-	m_pMainRotorFrame = FindFrame("MainRotor");
-	m_pTailRotorFrame = FindFrame("TailRotor");
-}
-
-void CSuperCobraObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
-	if (m_pMainRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
-		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
-	}
-	if (m_pTailRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
-		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
-	}
-
-	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CGunshipObject::CGunshipObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
-}
-
-CGunshipObject::~CGunshipObject() {
-}
-
-void CGunshipObject::PrepareAnimate() {
-	m_pMainRotorFrame = FindFrame("Rotor");
-	m_pTailRotorFrame = FindFrame("Back_Rotor");
-}
-
-void CGunshipObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
-	if (m_pMainRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 2.0f) * fTimeElapsed);
-		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
-	}
-	if (m_pTailRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
-		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
-	}
-
-	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CMi24Object::CMi24Object(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) {
-}
-
-CMi24Object::~CMi24Object() {
-}
-
-void CMi24Object::PrepareAnimate() {
-	m_pMainRotorFrame = FindFrame("Top_Rotor");
-	m_pTailRotorFrame = FindFrame("Tail_Rotor");
-}
-
-void CMi24Object::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
-	if (m_pMainRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationY(XMConvertToRadians(360.0f * 2.0f) * fTimeElapsed);
-		m_pMainRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pMainRotorFrame->m_xmf4x4Transform);
-	}
-	if (m_pTailRotorFrame) {
-		XMMATRIX xmmtxRotate = XMMatrixRotationX(XMConvertToRadians(360.0f * 4.0f) * fTimeElapsed);
-		m_pTailRotorFrame->m_xmf4x4Transform = Matrix4x4::Multiply(xmmtxRotate, m_pTailRotorFrame->m_xmf4x4Transform);
-	}
-
-	CGameObject::Animate(fTimeElapsed, pxmf4x4Parent);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 
-CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject(1) {
-	CSkyBoxMesh *pSkyBoxMesh = new CSkyBoxMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 20.0f);
-	SetMesh(pSkyBoxMesh);
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0, 1);
-	pSkyBoxTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"../Model/Textures/earth-cubemap.dds", RESOURCE_TEXTURE_CUBE, 0);
-	//	pSkyBoxTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"SkyBox/SkyBox_1.dds", RESOURCE_TEXTURE_CUBE, 0);
-
-	CSkyBoxShader *pSkyBoxShader = new CSkyBoxShader();
-	pSkyBoxShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
-	pSkyBoxShader->CreateShaderVariables(pd3dDevice, pd3dCommandList); // 없음
-
-	pSkyBoxShader->CreateCbvSrvDescriptorHeaps(pd3dDevice, 0, 1);
-	pSkyBoxShader->CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, 0, PARAMETER_SKYBOX_CUBE_TEXTURE);
-
-	CMaterial *pSkyBoxMaterial = new CMaterial();
-	pSkyBoxMaterial->SetTexture(pSkyBoxTexture);
-	pSkyBoxMaterial->SetShader(pSkyBoxShader);
-
-	SetMaterial(0, pSkyBoxMaterial);
-}
-
-CSkyBox::~CSkyBox() {
-}
-
-void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
-	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
-	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
-
-	CGameObject::Render(pd3dCommandList, pCamera);
-}
+#endif

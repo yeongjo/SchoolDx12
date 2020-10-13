@@ -47,15 +47,28 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
+#define LASSETPATH L"../../DX12"
+#define ASSETPATH "../../DX12"
+
 #define FRAME_BUFFER_WIDTH 640
 #define FRAME_BUFFER_HEIGHT 480
 
 #define PARAMETER_STANDARD_TEXTURE		3
 
+#ifdef _WITH_STANDARD_TEXTURE_MULTIPLE_DESCRIPTORS
+#define PARAMETER_SKYBOX_CUBE_TEXTURE	10
+#else
+#define PARAMETER_SKYBOX_CUBE_TEXTURE	4
+#endif
+
 #define DegreeToRadian(x) float((x)*3.141592654f/180.0f)
 
 /*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
+
+float Random();
+float Random(float fMin, float fMax);
+XMFLOAT3 RandomPositionInSphere(XMFLOAT3 xmf3Center, float fRadius, int nColumn, int nColumnSpace);
 
 #define EPSILON 1.0e-10f
 inline bool IsZero(float fValue) { return((fabsf(fValue) < EPSILON)); }

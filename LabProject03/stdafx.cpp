@@ -9,6 +9,25 @@ UINT gnCbvSrvDescriptorIncrementSize = 0;
 
 float random(){ return (float)rand()/(float)RAND_MAX*2.0f-1.0f; }
 
+float Random() {
+	return(rand() / float(RAND_MAX));
+}
+
+float Random(float fMin, float fMax) {
+	return Random()*(fMax - fMin) + fMin;
+}
+
+XMFLOAT3 RandomPositionInSphere(XMFLOAT3 xmf3Center, float fRadius, int nColumn, int nColumnSpace) {
+	float fAngle = Random() * 360.0f * (2.0f * 3.14159f / 360.0f);
+
+	XMFLOAT3 xmf3Position;
+	xmf3Position.x = xmf3Center.x + fRadius * sin(fAngle);
+	xmf3Position.y = xmf3Center.y - (nColumn * float(nColumnSpace) / 2.0f) + (nColumn * nColumnSpace) + Random();
+	xmf3Position.z = xmf3Center.z + fRadius * cos(fAngle);
+
+	return(xmf3Position);
+}
+
 void print(LPCTSTR pszStr, ...){
 #ifdef _DEBUG
 	TCHAR szMsg[256];

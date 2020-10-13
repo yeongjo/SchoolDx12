@@ -1,14 +1,13 @@
 ﻿#pragma once
 #include "Mesh.h"
-class CShader;
-class CCamera;
+#include "Camera.h"
 
-struct MATERIAL {
-	XMFLOAT4						m_xmf4Ambient;
-	XMFLOAT4						m_xmf4Diffuse;
-	XMFLOAT4						m_xmf4Specular; //(r,g,b,a=power)
-	XMFLOAT4						m_xmf4Emissive;
-};
+#define DIR_FORWARD					0x01
+#define DIR_BACKWARD				0x02
+#define DIR_LEFT					0x04
+#define DIR_RIGHT					0x08
+#define DIR_UP						0x10
+#define DIR_DOWN					0x20
 
 #define RESOURCE_TEXTURE2D			0x01
 #define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
@@ -16,12 +15,9 @@ struct MATERIAL {
 #define RESOURCE_TEXTURE_CUBE		0x04
 #define RESOURCE_BUFFER				0x05
 
-class CRef {
-	int	m_nReferences = 0;
-public:
-	void AddRef() { m_nReferences++; }
-	void Release() { if (--m_nReferences <= 0) delete this; }
-};
+class CShader;
+class CStandardShader;
+class CGameObject;
 
 class CTexture : public CRef {
 public:
@@ -89,6 +85,7 @@ public:
 #define MATERIAL_DETAIL_ALBEDO_MAP	0x20
 #define MATERIAL_DETAIL_NORMAL_MAP	0x40
 
+
 class CMaterial : public CRef {
 public:
 	CMaterial();
@@ -125,23 +122,30 @@ class CGameObject : public CRef {
 public:
 	CGameObject();
 	CGameObject(int nMaterials);
+	virtual ~CGameObject();
 
-	virtual void		Animate(float fTimeElapsed);
-	virtual void		OnPrepareRender();
-	virtual void		Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances = 1);
+	virtual void PrepareAnimate() {}
+	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent);
+	virtual void OnPrepareRender();
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances);
 	virtual void		Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 
-	virtual bool		IsVisible(CCamera *pCamera = NULL);
+	virtual bool IsVisible(CCamera *pCamera = NULL);
 
-	virtual void		CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void		UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void ReleaseUploadBuffers();
+	virtual void ReleaseShaderVariables();
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World);
+	virtual void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CMaterial *pMaterial){}
 
 	void UpdateTransform(XMFLOAT4X4 *pxmf4x4Parent = NULL);
 
-	void				GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
+	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
 		XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
-	virtual int			PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
-	virtual float		GetDistance(const XMFLOAT3& position);
+	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance);
+	virtual float GetDistance(const XMFLOAT3& position);
 
 	
 	CGameObject *GetParent() { return(m_pParent); }
@@ -158,6 +162,7 @@ public:
 	void SetShader(CShader *pShader);
 	void SetShader(int nMaterial, CShader *pShader);
 	void SetMaterial(int nMaterial, CMaterial *pMaterial);
+	void SetChild(CGameObject *pChild);
 
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3 xmf3Position);
@@ -174,11 +179,6 @@ public:
 	static CGameObject *LoadGeometryFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, char *pstrFileName, CShader *pShader);
 
 	static void PrintFrameInfo(CGameObject *pGameObject, CGameObject *pParent);
-
-	virtual ~CGameObject();
-
-	void				ReleaseUploadBuffers();
-	virtual void		ReleaseShaderVariables();
 
 	char				m_pstrFrameName[64];
 	CMesh				*m_pMesh = NULL;
@@ -281,7 +281,7 @@ public:
 
 	virtual void Animate(float fTimeElapsed);
 };
-
+#ifdef HIGHTMAPTERRAINOBJ_ON
 class CHeightMapTerrain : public CGameObject {
 public:
 	CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
@@ -331,7 +331,7 @@ public:
 		return true;
 	}
 };
-
+#endif
 class CExplosibleObject : public CRotatingObject {
 public:
 	bool isExploed = false;

@@ -51,7 +51,6 @@ protected:
 	//카메라를 가지고 있는 플레이어에 대한 포인터이다. 
 	CPlayer *m_pPlayer = NULL;
 	//절두체(월드 좌표계)
-protected:
 	BoundingFrustum m_xmFrustum;
 	VS_CB_CAMERA_INFO* m_pCameraInfo;
 	ID3D12Resource* m_pd3dcbCameraInfo;
@@ -60,8 +59,7 @@ public:
 	CCamera(CCamera *pCamera);
 	virtual ~CCamera();
 	//카메라의 정보를 셰이더 프로그램에게 전달하기 위한 상수 버퍼를 생성하고 갱신한다. 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-	*pd3dCommandList);
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	//카메라 변환 행렬을 생성한다. 
@@ -70,10 +68,8 @@ public:
 	/*카메라가 여러번 회전을 하게 되면 누적된 실수 연산의 부정확성 때문에 카메라의 로컬 x-축(Right), y-축(Up), z- 축(Look)이 서로 직교하지 않을 수 있다. 카메라의 로컬 x-축(Right), y-축(Up), z-축(Look)이 서로 직교하도록 만들어준다.*/
 	void RegenerateViewMatrix();
 	//투영 변환 행렬을 생성한다. 
-	void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float
-	fAspectRatio, float fFOVAngle);
-	void SetViewport(int xTopLeft, int yTopLeft, int nWidth, int nHeight, float fMinZ =
-		0.0f, float fMaxZ = 1.0f);
+	void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle);
+	void SetViewport(int xTopLeft, int yTopLeft, int nWidth, int nHeight, float fMinZ = 0.0f, float fMaxZ = 1.0f);
 	void SetScissorRect(LONG xLeft, LONG yTop, LONG xRight, LONG yBottom);
 	virtual void SetViewportsAndScissorRects(ID3D12GraphicsCommandList *pd3dCommandList);
 	void SetPlayer(CPlayer *pPlayer) {
