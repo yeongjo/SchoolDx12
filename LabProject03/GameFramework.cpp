@@ -186,6 +186,8 @@ void CGameFramework::CreateDirect3DDevice() {
 	////뷰포트를 주 윈도우의 클라이언트 영역 전체로 설정한다.
 	//m_d3dScissorRect = {0, 0, m_nWndClientWidth, m_nWndClientHeight};
 	//씨저 사각형을 주 윈도우의 클라이언트 영역 전체로 설정한다.
+	::gnCbvSrvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 	if (pd3dAdapter) pd3dAdapter->Release();
 }
 
@@ -306,7 +308,7 @@ void CGameFramework::CreateDepthStencilView() {
 }
 
 void CGameFramework::BuildObjects() {
-	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
+	assert(SUCCEEDED(m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL)));
 	m_pScene = new CScene();
 	if (m_pScene) m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, NULL);
 	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
@@ -315,7 +317,7 @@ void CGameFramework::BuildObjects() {
 	//m_pPlayer->SetPlayerUpdatedContext(m_pScene->GetTerrain());
 	/*m_pPlayer = new CTerrainPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain(), 1);*/
 	m_pCamera = m_pPlayer->GetCamera();
-	m_pd3dCommandList->Close();
+	assert(SUCCEEDED(m_pd3dCommandList->Close()));
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 	WaitForGpuComplete();
@@ -427,7 +429,7 @@ void CGameFramework::ProcessInput() {
 			}
 			/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 이동 거리는 시간에 비례하도록 한다. 플레이어의 이동 속력은 (50/초)로 가정한다.*/
 			if (dwDirection)
-				m_pPlayer->Move(dwDirection, 500.0f * m_GameTimer.GetTimeElapsed(), true);
+				m_pPlayer->Move(dwDirection, 50000.0f * m_GameTimer.GetTimeElapsed(), true);
 		}
 	}
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
@@ -468,6 +470,23 @@ void CGameFramework::MoveToNextFrame() {
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
 }
+
+void CGameFramework::UpdateShaderVariables() {
+	float fCurrentTime = m_GameTimer.GetTotalTime();
+	float fElapsedTime = m_GameTimer.GetTimeElapsed();
+
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(6, 1, &fCurrentTime, 0);
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(6, 1, &fElapsedTime, 1);
+
+	POINT ptCursorPos;
+	::GetCursorPos(&ptCursorPos);
+	::ScreenToClient(m_hWnd, &ptCursorPos);
+	float fxCursorPos = (ptCursorPos.x < 0) ? 0.0f : float(ptCursorPos.x);
+	float fyCursorPos = (ptCursorPos.y < 0) ? 0.0f : float(ptCursorPos.y);
+
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(6, 1, &fxCursorPos, 2);
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(6, 1, &fyCursorPos, 3);
+}
 //#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {
 	m_GameTimer.Tick(0.0f);
@@ -495,7 +514,10 @@ void CGameFramework::FrameAdvance() {
 		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
 		&d3dDsvCPUDescriptorHandle);
-	if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
+	if (m_pScene) { 
+		m_pScene->PrepareRender(m_pd3dCommandList);
+		m_pScene->Render(m_pd3dCommandList, m_pCamera); 
+	}
 	//3인칭 카메라일 때 플레이어가 항상 보이도록 렌더링한다. 
 #ifdef _WITH_PLAYER_TOP
 	//렌더 타겟은 그대로 두고 깊이 버퍼를 1.0으로 지우고 플레이어를 렌더링하면 플레이어는 무조건 그려질 것이다. 

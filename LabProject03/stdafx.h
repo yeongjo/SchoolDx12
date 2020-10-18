@@ -42,24 +42,27 @@ using Microsoft::WRL::ComPtr;
 #define DIR_UP 0x10
 #define DIR_DOWN 0x20
 
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "dxguid.lib")
-
 #define LASSETPATH L"../../DX12"
 #define ASSETPATH "../../DX12"
 
 #define FRAME_BUFFER_WIDTH 640
 #define FRAME_BUFFER_HEIGHT 480
 
-#define PARAMETER_STANDARD_TEXTURE		3
 
+#define _WITH_CB_WORLD_MATRIX_DESCRIPTOR_TABLE
+#define _WITH_STANDARD_TEXTURE_MULTIPLE_DESCRIPTORS
+
+#define PARAMETER_STANDARD_TEXTURE		3
 #ifdef _WITH_STANDARD_TEXTURE_MULTIPLE_DESCRIPTORS
 #define PARAMETER_SKYBOX_CUBE_TEXTURE	10
 #else
 #define PARAMETER_SKYBOX_CUBE_TEXTURE	4
 #endif
+
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #define DegreeToRadian(x) float((x)*3.141592654f/180.0f)
 

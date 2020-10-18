@@ -31,10 +31,10 @@ public:
 	virtual void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World) {}
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState = 0);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nPipelineState = 0);
+	virtual void AnimateObjects(float fTimeElapsed) {}
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL) {}
 	virtual void ReleaseObjects() {} // 만든 오브젝 지움
-	virtual void AnimateObjects(float fTimeElapsed) {}
 
 	void CreateCbvSrvDescriptorHeaps(ID3D12Device *pd3dDevice, int nConstantBufferViews, int nShaderResourceViews);
 	void CreateConstantBufferViews(ID3D12Device *pd3dDevice, int nConstantBufferViews, ID3D12Resource *pd3dConstantBuffers, UINT nStride);
@@ -93,31 +93,48 @@ public:
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
 	virtual void ReleaseObjects();
 
-	virtual void					CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);	// Nothing
-	virtual void					ReleaseShaderVariables();
-	virtual void					ReleaseUploadBuffers();
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);	// Nothing
+	virtual void ReleaseShaderVariables();
+	virtual void ReleaseUploadBuffers();
 
-	virtual void					UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList); // Nothing
-	virtual void					AnimateObjects(float fTimeElapsed);
-	virtual void					Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList); // Nothing
+	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nPipelineState = 0);
+
+	//셰이더에 포함되어 있는 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
+	virtual CGameObject *PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfNearHitDistance);
+	virtual CGameObject* GetIntersectObject(const XMFLOAT3& xmf3Position, float *pfNearHitDistance);
 protected:
 	CGameObject						**m_ppObjects = NULL;
 	int								m_nObjects = 0;
 	//ID3D12Resource					*m_pd3dcbGameObjects = NULL;
 	//UINT8							*m_pcbMappedGameObjects = NULL;
-public:
-	//셰이더에 포함되어 있는 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
-	virtual CGameObject *PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfNearHitDistance);
-	virtual CGameObject* GetIntersectObject(const XMFLOAT3& xmf3Position, float *pfNearHitDistance);
 };
 ////////////////////////////////////////////////////////////////////////////////////
-class CTerrainShader : public CObjectsShader {
+class CTexturedShader : public CShader {
 public:
-	CTerrainShader() {}
-	virtual ~CTerrainShader() {}
+	CTexturedShader() {}
+	virtual ~CTexturedShader() {}
+
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
+
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+////////////////////////////////////////////////////////////////////////////////////
+class CTerrainShader : public CTexturedShader {
+public:
+	CTerrainShader(){}
+	virtual ~CTerrainShader() {}
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 };
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -183,3 +200,18 @@ class CInstancingShader2 : public CInstancingShader {
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 };
 #endif
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+class CTerrainWaterShader : public CTexturedShader {
+public:
+	CTerrainWaterShader() {}
+	virtual ~CTerrainWaterShader() {}
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+
+	virtual void CreateShader(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature);
+};

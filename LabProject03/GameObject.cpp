@@ -66,10 +66,12 @@ void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuD
 void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList) {
 	if (m_nRootParameters == m_nTextures) {
 		for (int i = 0; i < m_nRootParameters; i++) {
-			if (m_pd3dSrvGpuDescriptorHandles[i].ptr && (m_pnRootParameterIndices[i] != -1)) pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[i], m_pd3dSrvGpuDescriptorHandles[i]);
+			if (m_pd3dSrvGpuDescriptorHandles[i].ptr && (m_pnRootParameterIndices[i] != -1))
+				pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[i], m_pd3dSrvGpuDescriptorHandles[i]);
 		}
 	} else {
-		if (m_pd3dSrvGpuDescriptorHandles[0].ptr) pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[0], m_pd3dSrvGpuDescriptorHandles[0]);
+		if (m_pd3dSrvGpuDescriptorHandles[0].ptr)
+			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[0], m_pd3dSrvGpuDescriptorHandles[0]);
 	}
 }
 
@@ -119,7 +121,7 @@ int CTexture::LoadTextureFromFile(ID3D12Device* pd3dDevice, ID3D12GraphicsComman
 	if (strcmp(pstrTextureName, "null")) {
 		bLoaded = true;
 		char pstrFilePath[64] = { '\0' };
-		strcpy_s(pstrFilePath, 64, ASSETPATH"/Textures/");
+		strcpy_s(pstrFilePath, 64, ASSETPATH"/Model/Textures/");
 		auto len = strlen(pstrFilePath);
 		bDuplicated = (pstrTextureName[0] == '@');
 		strcpy_s(pstrFilePath + len, 64 - len, (bDuplicated) ? (pstrTextureName + 1) : pstrTextureName);
@@ -302,7 +304,6 @@ void CGameObject::SetMaterial(int nMaterial, CMaterial *pMaterial) {
 	m_ppMaterials[nMaterial] = pMaterial;
 	if (m_ppMaterials[nMaterial]) m_ppMaterials[nMaterial]->AddRef();
 }
-
 void CGameObject::ReleaseUploadBuffers() {
 	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
 }
@@ -311,11 +312,6 @@ void CGameObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
 	if (m_pChild) m_pChild->Animate(fTimeElapsed, &m_xmf4x4World);
 }
 void CGameObject::OnPrepareRender() {
-}
-void CGameObject::Rotate(XMFLOAT3 *pxmf3Axis, float fAngle) {
-	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(pxmf3Axis),
-		XMConvertToRadians(fAngle));
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
 void CGameObject::SetChild(CGameObject *pChild) {
 	if (m_pChild) {
@@ -328,38 +324,20 @@ void CGameObject::SetChild(CGameObject *pChild) {
 		pChild->m_pParent = this;
 	}
 }
-////////////////////////////////////////////////////////////////////////
-//
-CRotatingObject::CRotatingObject(int nMeshes) : CGameObject() {
-	m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	m_fRotationSpeed = 15.0f;
-}
-CRotatingObject::~CRotatingObject() {
-}
-void CRotatingObject::Animate(float fTimeElapsed) {
-	CGameObject::Rotate(&m_xmf3RotationAxis, m_fRotationSpeed * fTimeElapsed);
-}
-
 void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {
 }
 void CGameObject::ReleaseShaderVariables() {
 }
 
 void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {
-	//XMFLOAT4X4 xmf4x4World;
-	//XMStoreFloat4x4(&m_pcb, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
-	////객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
-	//pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
-}
-void CGameObject::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4X4 *pxmf4x4World) {
 	XMFLOAT4X4 xmf4x4World;
-	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(pxmf4x4World)));
+	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 16, &xmf4x4World, 0);
 }
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
-	OnPrepareRender();
+	//OnPrepareRender();
 
-	UpdateShaderVariable(pd3dCommandList, &m_xmf4x4World);
+	UpdateShaderVariables(pd3dCommandList);
 
 	if (m_nMaterials > 0) {
 		for (int i = 0; i < m_nMaterials; i++) {
@@ -395,9 +373,10 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 }
 
 void CGameObject::SetPosition(float x, float y, float z) {
-	m_xmf4x4World._41 = x;
-	m_xmf4x4World._42 = y;
-	m_xmf4x4World._43 = z;
+	m_xmf4x4Transform._41 = x;
+	m_xmf4x4Transform._42 = y;
+	m_xmf4x4Transform._43 = z;
+	UpdateTransform(NULL);
 }
 void CGameObject::SetPosition(XMFLOAT3 xmf3Position) {
 	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
@@ -419,6 +398,9 @@ XMFLOAT3 CGameObject::GetUp() {
 XMFLOAT3 CGameObject::GetRight() {
 	return(Vector3::Normalize(XMFLOAT3(m_xmf4x4World._11, m_xmf4x4World._12,
 		m_xmf4x4World._13)));
+}
+CGameObject * CGameObject::AddSibling(CGameObject * obj) {
+	return obj;
 }
 //게임 객체를 로컬 x-축 방향으로 이동한다. 
 void CGameObject::MoveStrafe(float fDistance) {
@@ -445,11 +427,19 @@ void CGameObject::MoveForward(float fDistance) {
 void CGameObject::Rotate(float fPitch, float fYaw, float fRoll) {
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(fPitch),
 		XMConvertToRadians(fYaw), XMConvertToRadians(fRoll));
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+	m_xmf4x4Transform = Matrix4x4::Multiply(mtxRotate, m_xmf4x4Transform);
+	UpdateTransform(NULL);
+}
+void CGameObject::Rotate(XMFLOAT3 *pxmf3Axis, float fAngle) {
+	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(pxmf3Axis),
+		XMConvertToRadians(fAngle));
+	m_xmf4x4Transform = Matrix4x4::Multiply(mtxRotate, m_xmf4x4Transform);
+	UpdateTransform(NULL);
 }
 void CGameObject::Scale(float x, float y, float z) {
 	auto s = XMMatrixScaling(x, y, z);
-	m_xmf4x4World = Matrix4x4::Multiply(s, m_xmf4x4World);
+	m_xmf4x4Transform = Matrix4x4::Multiply(s, m_xmf4x4Transform);
+	UpdateTransform(NULL);
 }
 bool CGameObject::IsVisible(CCamera *pCamera) {
 	return true;
@@ -806,78 +796,71 @@ void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 //========================================================================
 //========================================================================
 #ifdef HIGHTMAPTERRAINOBJ_ON
-CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-	*pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int
-	nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4
-	xmf4Color) : CGameObject() {
-	//지형에 사용할 높이 맵의 가로, 세로의 크기이다. 
+CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color) : CGameObject(1) {
 	m_nWidth = nWidth;
 	m_nLength = nLength;
-	/*지형 객체는 격자 메쉬들의 배열로 만들 것이다. nBlockWidth, nBlockLength는 격자 메쉬 하나의 가로, 세로 크기이다. cxQuadsPerBlock, czQuadsPerBlock은 격자 메쉬의 가로 방향과 세로 방향 사각형의 개수이다.*/
+
 	int cxQuadsPerBlock = nBlockWidth - 1;
 	int czQuadsPerBlock = nBlockLength - 1;
-	//xmf3Scale는 지형을 실제로 몇 배 확대할 것인가를 나타낸다. 
+
 	m_xmf3Scale = xmf3Scale;
-	//지형에 사용할 높이 맵을 생성한다. 
+
 	m_pHeightMapImage = new CHeightMapImage(pFileName, nWidth, nLength, xmf3Scale);
-	//지형에서 가로 방향, 세로 방향으로 격자 메쉬가 몇 개가 있는 가를 나타낸다.
+
 	long cxBlocks = (m_nWidth - 1) / cxQuadsPerBlock;
 	long czBlocks = (m_nLength - 1) / czQuadsPerBlock;
-	//지형 전체를 표현하기 위한 격자 메쉬에 대한 포인터 배열을 생성한다. 
+
+	UINT m_nMeshes = cxBlocks * czBlocks;
+	auto m_ppMeshes = new CMesh*[m_nMeshes];
+	for (UINT i = 0; i < m_nMeshes; i++)	m_ppMeshes[i] = NULL;
+
 	CHeightMapGridMesh *pHeightMapGridMesh = NULL;
 	for (int z = 0, zStart = 0; z < czBlocks; z++) {
 		for (int x = 0, xStart = 0; x < cxBlocks; x++) {
-			//지형의 일부분을 나타내는 격자 메쉬의 시작 위치(좌표)이다. 
 			xStart = x * (nBlockWidth - 1);
 			zStart = z * (nBlockLength - 1);
-			//지형의 일부분을 나타내는 격자 메쉬를 생성하여 지형 메쉬에 저장한다. 
-			pHeightMapGridMesh = new CHeightMapGridMesh(pd3dDevice, pd3dCommandList, xStart,
-				zStart, nBlockWidth, nBlockLength, xmf3Scale, xmf4Color, m_pHeightMapImage);
-			SetMesh(pHeightMapGridMesh);
+			pHeightMapGridMesh = new CHeightMapGridMesh(pd3dDevice, pd3dCommandList, xStart, zStart, nBlockWidth, nBlockLength, xmf3Scale, xmf4Color, m_pHeightMapImage);
+			auto obj = new CGameObject(1);
+			obj->SetMesh(pHeightMapGridMesh);
+			SetChild(obj);
 		}
 	}
-	//지형을 렌더링하기 위한 셰이더를 생성한다. 
-	CTerrainShader *pShader = new CTerrainShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	SetShader(pShader);
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	CTexture *pTerrainTexture = new CTexture(5, RESOURCE_TEXTURE2D, 0, 1);
+
+	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Base_Texture.dds", RESOURCE_TEXTURE2D, 0);
+	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Detail_Texture_7.dds", RESOURCE_TEXTURE2D, 1);
+	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Detail_Texture_1.dds", RESOURCE_TEXTURE2D, 2);
+	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Lava(Diffuse).dds", RESOURCE_TEXTURE2D, 3);
+	//	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/HeightMap-Alpha(Flipped).dds", RESOURCE_TEXTURE2D, 4);
+	pTerrainTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/HeightMap2(Flipped)Alpha.dds", RESOURCE_TEXTURE2D, 4);
+
+	//UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256의 배수
+
+	CTerrainShader *pTerrainShader = new CTerrainShader();
+	pTerrainShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	//pTerrainShader->CreateShaderVariables(pd3dDevice, pd3dCommandList); // Nothing
+	pTerrainShader->CreateCbvSrvDescriptorHeaps(pd3dDevice, 0, 5);
+	//pTerrainShader->CreateConstantBufferViews(pd3dDevice, 1, m_pd3dcbGameObject, ncbElementBytes);
+	pTerrainShader->CreateShaderResourceViews(pd3dDevice, pTerrainTexture, 0, 11);
+
+	CMaterial *pTerrainMaterial = new CMaterial();
+	pTerrainMaterial->SetTexture(pTerrainTexture);
+
+	SetMaterial(0, pTerrainMaterial);
+
+	//m_d3dCbvGPUDescriptorHandle = (pTerrainShader->GetGPUCbvDescriptorStartHandle());
+
+	SetShader(pTerrainShader);
 }
+
 CHeightMapTerrain::~CHeightMapTerrain(void) {
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
 }
-void CHeightMapTerrain::Animate(float fTimeElapsed) {
-	auto player = CGameFramework::getInstance().m_pPlayer;
-	auto x = m_xmf3Scale.x * m_nWidth*0.5f;
-	auto z = m_xmf3Scale.z * m_nLength*0.5f;
-	auto pos = GetPosition();
-	auto direction = Vector3::Subtract(player->GetPosition(), pos);
-	if (abs(direction.x) >= x) {
-		MoveStrafe((direction.x > 0 ? x : -x) * 2);
-	}
-	if (abs(direction.z) >= z) {
-		MoveForward((direction.z > 0 ? z : -z) * 2);
-	}
-}
-void CHeightMapTerrain::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera) {
-	CHeightMapTerrain::Animate(0);
-	CGameObject::Render(pd3dCommandList, pCamera);
-	auto t = m_xmf4x4World;
-	auto x = m_xmf3Scale.x * m_nWidth;
-	auto z = m_xmf3Scale.z * m_nLength;
-	MoveForward(-z);
-	MoveStrafe(-x);
-	for (size_t _x = 0; _x < 3; _x++) {
-		for (size_t _z = 0; _z < 3; _z++) {
-			UpdateShaderVariables(pd3dCommandList);
-			//if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
-			//게임 객체가 포함하는 모든 메쉬를 렌더링한다.
-			if (m_pMesh) m_pMesh->Render(pd3dCommandList);
-			MoveForward(z);
-		}
-		MoveStrafe(x);
-		MoveForward(z*-3);
-	}
-	m_xmf4x4World = t;
-}
+//////////////////////////////////////////////////////////////////////
+//
 void CFollowObject::Animate(float fTimeElapsed) {
 	elapsedTime += fTimeElapsed;
 	if (8 < elapsedTime) {
@@ -972,5 +955,52 @@ void CMapObject::Animate(float fTimeElapsed) {
 	if (distance > width) {
 		SetPosition(player->GetPosition());
 	}
+}
+////////////////////////////////////////////////////////////////////////
+//
+CRotatingObject::CRotatingObject(int nMeshes) : CGameObject() {
+	m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	m_fRotationSpeed = 15.0f;
+}
+CRotatingObject::~CRotatingObject() {
+}
+void CRotatingObject::Animate(float fTimeElapsed) {
+	CGameObject::Rotate(&m_xmf3RotationAxis, m_fRotationSpeed * fTimeElapsed);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+CTerrainWater::CTerrainWater(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature, float fWidth, float fLength) : CGameObject(1) {
+	CTexturedRectMesh* pWaterMesh = new CTexturedRectMesh(pd3dDevice, pd3dCommandList, fWidth, 0.0f, fLength, 0.0f, 0.0f, 0.0f);
+	SetMesh(pWaterMesh);
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	CTexture* pWaterTexture = new CTexture(3, RESOURCE_TEXTURE2D, 0, 1);
+
+	pWaterTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Water_Base_Texture_0.dds", RESOURCE_TEXTURE2D, 0);
+	pWaterTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Water_Detail_Texture_0.dds", RESOURCE_TEXTURE2D, 1);
+	pWaterTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Lava(Diffuse).dds", RESOURCE_TEXTURE2D, 2);
+	//	pWaterTexture->LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, L"Image/Water_Texture_Alpha.dds", RESOURCE_TEXTURE2D, 2);
+
+	//UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256의 배수
+
+	CTerrainWaterShader* pWaterShader = new CTerrainWaterShader();
+	pWaterShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	pWaterShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pWaterShader->CreateCbvSrvDescriptorHeaps(pd3dDevice, 1, 3);
+	//pWaterShader->CreateConstantBufferViews(pd3dDevice, 1, m_pd3dcbGameObject, ncbElementBytes);
+	pWaterShader->CreateShaderResourceViews(pd3dDevice, pWaterTexture, 0, 12);
+
+	CMaterial* pWaterMaterial = new CMaterial();
+	pWaterMaterial->SetTexture(pWaterTexture);
+
+	SetMaterial(0, pWaterMaterial);
+
+	//SetCbvGPUDescriptorHandle(pWaterShader->GetGPUCbvDescriptorStartHandle());
+
+	SetShader(pWaterShader);
+}
+
+CTerrainWater::~CTerrainWater() {
 }
 #endif

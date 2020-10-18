@@ -51,6 +51,7 @@ public:
 	bool ProcessInput(UCHAR *pKeysBuffer);
 	void AnimateObjects(float fTimeElapsed);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	void PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList);
 	void ReleaseUploadBuffers();
 
 	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 

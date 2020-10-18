@@ -76,8 +76,8 @@ public:
 	//렌더 타겟 뷰와 깊이-스텐실 뷰를 생성하는 함수이다. 
 	void BuildObjects();
 	void ReleaseObjects();
-	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
-	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
+
+	void UpdateShaderVariables();
 	void ProcessInput();
 	void AnimateObjects();
 	void FrameAdvance();

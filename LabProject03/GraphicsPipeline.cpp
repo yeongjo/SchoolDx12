@@ -5,7 +5,9 @@ XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4World = NULL;
 XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4ViewProject = NULL;
 XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4View = NULL;
 XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4Project = NULL;
-CViewport* CGraphicsPipeline::m_pViewport = NULL;BoundingFrustum CGraphicsPipeline::boundingFrustum;
+CViewport* CGraphicsPipeline::m_pViewport = NULL;
+BoundingFrustum CGraphicsPipeline::boundingFrustum;
+
 
 XMFLOAT3 CGraphicsPipeline::Project(XMFLOAT3& xmf3Model){
 	//XMMATRIX xmmtxModelToProject =
