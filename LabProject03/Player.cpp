@@ -10,7 +10,7 @@
 // CPlayer
 
 CPlayer::CPlayer() {
-	m_pCamera = NULL;
+	m_pCamera = nullptr;
 
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
@@ -27,8 +27,8 @@ CPlayer::CPlayer() {
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
 
-	m_pPlayerUpdatedContext = NULL;
-	m_pCameraUpdatedContext = NULL;
+	m_pPlayerUpdatedContext = nullptr;
+	m_pCameraUpdatedContext = nullptr;
 }
 
 CPlayer::~CPlayer() {
@@ -153,7 +153,7 @@ void CPlayer::Update(float fTimeElapsed) {
 }
 
 CCamera *CPlayer::OnChangeCamera(DWORD nNewCameraMode, DWORD nCurrentCameraMode) {
-	CCamera *pNewCamera = NULL;
+	CCamera *pNewCamera = nullptr;
 	switch (nNewCameraMode) {
 	case FIRST_PERSON_CAMERA:
 		pNewCamera = new CFirstPersonCamera(m_pCamera);
@@ -196,7 +196,7 @@ void CPlayer::OnPrepareRender() {
 	m_xmf4x4Transform._31 = m_xmf3Look.x; m_xmf4x4Transform._32 = m_xmf3Look.y; m_xmf4x4Transform._33 = m_xmf3Look.z;
 	m_xmf4x4Transform._41 = m_xmf3Position.x; m_xmf4x4Transform._42 = m_xmf3Position.y; m_xmf4x4Transform._43 = m_xmf3Position.z;
 
-	UpdateTransform(NULL);
+	UpdateTransform(nullptr);
 }
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {

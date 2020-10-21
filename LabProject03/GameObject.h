@@ -15,6 +15,9 @@
 #define RESOURCE_TEXTURE_CUBE		0x04
 #define RESOURCE_BUFFER				0x05
 
+class CTexturedShader;
+class ObjectSpawner;
+class CObjectsShader;
 class CShader;
 class CStandardShader;
 class CGameObject;
@@ -28,21 +31,21 @@ private:
 	UINT							m_nTextureType;
 
 	int								m_nTextures = 0;
-	_TCHAR							(*m_ppstrTextureNames)[64] = NULL;
-	ID3D12Resource**				m_ppd3dTextures = NULL;
+	_TCHAR							(*m_ppstrTextureNames)[64] = nullptr;
+	ID3D12Resource**				m_ppd3dTextures = nullptr;
 	ID3D12Resource**				m_ppd3dTextureUploadBuffers;
 
-	UINT*							m_pnResourceTypes = NULL;
+	UINT*							m_pnResourceTypes = nullptr;
 
-	DXGI_FORMAT*					m_pdxgiBufferFormats = NULL;
-	int*							m_pnBufferElements = NULL;
+	DXGI_FORMAT*					m_pdxgiBufferFormats = nullptr;
+	int*							m_pnBufferElements = nullptr;
 
 	int								m_nRootParameters = 0;
-	int*							m_pnRootParameterIndices = NULL;
-	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSrvGpuDescriptorHandles = NULL;
+	int*							m_pnRootParameterIndices = nullptr;
+	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSrvGpuDescriptorHandles = nullptr;
 
 	int								m_nSamplers = 0;
-	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSamplerGpuDescriptorHandles = NULL;
+	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSamplerGpuDescriptorHandles = nullptr;
 
 public:
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
@@ -100,8 +103,8 @@ public:
 
 	virtual void ReleaseUploadBuffers();
 
-	CShader		*m_pShader = NULL;
-	CTexture*	m_pTexture = NULL;
+	CShader		*m_pShader = nullptr;
+	CTexture*	m_pTexture = nullptr;
 
 	XMFLOAT4	m_xmf4AlbedoColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4	m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -124,22 +127,21 @@ public:
 	CGameObject(int nMaterials);
 	virtual ~CGameObject();
 
+	void UpdateTransform(XMFLOAT4X4 *pxmf4x4Parent = nullptr);
 	virtual void PrepareAnimate() {}
-	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = nullptr);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances);
-	virtual void		Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
 
-	virtual bool IsVisible(CCamera *pCamera = NULL);
+	virtual bool IsVisible(CCamera *pCamera = nullptr);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void ReleaseUploadBuffers();
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CMaterial *pMaterial){}
-
-	void UpdateTransform(XMFLOAT4X4 *pxmf4x4Parent = NULL);
 
 	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View,
 		XMFLOAT3 *pxmf3PickRayOrigin, XMFLOAT3 *pxmf3PickRayDirection);
@@ -182,16 +184,18 @@ public:
 	static void PrintFrameInfo(CGameObject *pGameObject, CGameObject *pParent);
 
 	char				m_pstrFrameName[64];
-	CMesh				*m_pMesh = NULL;
+	CMesh				*m_pMesh = nullptr;
 	int					m_nMaterials = 0;
-	CMaterial			**m_ppMaterials = NULL;
+	CMaterial			**m_ppMaterials = nullptr;
 
 	XMFLOAT4X4			m_xmf4x4Transform;
 	XMFLOAT4X4			m_xmf4x4World;
 
-	CGameObject 		*m_pParent = NULL;
-	CGameObject 		*m_pChild = NULL;
-	CGameObject 		*m_pSibling = NULL;
+	CGameObject 		*m_pParent = nullptr;
+	CGameObject 		*m_pChild = nullptr;
+	CGameObject 		*m_pSibling = nullptr;
+
+	bool				isDestroyNextFrame = false;
 };
 
 //========================================================================
@@ -204,12 +208,12 @@ public:
 	virtual ~CSuperCobraObject();
 
 private:
-	CGameObject					*m_pMainRotorFrame = NULL;
-	CGameObject					*m_pTailRotorFrame = NULL;
+	CGameObject					*m_pMainRotorFrame = nullptr;
+	CGameObject					*m_pTailRotorFrame = nullptr;
 
 public:
-	virtual void PrepareAnimate();
-	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+	void PrepareAnimate() override;
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
 };
 
 class CGunshipObject : public CGameObject {
@@ -218,12 +222,12 @@ public:
 	virtual ~CGunshipObject();
 
 private:
-	CGameObject					*m_pMainRotorFrame = NULL;
-	CGameObject					*m_pTailRotorFrame = NULL;
+	CGameObject					*m_pMainRotorFrame = nullptr;
+	CGameObject					*m_pTailRotorFrame = nullptr;
 
 public:
-	virtual void PrepareAnimate();
-	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+	void PrepareAnimate() override;
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
 };
 
 class CMi24Object : public CGameObject {
@@ -232,12 +236,12 @@ public:
 	virtual ~CMi24Object();
 
 private:
-	CGameObject					*m_pMainRotorFrame = NULL;
-	CGameObject					*m_pTailRotorFrame = NULL;
+	CGameObject					*m_pMainRotorFrame = nullptr;
+	CGameObject					*m_pTailRotorFrame = nullptr;
 
 public:
-	virtual void PrepareAnimate();
-	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+	void PrepareAnimate() override;
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
 };
 
 //========================================================================
@@ -248,7 +252,7 @@ public:
 	CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual ~CSkyBox();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = nullptr) override;
 };
 
 //========================================================================
@@ -256,8 +260,8 @@ public:
 
 class CRotatingObject : public CGameObject {
 public:
-	CRotatingObject(int nMeshes = 1);
-	virtual ~CRotatingObject();
+	CRotatingObject();
+	virtual ~CRotatingObject() = default;
 protected:
 	XMFLOAT3 m_xmf3RotationAxis;
 public:
@@ -267,20 +271,22 @@ public:
 		m_fRotationSpeed = fRotationSpeed;
 	}
 	void SetRotationAxis(XMFLOAT3 xmf3RotationAxis) {
-		m_xmf3RotationAxis =
-			xmf3RotationAxis;
+		m_xmf3RotationAxis = xmf3RotationAxis;
 	}
-	virtual void Animate(float fTimeElapsed);
+	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
 };
 
 class CFollowObject : public CRotatingObject {
 public:
 	float elapsedTime = 0;
-	CGameObject* followObj = NULL;
+	CGameObject* followObj = nullptr;
+	float speed = 5;
+	void(*OnArrived)(CFollowObject* self, CGameObject* target) = nullptr;
+	
 	CFollowObject() :CRotatingObject() { }
 	virtual ~CFollowObject() { }
 
-	virtual void Animate(float fTimeElapsed);
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL) override;
 };
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -345,8 +351,9 @@ public:
 	virtual ~CExplosibleObject() {
 	}
 
-	virtual void Animate(float fTimeElapsed);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) override;
+
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) override {
 		if (isExploed) {
 			for (size_t i = 0; i < children.size(); i++) {
 				children[i].Render(pd3dCommandList, pCamera);
@@ -362,14 +369,54 @@ public:
 	}
 	virtual ~CMapObject() {
 	}
-	virtual void Animate(float fTimeElapsed);
-	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance) {
+	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+
+	int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float *pfHitDistance) override {
 		return 0;
 	}
-	virtual float GetDistance(const XMFLOAT3& position) {
+
+	float GetDistance(const XMFLOAT3& position) override {
 		return FLT_MAX;
 	}
-	virtual bool IsVisible(CCamera *pCamera = NULL) {
+
+	bool IsVisible(CCamera *pCamera = nullptr) override {
 		return true;
 	}
+};
+
+class WayPointFollower : public CGameObject {
+public:
+	float prevPos = 0;
+	float pos = 0;
+	float direc = 1;
+	float canMove = 1;
+	float speed = Random(0.006f, 0.008f);
+	float attackRange = Random(0.04f, 0.06f);
+	float attackDelay = 1;
+	float durability = 5; // 내구도
+	ObjectSpawner* objectSpawner;
+
+	XMFLOAT3 offset;
+
+	void Destroy();
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
+};
+
+class ObjectSpawner : public CGameObject {
+public:
+	vector<CGameObject*>	baseObjs;
+	CObjectsShader			*targetShader;
+	CTexturedShader			*bulletShader;
+	float					remainSpawnTime0=0;
+	float					remainSpawnTime1=0;
+	CFollowObject			*bulletObj;
+
+	vector<WayPointFollower*>	Objs0;
+	vector<WayPointFollower*>	Objs1;
+
+	void InitBullet(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void AddBullet(WayPointFollower* owner, WayPointFollower* target);
+	void AddObject(int idx, XMFLOAT3 off = XMFLOAT3(0,0,0), bool isReverse = false);
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
 };

@@ -94,6 +94,8 @@ void CGameTimer::Reset()
 	m_nCurrentFrameRate = 0;
 	m_FramePerSecond = 0;
 	m_fFPSTimeElapsed = 0.0f;
+
+	Tick();
 }
 
 void CGameTimer::Start() {

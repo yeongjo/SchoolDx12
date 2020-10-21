@@ -56,30 +56,31 @@ public:
 
 	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
 	CGameObject *PickObjectPointedByCursor(int xClient, int yClient, CCamera *pCamera);
-	CGameObject *GetIntersectObject(const XMFLOAT3 & xmf3Position, float * pfNearHitDistance);
+	CGameObject *GetNearestObject(CGameObject *obj, float * pfNearHitDistance);
 	bool RemoveGameObject(CGameObject* obj);
 
 	//그래픽 루트 시그너쳐를 생성한다. 
 	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 	ID3D12RootSignature *GetGraphicsRootSignature();
 
-	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
+	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = nullptr;
 	
-	CPlayer						*m_pPlayer = NULL;
+	CPlayer						*m_pPlayer = nullptr;
 
-	CGameObject					**m_ppGameObjects = NULL;
-	int							m_nGameObjects = 0;
+	vector<CGameObject*>		m_ppGameObjects;
 
-	CShader						**m_ppShaders = NULL;
-	int							m_nShaders = 0;
+	vector<CShader*>			m_ppShaders;
 
-	LIGHT						*m_pLights = NULL;
+	LIGHT						*m_pLights = nullptr;
 	int							m_nLights = 0;
 	XMFLOAT4					m_xmf4GlobalAmbient;
 
-	ID3D12Resource				*m_pd3dcbLights = NULL;
-	LIGHTS						*m_pcbMappedLights = NULL;
+	ID3D12Resource				*m_pd3dcbLights = nullptr;
+	LIGHTS						*m_pcbMappedLights = nullptr;
 
-	CSkyBox						*m_pSkyBox = NULL;
+	CSkyBox						*m_pSkyBox = nullptr;
+	CTerrainWater				*pTerrainWater = nullptr;
+
+	WayPointHandler				*_wayPointHandler = nullptr;
 };
 

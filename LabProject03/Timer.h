@@ -11,7 +11,7 @@ public:
 	//타이머의 시간을 갱신한다. 
 	void Tick(float fLockFPS = 0.0f);
 
-	unsigned long GetFrameRate(LPTSTR lpszString = NULL, int nCharacters = 0);
+	unsigned long GetFrameRate(LPTSTR lpszString = nullptr, int nCharacters = 0);
 	float GetTimeElapsed();
 	float GetTotalTime();
 

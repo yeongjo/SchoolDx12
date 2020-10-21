@@ -27,6 +27,12 @@ cbuffer cbWaterInfo : register(b4) {
 	matrix		gf4x4TextureAnimation : packoffset(c0);
 };
 
+cbuffer cbParticleInfo : register(b5) {
+	float2		gf2SheetCount : packoffset(c0);
+	float		gfStartTime : packoffset(c0.z);
+	float		gfSheetSpeed : packoffset(c0.w);
+};
+
 /////////////////////////////////////////////////////////////////////
 //정점 셰이더의 입력을 위한 구조체를 선언한다. 
 struct VS_INPUT {
@@ -113,6 +119,8 @@ VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input) {
 
 float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
+	//return float4(1, 1, 0, 1);
+
 	float4 cAlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	float4 cSpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	float4 cNormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -133,16 +141,16 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 	if (gnTexturesMask & MATERIAL_EMISSION_MAP) cEmissionColor = gtxtStandardTextures[4].Sample(gssWrap, input.uv);
 #endif
 
-	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	float4 cColor = cAlbedoColor + cSpecularColor + cEmissionColor;
+	float3 normalW = input.normalW;
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP) {
-		float3 normalW = input.normalW;
 		float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.bitangentW), normalize(input.normalW));
 		float3 vNormal = normalize(cNormalColor.rgb * 2.0f - 1.0f); //[0, 1] → [-1, 1]
 		normalW = normalize(mul(vNormal, TBN));
-		cIllumination = Lighting(input.positionW, normalW);
-		cColor = lerp(cColor, cIllumination, 0.5f);
+		
 	}
+	float4 cIllumination = Lighting(input.positionW, normalW);
+	cColor = cColor * cIllumination;
 
 	return(cColor);
 }
@@ -172,6 +180,7 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input) {
 
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
+	//return float4(input.uv, 0, 1);
 	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
 
 	return(cColor);
@@ -192,11 +201,12 @@ VS_SKYBOX_CUBEMAP_OUTPUT VSSkyBox(VS_SKYBOX_CUBEMAP_INPUT input) {
 
 	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
 	output.positionL = input.position;
-
+	output.position.z = output.position.w;
 	return(output);
 }
 
 TextureCube gtxtSkyCubeTexture : register(t13);
+SamplerState gssClamp1 : register(s1);
 SamplerState gssClamp : register(s1);
 
 float4 PSSkyBox(VS_SKYBOX_CUBEMAP_OUTPUT input) : SV_TARGET
@@ -336,10 +346,13 @@ struct VS_TERRAIN_INPUT {
 	float4 color : COLOR;
 	float2 uv0 : TEXCOORD0;
 	float2 uv1 : TEXCOORD1;
+	float3 normal : NORMAL;
 };
 
 struct VS_TERRAIN_OUTPUT {
 	float4 position : SV_POSITION;
+	float4 positionW : POSITION;
+	float3 normalW : NORMAL;
 	float4 color : COLOR;
 	float2 uv0 : TEXCOORD0;
 	float2 uv1 : TEXCOORD1;
@@ -350,10 +363,12 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input) {
 	float3 pos = input.position;
 	float4 alpha = gtxtTerrainAlphaTexture.SampleLevel(gSamplerState, input.uv0, 0);
 	pos.y *= alpha.w;
-	output.position = mul(mul(mul(float4(pos, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.positionW = mul(float4(pos, 1.0f), gmtxGameObject);
+	output.position = mul(mul(output.positionW, gmtxView), gmtxProjection);
 	output.color = input.color;
 	output.uv0 = input.uv0;
 	output.uv1 = input.uv1;
+	output.normalW = mul(float4(input.normal, 0.0f), gmtxGameObject).xyz;
 
 	return(output);
 }
@@ -366,11 +381,11 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	//return float4(fAlpha, fAlpha, fAlpha, 1);
 	float4 cDetailTexColors[3];
 	cDetailTexColors[0] = gtxtTerrainDetailTextures[0].Sample(gSamplerState, input.uv1 * 2.0f);
-	cDetailTexColors[1] = gtxtTerrainDetailTextures[1].Sample(gSamplerState, input.uv1 * 0.125f);
+	cDetailTexColors[1] = gtxtTerrainDetailTextures[1].Sample(gSamplerState, input.uv1 * 0.125f); // 물
 	cDetailTexColors[2] = gtxtTerrainDetailTextures[2].Sample(gSamplerState, input.uv1);
 
-	float4 cColor = cBaseTexColor * cDetailTexColors[0];
-	cColor += lerp(cDetailTexColors[1] * 0.25f, cDetailTexColors[2], 1.0f - fAlpha);
+	float4 cColor = cBaseTexColor + (cDetailTexColors[0]-0.5f)*0.7f;
+	cColor = lerp(cColor, cDetailTexColors[1]*0.5f, 1.0f - fAlpha);
 	/*
 		cColor = lerp(cDetailTexColors[0], cDetailTexColors[2], 1.0f - fAlpha) ;
 		cColor = lerp(cBaseTexColor, cColor, 0.3f) + cDetailTexColors[1] * (1.0f - fAlpha);
@@ -380,6 +395,10 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 		else if (fAlpha > 0.8975f) cColor = cDetailTexColors[0];
 		else cColor = cDetailTexColors[1];
 	*/
+	float3 normalW = normalize(input.normalW);
+	//return float4(normalW, 1);
+	cColor *= Lighting(input.positionW, normalW);
+	
 	return(cColor);
 }
 
@@ -393,81 +412,178 @@ struct VS_WATER_OUTPUT {
 	float2 uv : TEXCOORD0;
 };
 
+Texture2D<float4> gtxtWaterBaseTexture : register(t19);
+Texture2D<float4> gtxtWaterDetail0Texture : register(t20);
+Texture2D<float4> gtxtWaterDetail1Texture : register(t21);
+
 VS_WATER_OUTPUT VSTerrainWater(VS_WATER_INPUT input) {
 	VS_WATER_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	float3 pos = input.position;
+	/*float2 uv = input.uv;
+	float4 cBaseTexColor = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
+	uv.y -= gfCurrentTime * 0.0425f * 1.31f;
+	uv.x -= gfCurrentTime * 0.021f;
+	float4 cBaseTexColor1 = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
+	uv.x += gfCurrentTime * 0.021f * 2;
+	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
+	pos.y = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor * 20;*/
+	output.position = mul(mul(mul(float4(pos, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
 	output.uv = input.uv;
 
 	return(output);
 }
 
-Texture2D<float4> gtxtWaterBaseTexture : register(t19);
-Texture2D<float4> gtxtWaterDetail0Texture : register(t20);
-Texture2D<float4> gtxtWaterDetail1Texture : register(t21);
+
 
 static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 
-#define _WITH_TEXTURE_ANIMATION
 
 //#define _WITH_BASE_TEXTURE_ONLY
 #define _WITH_FULL_TEXTURES
-
-#ifndef _WITH_TEXTURE_ANIMATION
-float4 PSTerrainWater(VS_WATER_OUTPUT input) : SV_TARGET
-{
-	float4 cBaseTexColor = gtxtWaterBaseTexture.Sample(gSamplerState, input.uv);
-	float4 cDetail0TexColor = gtxtWaterDetail0Texture.Sample(gSamplerState, input.uv * 20.0f);
-	float4 cDetail1TexColor = gtxtWaterDetail1Texture.Sample(gSamplerState, input.uv * 20.0f);
-
-	float4 cColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-#ifdef _WITH_BASE_TEXTURE_ONLY
-	cColor = cBaseTexColor;
-#else
-#ifdef _WITH_FULL_TEXTURES
-	cColor = lerp(cBaseTexColor * cDetail0TexColor, cDetail1TexColor.r * 0.5f, 0.35f);
-#else
-	cColor = cBaseTexColor * cDetail0TexColor;
-#endif
-#endif
-
-	return(cColor);
-}
-#else
 #define _WITH_CONSTANT_BUFFER_MATRIX
 //#define _WITH_STATIC_MATRIX
 
 float4 PSTerrainWater(VS_WATER_OUTPUT input) : SV_TARGET
 {
 	float2 uv = input.uv;
-
-#ifdef _WITH_STATIC_MATRIX
-	sf3x3TextureAnimation._m21 = gfCurrentTime * 0.00125f;
-	uv = mul(float3(input.uv, 1.0f), sf3x3TextureAnimation).xy;
-#else
-#ifdef _WITH_CONSTANT_BUFFER_MATRIX
-	uv = mul(float3(input.uv, 1.0f), (float3x3)gf4x4TextureAnimation).xy;
-	//	uv = mul(float4(uv, 1.0f, 0.0f), gf4x4TextureAnimation).xy;
-#else
-	uv.y += gfCurrentTime * 0.00125f;
-#endif
-#endif
+	uv *= 20;
+	uv.y += gfCurrentTime * 0.0425f;
 
 	float4 cBaseTexColor = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
-	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 20.0f, 0);
-	float4 cDetail1TexColor = gtxtWaterDetail1Texture.SampleLevel(gSamplerState, uv * 20.0f, 0);
+	uv.y -= gfCurrentTime * 0.0425f * 1.31f;
+	uv.x -= gfCurrentTime * 0.021f;
+	float4 cBaseTexColor1 = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
+	uv.x += gfCurrentTime * 0.021f * 2;
+	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
+	float4 cDetail1TexColor = gtxtWaterDetail1Texture.SampleLevel(gSamplerState, uv * 5.0f, 0);
+	float4 cColor = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor;
+	cColor.a = 0.8f;
+	return(cColor);
+}
 
-	float4 cColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-#ifdef _WITH_BASE_TEXTURE_ONLY
-	cColor = cBaseTexColor;
-#else
-#ifdef _WITH_FULL_TEXTURES
-	cColor = lerp(cBaseTexColor * cDetail0TexColor, cDetail1TexColor.r * 0.5f, 0.35f);
-#else
-	cColor = cBaseTexColor * cDetail0TexColor;
-#endif
-#endif
+////////////////////////////////////////////////////////////////////////////////////
+//
+struct VS_BILLBOARD_INPUT {
+	float3 center : POSITION;
+	float2 size : TEXCOORD;
+	uint index : TEXTURE;
+};
+
+VS_BILLBOARD_INPUT VSBillboard(VS_BILLBOARD_INPUT input) {
+	return(input);
+}
+
+struct GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT {
+	float4 position : SV_POSITION;
+	float3 positionW : POSITION;
+	float3 normal : NORMAL;
+	float2 uv : TEXCOORD;
+	uint index : TEXTURE;
+	float3 color : COLOR;
+};
+
+static float2 pf2UVs[4] = { float2(0.0f, 1.0f), float2(0.0f, 0.0f), float2(1.0f, 1.0f), float2(1.0f, 0.0f) };
+
+[maxvertexcount(4)]
+void GSBillboard(point VS_BILLBOARD_INPUT input[1], inout TriangleStream<GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT> outStream) {
+	float3 f3Up = float3(0.0f, 1.0f, 0.0f);
+	float3 f3Look = normalize(gvCameraPosition - input[0].center.xyz);
+	float3 f3Right = cross(f3Up, f3Look);
+	float fHalfWidth = input[0].size.x * 0.5f;
+	float fHalfHeight = input[0].size.y * 0.5f;
+
+	float4 pf4Vertices[4];
+	pf4Vertices[0] = float4(input[0].center.xyz + (fHalfWidth * f3Right) - (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[1] = float4(input[0].center.xyz + (fHalfWidth * f3Right) + (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[2] = float4(input[0].center.xyz - (fHalfWidth * f3Right) - (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[3] = float4(input[0].center.xyz - (fHalfWidth * f3Right) + (fHalfHeight * f3Up), 1.0f);
+
+	GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT output;
+	for (int i = 0; i < 4; i++) {
+		output.positionW = pf4Vertices[i].xyz;
+		output.position = mul(mul(pf4Vertices[i], gmtxView), gmtxProjection);
+		output.normal = f3Look;
+		output.uv = pf2UVs[i];
+		output.index = input[0].index;
+		output.color = VSLighting(output.positionW);
+
+		outStream.Append(output);
+	}
+}
+
+Texture2D gtxtBillboardTextures[7] : register(t22);
+
+float4 PSBillboard(GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT input) : SV_TARGET
+{
+	//return float4(1, 0, 1, 1);
+	float4 cColor = gtxtBillboardTextures[input.index].Sample(gSamplerState, input.uv);
+	if (cColor.a <= 0.3f) discard; //clip(cColor.a - 0.3f);
+	cColor.xyz *= input.color;
+	return(cColor);
+}
+///////////////////////////////////////////////////////////////////////////
+/////
+struct VS_BILLBOARD_PARTICLE_INPUT {
+	float3 center : POSITION;
+	float2 size : TEXCOORD;
+	float3 velocity : TEXTURE;
+};
+VS_BILLBOARD_PARTICLE_INPUT VSBillboardParticle(VS_BILLBOARD_PARTICLE_INPUT input)
+{
+	input.center = mul(float4(input.center,1), gmtxGameObject).xyz;
+	input.center += input.velocity * (gfCurrentTime- gfStartTime);
+	return (input);
+}
+struct GS_BILLBOARD_GEOMETRY_OUTPUT {
+	float4 position : SV_POSITION;
+	float3 positionW : POSITION;
+	float3 normal : NORMAL;
+	float2 uv : TEXCOORD;
+	uint index : TEXTURE;
+};
+//gfCurrentTime
+//gf2SheetCount
+//gfStartTime :
+//gfSheetSpeed
+[maxvertexcount(4)]
+void GSBillboardParticle(point VS_BILLBOARD_PARTICLE_INPUT input[1], inout TriangleStream<GS_BILLBOARD_GEOMETRY_OUTPUT> outStream) {
+	float3 f3Up = float3(0.0f, 1.0f, 0.0f);
+	float3 f3Look = normalize(gvCameraPosition - input[0].center.xyz);
+	float3 f3Right = cross(f3Up, f3Look);
+	float fHalfWidth = input[0].size.x * 0.5f;
+	float fHalfHeight = input[0].size.y * 0.5f;
+
+	float4 pf4Vertices[4];
+	pf4Vertices[0] = float4(input[0].center.xyz + (fHalfWidth * f3Right) - (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[1] = float4(input[0].center.xyz + (fHalfWidth * f3Right) + (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[2] = float4(input[0].center.xyz - (fHalfWidth * f3Right) - (fHalfHeight * f3Up), 1.0f);
+	pf4Vertices[3] = float4(input[0].center.xyz - (fHalfWidth * f3Right) + (fHalfHeight * f3Up), 1.0f);
+
+	int idx = (int)((gfCurrentTime - gfStartTime)*gfSheetSpeed);
+	idx = idx % (gf2SheetCount.x*gf2SheetCount.y);
+	float uvOffsetY = (int)(idx / gf2SheetCount.x) / (gf2SheetCount.y);
+	float uvOffsetX = frac(idx / gf2SheetCount.x);
+
+	GS_BILLBOARD_GEOMETRY_OUTPUT output;
+	for (int i = 0; i < 4; i++) {
+		output.positionW = pf4Vertices[i].xyz;
+		output.position = mul(mul(pf4Vertices[i], gmtxView), gmtxProjection);
+		output.normal = f3Look;
+		output.uv = pf2UVs[i] /gf2SheetCount + float2(uvOffsetX, uvOffsetY);
+		output.index = i;
+
+		outStream.Append(output);
+	}
+}
+
+Texture2D gtxtBillboardParticleTexture : register(t29);
+
+float4 PSBillboardParticle(GS_BILLBOARD_GEOMETRY_OUTPUT input) : SV_TARGET
+{
+	//return float4(1, 0, 1, 1);
+	float4 cColor = gtxtBillboardParticleTexture.Sample(gSamplerState, input.uv);
+	if (cColor.a <= 0.3f) discard; //clip(cColor.a - 0.3f);
 
 	return(cColor);
 }
-#endif

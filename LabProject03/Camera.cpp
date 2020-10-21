@@ -18,7 +18,7 @@ CCamera::CCamera() {
 	m_fTimeLag = 0.0f;
 	m_xmf3LookAtWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_nMode = 0x00;
-	m_pPlayer = NULL;
+	m_pPlayer = nullptr;
 }
 
 CCamera::CCamera(CCamera *pCamera) {
@@ -40,7 +40,7 @@ CCamera::CCamera(CCamera *pCamera) {
 		m_fTimeLag = 0.0f;
 		m_xmf3LookAtWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_nMode = 0x00;
-		m_pPlayer = NULL;
+		m_pPlayer = nullptr;
 	}
 }
 
@@ -96,9 +96,9 @@ void CCamera::RegenerateViewMatrix() {
 
 void CCamera::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {
 	UINT ncbElementBytes = ((sizeof(VS_CB_CAMERA_INFO) + 255) & ~255); //256의 배수
-	m_pd3dcbCamera = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbCamera = ::CreateBufferResource(pd3dDevice, pd3dCommandList, nullptr, ncbElementBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr);
 
-	m_pd3dcbCamera->Map(0, NULL, (void **)&m_pcbMappedCamera);
+	m_pd3dcbCamera->Map(0, nullptr, (void **)&m_pcbMappedCamera);
 }
 
 void CCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {
@@ -118,7 +118,7 @@ void CCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) 
 
 void CCamera::ReleaseShaderVariables() {
 	if (m_pd3dcbCamera) {
-		m_pd3dcbCamera->Unmap(0, NULL);
+		m_pd3dcbCamera->Unmap(0, nullptr);
 		m_pd3dcbCamera->Release();
 	}
 }

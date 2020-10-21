@@ -43,7 +43,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	MSG msg;
 
 	while(1){
-		if(::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
+		if(::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)){
 			if(msg.message==WM_QUIT) break;
 			if(!::TranslateAccelerator(msg.hwnd, hAccelTable, &msg)){
 				::TranslateMessage(&msg);
@@ -78,7 +78,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance){
 	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LABPROJECT021));
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName = NULL;// MAKEINTRESOURCEW(IDC_LABPROJECT00);
+	wcex.lpszMenuName = nullptr;// MAKEINTRESOURCEW(IDC_LABPROJECT00);
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 

@@ -30,9 +30,9 @@ protected:
 	LPVOID						m_pPlayerUpdatedContext;
 	LPVOID						m_pCameraUpdatedContext;
 
-	CCamera						*m_pCamera = NULL;
+	CCamera						*m_pCamera = nullptr;
 
-	CShader						*m_pShader = NULL;
+	CShader						*m_pShader = nullptr;
 
 public:
 	CPlayer();
@@ -71,15 +71,15 @@ public:
 	virtual void OnCameraUpdateCallback(float fTimeElapsed) {}
 	void SetCameraUpdatedContext(LPVOID pContext) { m_pCameraUpdatedContext = pContext; }
 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) override;
+	void ReleaseShaderVariables() override;
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) override;
 
 	CCamera *OnChangeCamera(DWORD nNewCameraMode, DWORD nCurrentCameraMode);
 
-	virtual CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed) { return(NULL); }
-	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed) { return(nullptr); }
+	void OnPrepareRender() override;
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = nullptr) override;
 };
 
 class CAirplanePlayer : public CPlayer {
@@ -87,16 +87,16 @@ public:
 	CAirplanePlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual ~CAirplanePlayer();
 
-	CGameObject					*m_pMainRotorFrame = NULL;
-	CGameObject					*m_pTailRotorFrame = NULL;
+	CGameObject					*m_pMainRotorFrame = nullptr;
+	CGameObject					*m_pTailRotorFrame = nullptr;
 
 private:
-	virtual void PrepareAnimate();
-	virtual void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = NULL);
+	void PrepareAnimate() override;
+	void Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent = nullptr) override;
 
 public:
-	virtual CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed);
-	virtual void OnPrepareRender();
+	CCamera *ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed) override;
+	void OnPrepareRender() override;
 };
 
 
