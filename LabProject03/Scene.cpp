@@ -341,6 +341,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	pTerrainWater = new CTerrainWater(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, 257 * xmf3Scale.x, 257 * xmf3Scale.z);
 	pTerrainWater->SetPosition(+(257 * xmf3Scale.x * 0.5f), 55.0f, +(257 * xmf3Scale.z * 0.5f));
+	
 	auto pTexturedShader = new CTexturedShader();
 
 	auto t = new ObjectSpawner();
