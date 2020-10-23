@@ -94,15 +94,16 @@ void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CTexturedRectMesh::CTexturedRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight, float fDepth, float fxPosition, float fyPosition, float fzPosition) : CMesh(pd3dDevice, pd3dCommandList) {
-	m_nVertices = 6;
+CTexturedRectMesh::CTexturedRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight, float fDepth, float fxPosition, float fyPosition, float fzPosition, float divX, float divY, float divZ) : CMesh(pd3dDevice, pd3dCommandList) {
+	m_nVertices = 6 * divX*divY*divZ;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 	m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
 
 	float fx = (fWidth * 0.5f) + fxPosition, fy = (fHeight * 0.5f) + fyPosition, fz = (fDepth * 0.5f) + fzPosition;
-
+	float dx = (fx+fx)/ divX, dy = (fy+fy)/ divY, dz = (fz + fz)/ divZ;
+	
 	if (fWidth == 0.0f) {
 		if (fxPosition > 0.0f) {
 			m_pxmf3Positions[0] = XMFLOAT3(fx, +fy, -fz); m_pxmf2TextureCoords0[0] = XMFLOAT2(1.0f, 0.0f);
@@ -144,12 +145,37 @@ CTexturedRectMesh::CTexturedRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			m_pxmf3Positions[4] = XMFLOAT3(-fx, +fy, fz); m_pxmf2TextureCoords0[4] = XMFLOAT2(0.0f, 0.0f);
 			m_pxmf3Positions[5] = XMFLOAT3(+fx, +fy, fz); m_pxmf2TextureCoords0[5] = XMFLOAT2(1.0f, 0.0f);
 		} else {
-			m_pxmf3Positions[0] = XMFLOAT3(-fx, +fy, fz); m_pxmf2TextureCoords0[0] = XMFLOAT2(1.0f, 0.0f);
-			m_pxmf3Positions[1] = XMFLOAT3(-fx, -fy, fz); m_pxmf2TextureCoords0[1] = XMFLOAT2(1.0f, 1.0f);
-			m_pxmf3Positions[2] = XMFLOAT3(+fx, -fy, fz); m_pxmf2TextureCoords0[2] = XMFLOAT2(0.0f, 1.0f);
-			m_pxmf3Positions[3] = XMFLOAT3(+fx, -fy, fz); m_pxmf2TextureCoords0[3] = XMFLOAT2(0.0f, 1.0f);
-			m_pxmf3Positions[4] = XMFLOAT3(+fx, +fy, fz); m_pxmf2TextureCoords0[4] = XMFLOAT2(0.0f, 0.0f);
-			m_pxmf3Positions[5] = XMFLOAT3(-fx, +fy, fz); m_pxmf2TextureCoords0[5] = XMFLOAT2(1.0f, 0.0f);
+			for (size_t x = 0; x < divX; x++) {
+				for (size_t y = 0; y < divY; y++) {
+					float tfx = fx/divX+dx*x- fx+ dx*0.5f;
+					float mtfx = -fx / divX + dx * x - fx + dx*0.5f;
+					float tfy = fy/divY+ dy * y - fy+ dy*0.5f;
+					float mtfy = -fy/divY+ dy * y - fy + dy*0.5f;
+					float divUvX = 1 / divX;
+					float divUvY = 1 / divY;
+					float maxUvX = divUvX + divUvX * x;
+					float minUvX = divUvX * x;
+					float maxUvY = divUvY + divUvY * y;
+					float minUvY = divUvY * y;
+					// 0 1 2 2 3 0
+					m_pxmf3Positions[0 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(mtfx, +tfy, fz);
+					m_pxmf2TextureCoords0[0 + (6 * y) + (6*(int)divY * x)] = XMFLOAT2(minUvX, maxUvY);
+					
+					m_pxmf3Positions[1 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(mtfx, mtfy, fz);
+					m_pxmf2TextureCoords0[1 + (6 * y) + (6*(int)divY * x)] = XMFLOAT2(minUvX, minUvY);
+					
+					m_pxmf3Positions[2 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(tfx, mtfy, fz);
+					m_pxmf2TextureCoords0[2 + (6 * y) + (6*(int)divY * x)] = XMFLOAT2(maxUvX, minUvY);
+					m_pxmf3Positions[3 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(tfx, mtfy, fz);
+					m_pxmf2TextureCoords0[3 + (6 * y) + (6*(int)divY * x)] = XMFLOAT2(maxUvX, minUvY);
+					
+					m_pxmf3Positions[4 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(tfx, +tfy, fz);
+					m_pxmf2TextureCoords0[4 + (6 * y) + (6*(int)divY * x)] = XMFLOAT2(maxUvX, maxUvY);
+					
+					m_pxmf3Positions[5 + (6 * y) + (6*(int)divY * x)] = XMFLOAT3(mtfx, +tfy, fz);
+					m_pxmf2TextureCoords0[5 + (6 * y) + (6*(int)divY*x)] = XMFLOAT2(minUvX, maxUvY);
+				}
+			}
 		}
 	}
 

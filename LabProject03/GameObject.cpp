@@ -1122,10 +1122,10 @@ void CRotatingObject::Animate(float fTimeElapsed, XMFLOAT4X4 *pxmf4x4Parent) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
 CTerrainWater::CTerrainWater(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature, float fWidth, float fLength) : CGameObject(1) {
-	CTexturedRectMesh* pWaterMesh = new CTexturedRectMesh(pd3dDevice, pd3dCommandList, fWidth, 0.0f, fLength, 0.0f, 0.0f, 0.0f);
+	CTexturedRectMesh* pWaterMesh = new CTexturedRectMesh(pd3dDevice, pd3dCommandList, fWidth, fLength, 0, 0.0f, 0.0f, 0.0f, 6,6,1);
 	pWaterMesh->m_d3dPrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
 	SetMesh(pWaterMesh);
-
+	Rotate(-90, 0, 0);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	CTexture* pWaterTexture = new CTexture(3, RESOURCE_TEXTURE2D, 0, 1);

@@ -2,7 +2,7 @@
 #include "Timer.h"
 #include "Player.h"
 #include "Scene.h"
-#define RENDER_WIREFRAME
+//#define RENDER_WIREFRAME
 
 class CCamera;
 

@@ -381,7 +381,8 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	//return float4(fAlpha, fAlpha, fAlpha, 1);
 	float4 cDetailTexColors[3];
 	cDetailTexColors[0] = gtxtTerrainDetailTextures[0].Sample(gSamplerState, input.uv1 * 2.0f);
-	cDetailTexColors[1] = gtxtTerrainDetailTextures[1].Sample(gSamplerState, input.uv1 * 0.125f); // ¹°
+	float2 off = float2(gfCurrentTime * 0.425f * 1.31f, gfCurrentTime * 0.021f);
+	cDetailTexColors[1] = gtxtTerrainDetailTextures[1].Sample(gSamplerState, input.uv1 * 0.525f+ off); // ¹°
 	cDetailTexColors[2] = gtxtTerrainDetailTextures[2].Sample(gSamplerState, input.uv1);
 
 	float4 cColor = cBaseTexColor + (cDetailTexColors[0]-0.5f)*0.7f;
@@ -408,7 +409,7 @@ struct VS_WATER_INPUT {
 };
 struct HullInputType {
 	float3 position : POSITION;
-	float2 uv : TEXCOORD0;
+	float3 uv : TEXCOORD0;
 };
 struct ConstantOutputType {
 	float edges[3] : SV_TessFactor;
@@ -421,6 +422,7 @@ struct HullOutputType {
 struct PixelInputType {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
+	float3 normal : NORMAL;
 };
 
 Texture2D<float4> gtxtWaterBaseTexture : register(t19);
@@ -436,16 +438,20 @@ HullInputType VSTerrainWater(VS_WATER_INPUT input) {
 	HullInputType output;
 	float3 pos = input.position;
 	output.position = pos;
-	output.uv = input.uv;
+	output.uv.xy = input.uv;
+	float3 camPos = gvCameraPosition;
+	output.uv.z = length(camPos-mul(float4(pos,1), gmtxGameObject).xyz);
 	return(output);
 }
 
 ConstantOutputType ColorPatchConstantFunction(InputPatch<HullInputType, 3> inputPatch, uint patchId : SV_PrimitiveID) {
 	ConstantOutputType output;
-	output.edges[0] = tessellationAmount;
-	output.edges[1] = tessellationAmount;
-	output.edges[2] = tessellationAmount;
-	output.inside = tessellationAmount;
+	float t = tessellationAmount;
+	//t = 1;
+	output.edges[0] = lerp(t, 1, saturate(pow(inputPatch[0].uv.z*0.001, 1)));
+	output.edges[1] = lerp(t, 1, saturate(pow(inputPatch[1].uv.z*0.001, 1)));
+	output.edges[2] = lerp(t, 1, saturate(pow(inputPatch[2].uv.z*0.001, 1)));
+	output.inside = (output.edges[0]+ output.edges[1]+ output.edges[0])*0.3;
 	return output;
 }
 
@@ -457,7 +463,7 @@ ConstantOutputType ColorPatchConstantFunction(InputPatch<HullInputType, 3> input
 HullOutputType HSTerrainWater(InputPatch<HullInputType, 3> patch, uint pointId : SV_OutputControlPointID, uint patchId : SV_PrimitiveID) {
 	HullOutputType output;
 	output.position = patch[pointId].position;
-	output.uv = patch[pointId].uv;
+	output.uv = patch[pointId].uv.xy;
 
 	return output;
 }
@@ -467,20 +473,35 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 	float3 vertexPosition;
 	PixelInputType output;
 	vertexPosition = uvwCoord.x * patch[0].position + uvwCoord.y * patch[1].position + uvwCoord.z * patch[2].position;
-	float2 uv = uvwCoord.x * patch[0].uv + uvwCoord.y * patch[1].uv + uvwCoord.z * patch[2].uv;
 
-	float4 cBaseTexColor = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
-	uv.y -= gfCurrentTime * 0.0425f * 1.31f;
-	uv.x -= gfCurrentTime * 0.021f;
-	float4 cBaseTexColor1 = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
-	uv.x += gfCurrentTime * 0.021f * 2;
-	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
-	vertexPosition.y += cBaseTexColor1 * cBaseTexColor * cDetail0TexColor * 500;
-	
 	output.position = mul(float4(vertexPosition, 1.0f), gmtxGameObject);
 	output.position = mul(output.position, gmtxView);
 	output.position = mul(output.position, gmtxProjection);
-	output.uv = uv;
+
+	float heights[3] = {0,0,0};
+	float2 uv1 = uvwCoord.x * patch[0].uv + uvwCoord.y * patch[1].uv + uvwCoord.z * patch[2].uv;;
+	float2 uvOffset[3] = { float2(0.01, 0), float2(0, 0.01), float2(0, 0) };
+	for (int i = 0;i <3;i++) {
+		float2 uv = uvwCoord.x * (patch[0].uv+ uvOffset[i]) + uvwCoord.y * (patch[1].uv + uvOffset[i]) + uvwCoord.z * (patch[2].uv + uvOffset[i]);
+
+		float4 cBaseTexColor = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
+		uv.y -= gfCurrentTime * 0.0425f * 1.31f;
+		uv.x -= gfCurrentTime * 0.021f;
+		float4 cBaseTexColor1 = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
+		uv.x += gfCurrentTime * 0.021f * 2;
+		float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
+		heights[i] = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor * 100;
+	}
+	output.position.y += heights[2];
+
+	output.normal.y = heights[1] - heights[2];
+	output.normal.x = heights[0]-heights[2];
+	output.normal.z = 5;
+	//output.normal = mul(gmtxGameObject, normalize(output.normal));
+	output.normal = normalize(output.normal);
+	
+	
+	output.uv = uv1;
 
 	return output;
 }
@@ -488,7 +509,13 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 [maxvertexcount(16 * 4)]
 void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<PixelInputType> outStream) {
 	PixelInputType output;
-
+	for (int i = 0; i < 3; i++) {
+		output.position = input[i].position;
+		output.uv = input[i].uv;
+		output.normal = input[i].normal;
+		outStream.Append(output);
+	}
+	return;
 	float t = 0.5;
 	float4 i01 = lerp(input[0].position, input[1].position, t);
 	float4 i02 = lerp(input[0].position, input[2].position, t);
@@ -598,7 +625,7 @@ static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0
 
 float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 {
-	return float4(1, 0, 1, 1);
+	//return float4(input.uv,0, 1);
 	float2 uv = input.uv;
 	uv *= 20;
 	uv.y += gfCurrentTime * 0.0425f;
@@ -611,6 +638,7 @@ float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
 	float4 cDetail1TexColor = gtxtWaterDetail1Texture.SampleLevel(gSamplerState, uv * 5.0f, 0);
 	float4 cColor = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor;
+	cColor.rgb*=(Lighting(input.position, input.normal).rgb*3 + float3(0.3,0.3,0.3));
 	cColor.a = 0.8f;
 	return(cColor);
 }

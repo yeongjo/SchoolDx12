@@ -548,7 +548,7 @@ void CScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 
 	m_pd3dcbTessellation->Map(0, nullptr, (void **)&m_pcbMappedTessellation);
 
-	m_pcbMappedTessellation->tessellationAmount = 1000000;
+	m_pcbMappedTessellation->tessellationAmount = 32;
 	m_pcbMappedTessellation->padding = XMFLOAT3();
 }
 
