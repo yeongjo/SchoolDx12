@@ -31,6 +31,11 @@ struct LIGHTS {
 	int						m_nLights;
 };
 
+struct TessellationBuffer {
+	float tessellationAmount;
+	XMFLOAT3 padding;
+};
+
 class CScene
 {
 public:
@@ -82,5 +87,8 @@ public:
 	CTerrainWater				*pTerrainWater = nullptr;
 
 	WayPointHandler				*_wayPointHandler = nullptr;
+
+	ID3D12Resource				*m_pd3dcbTessellation = nullptr;
+	TessellationBuffer			*m_pcbMappedTessellation = nullptr;
 };
 

@@ -406,8 +406,19 @@ struct VS_WATER_INPUT {
 	float3 position : POSITION;
 	float2 uv : TEXCOORD0;
 };
-
-struct VS_WATER_OUTPUT {
+struct HullInputType {
+	float3 position : POSITION;
+	float2 uv : TEXCOORD0;
+};
+struct ConstantOutputType {
+	float edges[3] : SV_TessFactor;
+	float inside : SV_InsideTessFactor;
+};
+struct HullOutputType {
+	float3 position : POSITION;
+	float2 uv : TEXCOORD0;
+};
+struct PixelInputType {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
 };
@@ -416,25 +427,166 @@ Texture2D<float4> gtxtWaterBaseTexture : register(t19);
 Texture2D<float4> gtxtWaterDetail0Texture : register(t20);
 Texture2D<float4> gtxtWaterDetail1Texture : register(t21);
 
-VS_WATER_OUTPUT VSTerrainWater(VS_WATER_INPUT input) {
-	VS_WATER_OUTPUT output;
+cbuffer TessellationBuffer {
+	float tessellationAmount;
+	float3 padding;
+};
 
+HullInputType VSTerrainWater(VS_WATER_INPUT input) {
+	HullInputType output;
 	float3 pos = input.position;
-	/*float2 uv = input.uv;
+	output.position = pos;
+	output.uv = input.uv;
+	return(output);
+}
+
+ConstantOutputType ColorPatchConstantFunction(InputPatch<HullInputType, 3> inputPatch, uint patchId : SV_PrimitiveID) {
+	ConstantOutputType output;
+	output.edges[0] = tessellationAmount;
+	output.edges[1] = tessellationAmount;
+	output.edges[2] = tessellationAmount;
+	output.inside = tessellationAmount;
+	return output;
+}
+
+[domain("tri")]
+[partitioning("integer")]
+[outputtopology("triangle_cw")]
+[outputcontrolpoints(3)]
+[patchconstantfunc("ColorPatchConstantFunction")]
+HullOutputType HSTerrainWater(InputPatch<HullInputType, 3> patch, uint pointId : SV_OutputControlPointID, uint patchId : SV_PrimitiveID) {
+	HullOutputType output;
+	output.position = patch[pointId].position;
+	output.uv = patch[pointId].uv;
+
+	return output;
+}
+
+[domain("tri")]
+PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_DomainLocation, const OutputPatch<HullOutputType, 3> patch) {
+	float3 vertexPosition;
+	PixelInputType output;
+	vertexPosition = uvwCoord.x * patch[0].position + uvwCoord.y * patch[1].position + uvwCoord.z * patch[2].position;
+	float2 uv = uvwCoord.x * patch[0].uv + uvwCoord.y * patch[1].uv + uvwCoord.z * patch[2].uv;
+
 	float4 cBaseTexColor = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
 	uv.y -= gfCurrentTime * 0.0425f * 1.31f;
 	uv.x -= gfCurrentTime * 0.021f;
 	float4 cBaseTexColor1 = gtxtWaterBaseTexture.SampleLevel(gSamplerState, uv, 0);
 	uv.x += gfCurrentTime * 0.021f * 2;
 	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
-	pos.y = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor * 20;*/
-	output.position = mul(mul(mul(float4(pos, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
-	output.uv = input.uv;
+	vertexPosition.y += cBaseTexColor1 * cBaseTexColor * cDetail0TexColor * 500;
+	
+	output.position = mul(float4(vertexPosition, 1.0f), gmtxGameObject);
+	output.position = mul(output.position, gmtxView);
+	output.position = mul(output.position, gmtxProjection);
+	output.uv = uv;
 
-	return(output);
+	return output;
 }
 
+[maxvertexcount(16 * 4)]
+void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<PixelInputType> outStream) {
+	PixelInputType output;
 
+	float t = 0.5;
+	float4 i01 = lerp(input[0].position, input[1].position, t);
+	float4 i02 = lerp(input[0].position, input[2].position, t);
+	float4 i21 = lerp(input[2].position, input[1].position, t);
+	float2 uv01 = lerp(input[0].uv, input[1].uv, t);
+	float2 uv02 = lerp(input[0].uv, input[2].uv, t);
+	float2 uv21 = lerp(input[2].uv, input[1].uv, t);
+
+	output.position = input[1].position;
+	output.uv = input[1].uv;
+	outStream.Append(output);
+	output.position = input[2].position;
+	output.uv = input[2].uv;
+	outStream.Append(output);
+	output.position = i02;
+	output.uv = uv02;
+	outStream.Append(output);
+	output.position = input[0].position;
+	output.uv = input[0].uv;
+	outStream.Append(output);
+	
+	/*output.position = input[0].position;
+	output.uv = input[0].uv;
+	outStream.Append(output);
+	output.position = i01;
+	output.uv = uv01;
+	outStream.Append(output);
+	output.position = i02;
+	output.uv = uv02;
+	outStream.Append(output);
+	
+	output.position = input[1].position;
+	output.uv = input[1].uv;
+	outStream.Append(output);
+	output.position = i21;
+	output.uv = uv21;
+	outStream.Append(output);
+	output.position = i01;
+	output.uv = uv01;
+	outStream.Append(output);
+	
+	output.position = input[2].position;
+	output.uv = input[2].uv;
+	outStream.Append(output);
+	output.position = i02;
+	output.uv = uv02;
+	outStream.Append(output);
+	output.position = i01;
+	output.uv = uv01;
+	outStream.Append(output);
+
+	output.position = i01;
+	output.uv = uv01;
+	outStream.Append(output);
+	output.position = i21;
+	output.uv = uv21;
+	outStream.Append(output);
+	output.position = i02;
+	output.uv = uv02;
+	outStream.Append(output);*/
+	
+	return;
+	float sub_divisions = 2;
+	float3 v0 = input[0].position;
+	float3 v1 = input[1].position;
+	float3 v2 = input[2].position;
+	float dx = abs(v0.x - v2.x) / sub_divisions;
+	float dz = abs(v0.z - v1.z) / sub_divisions;
+	float x = v0.x;
+	float z = v0.z;
+	float3 uvv0 = input[0].position;
+	float3 uvv1 = input[1].position;
+	float3 uvv2 = input[2].position;
+	float uvdx = abs(uvv0.x - uvv2.x) / sub_divisions;
+	float uvdz = abs(uvv0.z - uvv1.z) / sub_divisions;
+	float uvx = uvv0.x;
+	float uvz = uvv0.z;
+	for (int j = 0; j < sub_divisions*sub_divisions; j++) {
+		output.position = float4(x, 0, z, 1);
+		output.uv = float2(uvx, uvz);
+		outStream.Append(output);
+		output.position = float4(x, 0, z + dz, 1);
+		output.uv = float2(uvx, uvz + uvdz);
+		outStream.Append(output);
+		output.position = float4(x + dx, 0, z, 1);
+		output.uv = float2(uvx + uvdx, uvz);
+		outStream.Append(output);
+		output.position = float4(x + dx, 0, z + dz, 1);
+		output.uv = float2(uvx + uvdx, uvz + uvdz);
+		outStream.Append(output);
+
+		x += dx;
+		if ((j + 1) % sub_divisions == 0) {
+			x = v0.x;
+			z += dz;
+		}
+	}
+}
 
 static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 
@@ -444,8 +596,9 @@ static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0
 #define _WITH_CONSTANT_BUFFER_MATRIX
 //#define _WITH_STATIC_MATRIX
 
-float4 PSTerrainWater(VS_WATER_OUTPUT input) : SV_TARGET
+float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 {
+	return float4(1, 0, 1, 1);
 	float2 uv = input.uv;
 	uv *= 20;
 	uv.y += gfCurrentTime * 0.0425f;

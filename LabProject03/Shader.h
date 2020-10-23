@@ -18,6 +18,8 @@ public:
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+	virtual D3D12_SHADER_BYTECODE CreateHullShader();
+	virtual D3D12_SHADER_BYTECODE CreateDomainShader();
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader();
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 	D3D12_SHADER_BYTECODE ReadCompiledShaderFromFile(WCHAR *pszFileName, ID3DBlob **ppd3dShaderBlob = nullptr);
@@ -51,7 +53,9 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUSrvDescriptorStartHandle() { return(m_d3dSrvGPUDescriptorStartHandle); }
 
 	ShaderType GetType() { return shaderType; }
-
+private:
+	D3D12_SHADER_BYTECODE CreateEmptyShader();
+	
 public:
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE		m_d3dTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 protected:
@@ -59,6 +63,8 @@ protected:
 	
 	ID3DBlob*							m_pd3dVertexShaderBlob = nullptr;
 	ID3DBlob*							m_pd3dPixelShaderBlob = nullptr;
+	ID3DBlob*							m_pd3dHullShaderBlob = nullptr;
+	ID3DBlob*							m_pd3dDomainShaderBlob = nullptr;
 	ID3DBlob*							m_pd3dGeometryShaderBlob = nullptr;
 
 	int									m_nPipelineStates = 0;
@@ -272,4 +278,7 @@ public:
 	D3D12_INPUT_LAYOUT_DESC CreateInputLayout() override;
 	D3D12_SHADER_BYTECODE CreateVertexShader() override;
 	D3D12_SHADER_BYTECODE CreatePixelShader() override;
+	D3D12_SHADER_BYTECODE CreateGeometryShader() override;
+	virtual D3D12_SHADER_BYTECODE CreateHullShader();
+	virtual D3D12_SHADER_BYTECODE CreateDomainShader();
 };

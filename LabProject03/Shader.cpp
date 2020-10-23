@@ -25,6 +25,9 @@ D3D12_RASTERIZER_DESC CShader::CreateRasterizerState() {
 	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
 	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
 	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+#ifdef  RENDER_WIREFRAME
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+#endif
 	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
 	d3dRasterizerDesc.DepthBias = 0;
@@ -84,23 +87,19 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() {
 	return(d3dInputLayoutDesc);
 }
 D3D12_SHADER_BYTECODE CShader::CreateVertexShader() {
-	D3D12_SHADER_BYTECODE d3dShaderByteCode;
-	d3dShaderByteCode.BytecodeLength = 0;
-	d3dShaderByteCode.pShaderBytecode = nullptr;
-	return(d3dShaderByteCode);
+	return CreateEmptyShader();
 }
 D3D12_SHADER_BYTECODE CShader::CreatePixelShader() {
-	D3D12_SHADER_BYTECODE d3dShaderByteCode;
-	d3dShaderByteCode.BytecodeLength = 0;
-	d3dShaderByteCode.pShaderBytecode = nullptr;
-	return(d3dShaderByteCode);
+	return CreateEmptyShader();
+}
+D3D12_SHADER_BYTECODE CShader::CreateHullShader() {
+	return CreateEmptyShader();
+}
+D3D12_SHADER_BYTECODE CShader::CreateDomainShader() {
+	return CreateEmptyShader();
 }
 D3D12_SHADER_BYTECODE CShader::CreateGeometryShader() {
-	D3D12_SHADER_BYTECODE d3dShaderByteCode;
-	d3dShaderByteCode.BytecodeLength = 0;
-	d3dShaderByteCode.pShaderBytecode = nullptr;
-
-	return(d3dShaderByteCode);
+	return CreateEmptyShader();
 }
 //셰이더 소스 코드를 컴파일하여 바이트 코드 구조체를 반환한다. 
 D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob) {
@@ -133,6 +132,8 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	d3dPipelineStateDesc.VS = CreateVertexShader();
 	d3dPipelineStateDesc.PS = CreatePixelShader();
 	d3dPipelineStateDesc.GS = CreateGeometryShader();
+	d3dPipelineStateDesc.HS = CreateHullShader();
+	d3dPipelineStateDesc.DS = CreateDomainShader();
 	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
 	d3dPipelineStateDesc.BlendState = CreateBlendState();
 	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
@@ -151,6 +152,8 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	if (m_pd3dVertexShaderBlob) m_pd3dVertexShaderBlob->Release();
 	if (m_pd3dPixelShaderBlob) m_pd3dPixelShaderBlob->Release();
 	if (m_pd3dGeometryShaderBlob) m_pd3dGeometryShaderBlob->Release();
+	if (m_pd3dHullShaderBlob) m_pd3dHullShaderBlob->Release();
+	if (m_pd3dDomainShaderBlob) m_pd3dDomainShaderBlob->Release();
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs)
 		delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
@@ -264,6 +267,13 @@ void CShader::CreateShaderResourceView(ID3D12Device* pd3dDevice, CTexture* pText
 		pTexture->SetGpuDescriptorHandle(nIndex, m_d3dSrvGPUDescriptorNextHandle);
 		m_d3dSrvGPUDescriptorNextHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 	}
+}
+
+D3D12_SHADER_BYTECODE CShader::CreateEmptyShader() {
+	D3D12_SHADER_BYTECODE d3dShaderByteCode;
+	d3dShaderByteCode.BytecodeLength = 0;
+	d3dShaderByteCode.pShaderBytecode = nullptr;
+	return(d3dShaderByteCode);
 }
 
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState) {
@@ -1033,4 +1043,17 @@ D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateVertexShader() {
 
 D3D12_SHADER_BYTECODE CTerrainWaterShader::CreatePixelShader() {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTerrainWater", "ps_5_1", &m_pd3dPixelShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateGeometryShader() {
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSTerrainWater", "gs_5_1", &m_pd3dGeometryShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateHullShader() {
+	m_d3dTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "HSTerrainWater", "hs_5_1", &m_pd3dHullShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateDomainShader() {
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "DSTerrainWater", "ds_5_1", &m_pd3dDomainShaderBlob));
 }
