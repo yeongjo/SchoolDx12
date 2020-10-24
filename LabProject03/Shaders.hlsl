@@ -399,7 +399,8 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	float3 normalW = normalize(input.normalW);
 	//return float4(normalW, 1);
 	cColor *= Lighting(input.positionW, normalW);
-	
+	half3 fogColor = half3(1,0,1);
+	cColor.rgb = lerp(cColor, fogColor, saturate(input.position.z/ input.position.w));
 	return(cColor);
 }
 
@@ -497,7 +498,7 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 
 	output.normal.y = heights[1] - heights[2];
 	output.normal.x = heights[0]-heights[2];
-	output.normal.z = 5;
+	output.normal.z = 15;
 	//output.normal = mul(gmtxGameObject, normalize(output.normal));
 	output.normal = normalize(output.normal);
 	

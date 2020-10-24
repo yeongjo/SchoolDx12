@@ -236,7 +236,29 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	//깊이-스텐실 서술자 힙(서술자의 개수는 1)을 생성한다.
 	//깊이-스텐실 서술자 힙의 원소의 크기를 저장한다.
 
-	d3dDescriptorHeapDesc.NumDescriptors = 0 + 4; //CBVs + SRVs 
+	////////////////////////////////////////////////////////////
+	// 랜더텍스처 만들기
+	D3D12_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+
+	RTVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	UAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	
+	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	RTVDesc.Texture2D.MipSlice = 0;
+
+	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	UAVDesc.Texture2D.MipSlice = 0;
+
+	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	SRVDesc.Texture2D.MipLevels = 1;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+	
+	
+	d3dDescriptorHeapDesc.NumDescriptors = 0 + 2; //CBVs + SRVs 
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
@@ -257,7 +279,7 @@ void CGameFramework::CreateRenderTargetViews() {
 
 		
 		// 렌더텍스처 만들기 위함
-		d3dShaderResourceViewDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		d3dShaderResourceViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
 		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
@@ -475,8 +497,6 @@ void CGameFramework::UpdateShaderVariables() {
 
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fxCursorPos, 2);
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fyCursorPos, 3);
-
-	m_pd3dCommandList->SetGraphicsRootDescriptorTable(19, m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 //#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {
@@ -509,6 +529,10 @@ void CGameFramework::FrameAdvance() {
 	if (m_pScene) { 
 		m_pScene->PrepareRender(m_pd3dCommandList);
 		UpdateShaderVariables();
+		m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
+		auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		GPUDescriptorHandleForHeapStart.ptr += m_nSwapChainBufferIndex * gnCbvSrvDescriptorIncrementSize;
+		m_pd3dCommandList->SetGraphicsRootDescriptorTable(19, GPUDescriptorHandleForHeapStart);
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);
 	}
 	//3인칭 카메라일 때 플레이어가 항상 보이도록 렌더링한다. 
