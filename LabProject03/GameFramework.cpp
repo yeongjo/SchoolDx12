@@ -11,10 +11,10 @@ CGameFramework::CGameFramework() {
 	m_pd3dCommandList = nullptr;
 	for (int i = 0; i < m_nSwapChainBuffers; i++) m_ppd3dRenderTargetBuffers[i] = nullptr;
 	m_pd3dRtvDescriptorHeap = nullptr;
-	m_nRtvDescriptorIncrementSize = 0;
+	gnRtvDescriptorIncrementSize = 0;
 	m_pd3dDepthStencilBuffer = nullptr;
 	m_pd3dDsvDescriptorHeap = nullptr;
-	m_nDsvDescriptorIncrementSize = 0;
+	gnDsvDescriptorIncrementSize = 0;
 	m_nSwapChainBufferIndex = 0;
 	m_hFenceEvent = nullptr;
 	m_pd3dFence = nullptr;
@@ -74,27 +74,6 @@ void CGameFramework::CreateSwapChain() {
 	::GetClientRect(m_hWnd, &rcClient);
 	m_nWndClientWidth = rcClient.right - rcClient.left;
 	m_nWndClientHeight = rcClient.bottom - rcClient.top;
-	//DXGI_SWAP_CHAIN_DESC1 dxgiSwapChainDesc;
-	//::ZeroMemory(&dxgiSwapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC1));
-	//dxgiSwapChainDesc.Width = m_nWndClientWidth;
-	//dxgiSwapChainDesc.Height = m_nWndClientHeight;
-	//dxgiSwapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//dxgiSwapChainDesc.SampleDesc.Count = (m_bMsaa4xEnable) ? 4 : 1;
-	//dxgiSwapChainDesc.SampleDesc.Quality = (m_bMsaa4xEnable) ? (m_nMsaa4xQualityLevels-
-	//	1) : 0;
-	//dxgiSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	//dxgiSwapChainDesc.BufferCount = m_nSwapChainBuffers;
-	//dxgiSwapChainDesc.Scaling = DXGI_SCALING_NONE;
-	//dxgiSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	//dxgiSwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-	//dxgiSwapChainDesc.Flags = 0;
-	//DXGI_SWAP_CHAIN_FULLSCREEN_DESC dxgiSwapChainFullScreenDesc;
-	//::ZeroMemory(&dxgiSwapChainFullScreenDesc, sizeof(DXGI_SWAP_CHAIN_FULLSCREEN_DESC));
-	//dxgiSwapChainFullScreenDesc.RefreshRate.Numerator = 60;
-	//dxgiSwapChainFullScreenDesc.RefreshRate.Denominator = 1;
-	//dxgiSwapChainFullScreenDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	//dxgiSwapChainFullScreenDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	//dxgiSwapChainFullScreenDesc.Windowed = TRUE;
 	//m_pdxgiFactory->CreateSwapChainForHwnd(m_pd3dCommandQueue, m_hWnd,
 	//	&dxgiSwapChainDesc, &dxgiSwapChainFullScreenDesc, NULL, (IDXGISwapChain1
 	//		**)&m_pdxgiSwapChain);
@@ -232,8 +211,7 @@ void CGameFramework::ChangeSwapChainState() {
 	//	m_ppd3dSwapChainBackBuffers[i]->Release();
 	DXGI_SWAP_CHAIN_DESC dxgiSwapChainDesc;
 	m_pdxgiSwapChain->GetDesc(&dxgiSwapChainDesc);
-	m_pdxgiSwapChain->ResizeBuffers(m_nSwapChainBuffers, m_nWndClientWidth,
-		m_nWndClientHeight, dxgiSwapChainDesc.BufferDesc.Format, dxgiSwapChainDesc.Flags);
+	m_pdxgiSwapChain->ResizeBuffers(m_nSwapChainBuffers, m_nWndClientWidth, m_nWndClientHeight, dxgiSwapChainDesc.BufferDesc.Format, dxgiSwapChainDesc.Flags);
 	m_nSwapChainBufferIndex = m_pdxgiSwapChain->GetCurrentBackBufferIndex();
 	CreateRenderTargetViews();
 	CreateDepthStencilView();
@@ -248,28 +226,47 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	d3dDescriptorHeapDesc.NodeMask = 0;
 	HRESULT hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc,
 		__uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dRtvDescriptorHeap);
-	//렌더 타겟 서술자 힙(서술자의 개수는 스왑체인 버퍼의 개수)을 생성한다. 
-	m_nRtvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	//렌더 타겟 서술자 힙(서술자의 개수는 스왑체인 버퍼의 개수)을 생성한다.
+	
 	//렌더 타겟 서술자 힙의 원소의 크기를 저장한다. 
 	d3dDescriptorHeapDesc.NumDescriptors = 1;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV; // Depth Stencil View
 	hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc,
 		__uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
 	//깊이-스텐실 서술자 힙(서술자의 개수는 1)을 생성한다.
-	m_nDsvDescriptorIncrementSize =
-		m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	//깊이-스텐실 서술자 힙의 원소의 크기를 저장한다.
+
+	d3dDescriptorHeapDesc.NumDescriptors = 0 + 4; //CBVs + SRVs 
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	d3dDescriptorHeapDesc.NodeMask = 0;
+	m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dCbvSrvDescriptorHeap);
 }
 
 //스왑체인의 각 후면 버퍼에 대한 렌더 타겟 뷰를 생성한다.
 void CGameFramework::CreateRenderTargetViews() {
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =
-		m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	auto m_d3dSrvCPUDescriptorNextHandle = m_pd3dCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	
 	for (UINT i = 0; i < m_nSwapChainBuffers; i++) {
 		m_pdxgiSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_ppd3dRenderTargetBuffers[i]);
-		m_pd3dDevice->CreateRenderTargetView(m_ppd3dRenderTargetBuffers[i], nullptr,
-			d3dRtvCPUDescriptorHandle);
-		d3dRtvCPUDescriptorHandle.ptr += m_nRtvDescriptorIncrementSize;
+		m_pd3dDevice->CreateRenderTargetView(m_ppd3dRenderTargetBuffers[i], nullptr, d3dRtvCPUDescriptorHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
+		d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+		
+		// 렌더텍스처 만들기 위함
+		d3dShaderResourceViewDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
+		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
+		d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		m_pd3dDevice->CreateShaderResourceView(m_ppd3dRenderTargetBuffers[i], &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle);
+
+		d3dRtvCPUDescriptorHandle.ptr += gnRtvDescriptorIncrementSize;
+		m_d3dSrvCPUDescriptorNextHandle.ptr += gnCbvSrvDescriptorIncrementSize;
 	}
 }
 void CGameFramework::CreateDepthStencilView() {
@@ -296,14 +293,10 @@ void CGameFramework::CreateDepthStencilView() {
 	d3dClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dClearValue.DepthStencil.Depth = 1.0f;
 	d3dClearValue.DepthStencil.Stencil = 0;
-	m_pd3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue,
-		__uuidof(ID3D12Resource), (void **)&m_pd3dDepthStencilBuffer);
+	m_pd3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dDepthStencilBuffer);
 	//깊이-스텐실 버퍼를 생성한다. 
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle =
-		m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, nullptr,
-		d3dDsvCPUDescriptorHandle);
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, nullptr, d3dDsvCPUDescriptorHandle);
 	//깊이-스텐실 버퍼 뷰를 생성한다.
 }
 
@@ -482,6 +475,8 @@ void CGameFramework::UpdateShaderVariables() {
 
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fxCursorPos, 2);
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fyCursorPos, 3);
+
+	m_pd3dCommandList->SetGraphicsRootDescriptorTable(19, m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 //#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {
@@ -500,7 +495,7 @@ void CGameFramework::FrameAdvance() {
 	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * m_nRtvDescriptorIncrementSize);
+	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * gnRtvDescriptorIncrementSize);
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 #ifdef  RENDER_WIREFRAME
 	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle, pfClearColor/*Colors::Azure*/, 0, nullptr);

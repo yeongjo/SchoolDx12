@@ -2,6 +2,11 @@
 #include "Camera.h"
 #include "GameObject.h"
 
+struct RootParameterInfo {
+	int idx;
+	vector<D3D12_ROOT_PARAMETER> rootParameters;
+};
+
 enum ShaderType {
 	ShaderHasObjects,
 	ObjectHasShader

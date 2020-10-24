@@ -279,7 +279,8 @@ D3D12_SHADER_BYTECODE CShader::CreateEmptyShader() {
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState) {
 	if (m_ppd3dPipelineStates) pd3dCommandList->SetPipelineState(m_ppd3dPipelineStates[nPipelineState]);
 
-	// 먼저 할당하고 위치 이동시켜야함
+	// 리소스 GPU 주소가진 서술자힙 할당하고 위치 이동시켜야함
+	// 리소스 GPU주소 offset 주고 값 할당했는지 주의
 	if (m_pd3dCbvSrvDescriptorHeap) pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
 }
 void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nPipelineState) {
