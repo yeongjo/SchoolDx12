@@ -180,9 +180,27 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input) {
 
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
+	//return float4(1, 0, 1, 1);
 	//return float4(input.uv, 0, 1);
 	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
 
+	return(cColor);
+}
+
+VS_TEXTURED_OUTPUT VSViewport(VS_TEXTURED_INPUT input) {
+	VS_TEXTURED_OUTPUT output;
+
+	output.position = float4(input.position, 1.0f);
+	output.position.z = 0;
+	output.uv = input.uv;
+
+	return(output);
+}
+
+float4 PSViewport(VS_TEXTURED_OUTPUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
+	cColor *= cColor;
 	return(cColor);
 }
 /////////////////////////////////////////////////////////////////////////////////////

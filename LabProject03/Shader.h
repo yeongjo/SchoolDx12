@@ -139,6 +139,16 @@ public:
 	D3D12_SHADER_BYTECODE CreatePixelShader() override;
 };
 ////////////////////////////////////////////////////////////////////////////////////
+class CViewportShader : public CTexturedShader {
+public:
+	CViewportShader() = default;
+	virtual ~CViewportShader() = default;
+
+	D3D12_RASTERIZER_DESC CreateRasterizerState() override;
+	D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	D3D12_SHADER_BYTECODE CreatePixelShader() override;
+};
+////////////////////////////////////////////////////////////////////////////////////
 class CBillboardObjectsShader : public CShader {
 public:
 	CBillboardObjectsShader() { name = L"CBillboardObjectsShader"; }

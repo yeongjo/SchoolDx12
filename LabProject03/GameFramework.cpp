@@ -241,8 +241,9 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	////////////////////////////////////////////////////////////
 	// 랜더텍스처 만들기
 	D3D12_CLEAR_VALUE clearValue = { DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 0, 1 };
-	m_pColorRenderTex = new CTexture(1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 19);
+	m_pColorRenderTex = new CTexture(1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 1);
 	m_pColorRenderTex->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 0, RESOURCE_TEXTURE2D, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, &clearValue);
+	m_pColorRenderTex->SetRootParameterIndex(0, 17);
 	
 	D3D12_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
@@ -301,7 +302,8 @@ void CGameFramework::CreateRenderTargetViews() {
 	m_pd3dDevice->CreateShaderResourceView(m_pColorRenderTex->GetResource(0), &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle);
 	m_pd3dDevice->CreateRenderTargetView(m_pColorRenderTex->GetResource(0), nullptr, d3dRtvCPUDescriptorHandle);
 
-	
+
+	m_pColorRenderTex->SetGpuDescriptorHandle(0, m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 void CGameFramework::CreateDepthStencilView() {
 	D3D12_RESOURCE_DESC d3dResourceDesc;
@@ -343,13 +345,15 @@ void CGameFramework::BuildObjects() {
 	m_pScene->m_pPlayer = m_pPlayer = pAirplanePlayer;
 	m_pCamera = m_pPlayer->GetCamera();
 
-	auto rectMesh = new CTexturedRectMesh(m_pd3dDevice, m_pd3dCommandList, 1, 1, 0);
+	auto rectMesh = new CTexturedRectMesh(m_pd3dDevice, m_pd3dCommandList, 2, 2, 0,0,0,0.1f);
 	auto screenQuadObj = new CGameObject(1);
 	auto screenMaterial = new CMaterial();
 	screenMaterial->SetTexture(m_pColorRenderTex);
 	screenQuadObj->SetMaterial(0, screenMaterial);
-	screenShader = new CTexturedShader();
+	screenQuadObj->SetMesh(rectMesh);
+	screenShader = new CViewportShader();
 	screenShader->m_ppObjects.push_back(screenQuadObj);
+	screenShader->CreateShader(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
 
 	assert(SUCCEEDED(m_pd3dCommandList->Close()));
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
@@ -559,9 +563,7 @@ void CGameFramework::FrameAdvance() {
 		m_pScene->PrepareRender(m_pd3dCommandList);
 		
 		UpdateShaderVariables();
-		m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
-		auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-		m_pd3dCommandList->SetGraphicsRootDescriptorTable(19, GPUDescriptorHandleForHeapStart);
+		
 		
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);
 	}
@@ -578,29 +580,36 @@ void CGameFramework::FrameAdvance() {
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
-	
-	hResult = m_pd3dCommandList->Close();
-	ID3D12CommandList* ppd3dCommandLists[] = { m_pd3dCommandList };
-	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
-	WaitForGpuComplete();
-	hResult = m_pd3dCommandAllocator->Reset();
-	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, nullptr);
 
 	d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * gnRtvDescriptorIncrementSize);
 	
-	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, FALSE, nullptr);
+	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE, &d3dDsvCPUDescriptorHandle);
 
 	// 쿼드렌더
 	m_pScene->PrepareRender(m_pd3dCommandList);
-	screenShader->Render(m_pd3dCommandList, m_pCamera);
+
+	D3D12_VIEWPORT m_d3dViewport = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f };
+	D3D12_RECT m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
+	m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
+	m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
+
+	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
+	auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	m_pd3dCommandList->SetGraphicsRootDescriptorTable(17, GPUDescriptorHandleForHeapStart);
+	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
+
+	screenShader->OnPrepareRender(m_pd3dCommandList, 0);
+	screenShader->m_ppObjects[0]->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(m_pd3dCommandList);
+	screenShader->m_ppObjects[0]->m_pMesh->Render(m_pd3dCommandList, 0);
 
 	d3dResourceBarrier.Transition.pResource = m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
 	hResult = m_pd3dCommandList->Close();
-	ppd3dCommandLists[0] = m_pd3dCommandList;
+	ID3D12CommandList* ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 	WaitForGpuComplete();
 	m_pdxgiSwapChain->Present(0, 0);

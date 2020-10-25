@@ -1059,3 +1059,17 @@ D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateHullShader() {
 D3D12_SHADER_BYTECODE CTerrainWaterShader::CreateDomainShader() {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "DSTerrainWater", "ds_5_1", &m_pd3dDomainShaderBlob));
 }
+
+D3D12_RASTERIZER_DESC CViewportShader::CreateRasterizerState() {
+	auto t = CShader::CreateRasterizerState();
+	t.CullMode = D3D12_CULL_MODE_NONE;
+	t.FrontCounterClockwise = TRUE;
+	return t;
+}
+
+D3D12_SHADER_BYTECODE CViewportShader::CreateVertexShader() {
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSViewport", "vs_5_1", &m_pd3dVertexShaderBlob));
+}
+D3D12_SHADER_BYTECODE CViewportShader::CreatePixelShader() {
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSViewport", "ps_5_1", &m_pd3dPixelShaderBlob));
+}

@@ -50,7 +50,7 @@ private:
 
 	CScene *m_pScene;
 
-	CTexturedShader* screenShader;
+	CObjectsShader* screenShader;
 
 
 	_TCHAR m_pszFrameRate[128];
