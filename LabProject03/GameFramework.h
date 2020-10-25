@@ -30,6 +30,8 @@ private:
 	//현재 스왑 체인의 후면 버퍼 인덱스이다. 
 	ID3D12Resource *m_ppd3dRenderTargetBuffers[m_nSwapChainBuffers];
 	ID3D12DescriptorHeap *m_pd3dRtvDescriptorHeap;
+
+	CTexture *m_pColorRenderTex;
 	//렌더 타겟 버퍼, 서술자 힙 인터페이스 포인터, 렌더 타겟 서술자 원소의 크기이다.
 	ID3D12Resource *m_pd3dDepthStencilBuffer;
 	ID3D12DescriptorHeap *m_pd3dDsvDescriptorHeap;
@@ -48,10 +50,13 @@ private:
 
 	CScene *m_pScene;
 
+	CTexturedShader* screenShader;
+
+
 	_TCHAR m_pszFrameRate[128];
 public:
 	CCamera *m_pCamera = nullptr;
-public:
+
 	//플레이어 객체에 대한 포인터이다.
 	CPlayer *m_pPlayer = nullptr;
 	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 

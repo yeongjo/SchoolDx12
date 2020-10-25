@@ -135,8 +135,8 @@ public:
 
 	D3D12_INPUT_LAYOUT_DESC CreateInputLayout() override;
 
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+	D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	D3D12_SHADER_BYTECODE CreatePixelShader() override;
 };
 ////////////////////////////////////////////////////////////////////////////////////
 class CBillboardObjectsShader : public CShader {

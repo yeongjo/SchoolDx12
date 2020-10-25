@@ -12,6 +12,7 @@
 #include <tchar.h>
 #include <vector>
 #include <random>
+#include <typeinfo>
 
 #include <string>
 #include <wrl.h>

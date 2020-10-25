@@ -334,6 +334,7 @@ D3D12_SHADER_BYTECODE CTexturedShader::CreateVertexShader() {
 D3D12_SHADER_BYTECODE CTexturedShader::CreatePixelShader() {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTextured", "ps_5_1",& m_pd3dPixelShaderBlob));
 }
+
 //========================================================================
 // CObjectsShader
 void CObjectsShader::CreateShaderVariables(ID3D12Device * pd3dDevice, ID3D12GraphicsCommandList * pd3dCommandList) {
