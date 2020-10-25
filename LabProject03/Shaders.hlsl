@@ -423,6 +423,7 @@ struct HullOutputType {
 struct PixelInputType {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
+	float3 positionW : TEXCOORD1;
 	float3 normal : NORMAL;
 };
 
@@ -475,7 +476,7 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 	PixelInputType output;
 	vertexPosition = uvwCoord.x * patch[0].position + uvwCoord.y * patch[1].position + uvwCoord.z * patch[2].position;
 
-	output.position = mul(float4(vertexPosition, 1.0f), gmtxGameObject);
+	output.positionW = output.position = mul(float4(vertexPosition, 1.0f), gmtxGameObject);
 	output.position = mul(output.position, gmtxView);
 	output.position = mul(output.position, gmtxProjection);
 
@@ -501,7 +502,6 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 	//output.normal = mul(gmtxGameObject, normalize(output.normal));
 	output.normal = normalize(output.normal);
 	
-	
 	output.uv = uv1;
 
 	return output;
@@ -512,6 +512,7 @@ void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<Pixel
 	PixelInputType output;
 	for (int i = 0; i < 3; i++) {
 		output.position = input[i].position;
+		output.positionW = input[i].positionW;
 		output.uv = input[i].uv;
 		output.normal = input[i].normal;
 		outStream.Append(output);
@@ -624,9 +625,27 @@ static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0
 #define _WITH_CONSTANT_BUFFER_MATRIX
 //#define _WITH_STATIC_MATRIX
 
+
+half3 BoxProjection_half(half3 direction, half3 position) {
+	float3 _SpecCube0_ProbePosition = gvCameraPosition;
+	float3 _SpecCube0_BoxMax = _SpecCube0_ProbePosition+float3(2000, 2000, 2000);
+	float3 _SpecCube0_BoxMin = _SpecCube0_ProbePosition-float3(2000, 2000, 2000);
+	half3 factors = ((direction > 0 ? _SpecCube0_BoxMax : _SpecCube0_BoxMin) - position) / direction;
+	//factors = abs(factors);
+	half3 scalar = min(min(factors.x, factors.y), factors.z);
+	half3 direc = direction * scalar + (position - _SpecCube0_ProbePosition);
+	half3 lightenCol = gtxtSkyCubeTexture.Sample(gssClamp, direc);
+	return lightenCol;
+}
+
 float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 {
-	//return float4(input.uv,0, 1);
+	float3 viewDirec = normalize(input.positionW - gvCameraPosition);
+	float3 reflecDirec = normalize(reflect(viewDirec, input.normal));
+	//reflecDirec = reflect(viewDirec, float3(0,1,0));
+	//return float4(reflecDirec, 1);
+	float3 reflecCol = BoxProjection_half(reflecDirec, input.positionW);
+	//return float4(reflecCol, 1);
 	float2 uv = input.uv;
 	uv *= 20;
 	uv.y += gfCurrentTime * 0.0425f;
@@ -639,7 +658,9 @@ float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 	float4 cDetail0TexColor = gtxtWaterDetail0Texture.SampleLevel(gSamplerState, uv * 3.0f, 0);
 	float4 cDetail1TexColor = gtxtWaterDetail1Texture.SampleLevel(gSamplerState, uv * 5.0f, 0);
 	float4 cColor = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor;
-	cColor.rgb*=(Lighting(input.position, input.normal).rgb*3 + float3(0.3,0.3,0.3));
+	cColor.rgb *= (Lighting(input.position, input.normal).rgb * 3 + float3(0.3, 0.3, 0.3));
+	cColor.rgb = saturate(cColor.rgb);
+	cColor.rgb += reflecCol;
 	cColor.a = 0.8f;
 	return(cColor);
 }
