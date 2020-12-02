@@ -198,7 +198,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[15].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[16].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[16].Constants.Num32BitValues = 4;
+	pd3dRootParameters[16].Constants.Num32BitValues = 6;
 	pd3dRootParameters[16].Constants.ShaderRegister = 3; //cbFrameworkInfo
 	pd3dRootParameters[16].Constants.RegisterSpace = 0;
 	pd3dRootParameters[16].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -407,7 +407,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(2, d3dcbLightsGpuVirtualAddress); //Lights
 
-
+	m_pSkyBox->m_ppMaterials[0]->m_pShader->OnPrepareRender(pd3dCommandList);
+	m_pSkyBox->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(pd3dCommandList);
 	for (int i = 0; i < m_ppGameObjects.size(); i++) 
 		if (m_ppGameObjects[i]) 
 			m_ppGameObjects[i]->Render(pd3dCommandList, pCamera);

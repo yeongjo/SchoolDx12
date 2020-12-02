@@ -21,6 +21,7 @@ cbuffer cbFrameworkInfo : register(b3) {
 	float 		gfCurrentTime;
 	float		gfElapsedTime;
 	float2		gf2CursorPos;
+	float2		gfScreen;
 };
 
 cbuffer cbWaterInfo : register(b4) {
@@ -84,7 +85,8 @@ Texture2D gtxtStandardTextures[7] : register(t6);
 #endif
 
 SamplerState gssWrap : register(s0);
-
+SamplerState gssClamp : register(s1);
+TextureCube gtxtSkyCubeTexture : register(t13);
 #include "Light.hlsl"
 
 struct VS_STANDARD_INPUT {
@@ -101,7 +103,7 @@ struct VS_STANDARD_OUTPUT {
 	float3 normalW : NORMAL;
 	float3 tangentW : TANGENT;
 	float3 bitangentW : BITANGENT;
-	float2 uv : TEXCOORD;
+	float3 uv : TEXCOORD;
 };
 
 VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input) {
@@ -112,7 +114,8 @@ VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input) {
 	output.tangentW = (float3)mul(float4(input.tangent, 1.0f), gmtxGameObject);
 	output.bitangentW = (float3)mul(float4(input.bitangent, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
-	output.uv = input.uv;
+	output.uv.xy = input.uv;
+	output.uv.z = output.position.z * 0.0010;
 
 	return(output);
 }
@@ -151,6 +154,10 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 	}
 	float4 cIllumination = Lighting(input.positionW, normalW);
 	cColor = cColor * cIllumination;
+
+	half fogDensity = saturate(-0.2+0.8*exp2(-input.uv.z * input.uv.z));
+	half3 fogColor = gtxtSkyCubeTexture.SampleLevel(gssClamp, input.positionW - gvCameraPosition, fogDensity * 5+6);
+	cColor.rgb = lerp(fogColor, cColor, fogDensity);
 
 	return(cColor);
 }
@@ -197,10 +204,22 @@ VS_TEXTURED_OUTPUT VSViewport(VS_TEXTURED_INPUT input) {
 	return(output);
 }
 
+#define SHARPEN_FACTOR 0.1
+
+half4 sharpenMask(half2 fragCoord) {
+	half4 up = gtxtTexture.Sample(gSamplerState, (fragCoord + half2(0, 1)/ gfScreen));
+	half4 left = gtxtTexture.Sample(gSamplerState, (fragCoord + half2(-1, 0) / gfScreen));
+	half4 center = gtxtTexture.Sample(gSamplerState, fragCoord);
+	half4 right = gtxtTexture.Sample(gSamplerState, (fragCoord + half2(1, 0) / gfScreen));
+	half4 down = gtxtTexture.Sample(gSamplerState, (fragCoord + half2(0, -1) / gfScreen));
+
+	return (1.0 + 4.0 * SHARPEN_FACTOR) * center - SHARPEN_FACTOR * (up + left + right + down);
+}
+
 float4 PSViewport(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
-	cColor *= cColor;
+	float4 cColor = sharpenMask(input.uv);
+	cColor.rgb = gvCameraPosition.y < 50 ? cColor.rgb * float3(0.25, 0.54, 1) : cColor.rgb;
 	return(cColor);
 }
 /////////////////////////////////////////////////////////////////////////////////////
@@ -223,14 +242,12 @@ VS_SKYBOX_CUBEMAP_OUTPUT VSSkyBox(VS_SKYBOX_CUBEMAP_INPUT input) {
 	return(output);
 }
 
-TextureCube gtxtSkyCubeTexture : register(t13);
-SamplerState gssClamp1 : register(s1);
-SamplerState gssClamp : register(s1);
+
 
 float4 PSSkyBox(VS_SKYBOX_CUBEMAP_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtSkyCubeTexture.Sample(gssClamp, input.positionL);
-
+	//cColor = gtxtSkyCubeTexture.SampleLevel(gssClamp, input.positionL, 8);
 	return(cColor);
 }
 
@@ -372,7 +389,7 @@ struct VS_TERRAIN_OUTPUT {
 	float4 positionW : POSITION;
 	float3 normalW : NORMAL;
 	float4 color : COLOR;
-	float2 uv0 : TEXCOORD0;
+	float3 uv0 : TEXCOORD0;
 	float2 uv1 : TEXCOORD1;
 };
 
@@ -384,7 +401,8 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input) {
 	output.positionW = mul(float4(pos, 1.0f), gmtxGameObject);
 	output.position = mul(mul(output.positionW, gmtxView), gmtxProjection);
 	output.color = input.color;
-	output.uv0 = input.uv0;
+	output.uv0.xy = input.uv0;
+	output.uv0.z = output.position.z * 0.0010;
 	output.uv1 = input.uv1;
 	output.normalW = mul(float4(input.normal, 0.0f), gmtxGameObject).xyz;
 
@@ -393,9 +411,9 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input) {
 
 float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 {
-	float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gSamplerState, input.uv0);
+	float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gSamplerState, input.uv0.xy);
 	//	float fAlpha = gtxtTerrainAlphaTexture.Sample(gSamplerState, input.uv0);
-	float fAlpha = gtxtTerrainAlphaTexture.Sample(gSamplerState, input.uv0).w;
+	float fAlpha = gtxtTerrainAlphaTexture.Sample(gSamplerState, input.uv0.xy).w;
 	//return float4(fAlpha, fAlpha, fAlpha, 1);
 	float4 cDetailTexColors[3];
 	cDetailTexColors[0] = gtxtTerrainDetailTextures[0].Sample(gSamplerState, input.uv1 * 2.0f);
@@ -417,8 +435,9 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	float3 normalW = normalize(input.normalW);
 	//return float4(normalW, 1);
 	cColor *= Lighting(input.positionW, normalW);
-	half3 fogColor = half3(1,0,1);
-	cColor.rgb = lerp(cColor, fogColor, saturate(input.position.z/ input.position.w));
+	half fogDensity = saturate(-0.2 + 0.8 * exp2(-input.uv0.z * input.uv0.z));
+	half3 fogColor = gtxtSkyCubeTexture.SampleLevel(gssClamp, input.positionW - gvCameraPosition, fogDensity*8+3);
+	cColor.rgb = lerp(fogColor, cColor, fogDensity);
 	return(cColor);
 }
 
@@ -440,7 +459,7 @@ struct HullOutputType {
 };
 struct PixelInputType {
 	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD0;
+	float3 uv : TEXCOORD0;
 	float3 positionW : TEXCOORD1;
 	float3 normal : NORMAL;
 };
@@ -514,13 +533,13 @@ PixelInputType DSTerrainWater(ConstantOutputType input, float3 uvwCoord : SV_Dom
 	}
 	output.position.y += heights[2];
 
-	output.normal.y = heights[1] - heights[2];
+	output.normal.y = 35;
 	output.normal.x = heights[0]-heights[2];
-	output.normal.z = 15;
+	output.normal.z = heights[1] - heights[2];
 	//output.normal = mul(gmtxGameObject, normalize(output.normal));
 	output.normal = normalize(output.normal);
 	
-	output.uv = uv1;
+	output.uv.xy = uv1;
 
 	return output;
 }
@@ -531,11 +550,12 @@ void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<Pixel
 	for (int i = 0; i < 3; i++) {
 		output.position = input[i].position;
 		output.positionW = input[i].positionW;
-		output.uv = input[i].uv;
+		output.uv.xy = input[i].uv;
+		output.uv.z = input[i].position.z * 0.0010;
 		output.normal = input[i].normal;
 		outStream.Append(output);
 	}
-	return;
+	/*return;
 	float t = 0.5;
 	float4 i01 = lerp(input[0].position, input[1].position, t);
 	float4 i02 = lerp(input[0].position, input[2].position, t);
@@ -551,11 +571,11 @@ void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<Pixel
 	output.uv = input[2].uv;
 	outStream.Append(output);
 	output.position = i02;
-	output.uv = uv02;
+	output.uv.xy = uv02;
 	outStream.Append(output);
 	output.position = input[0].position;
 	output.uv = input[0].uv;
-	outStream.Append(output);
+	outStream.Append(output);*/
 	
 	/*output.position = input[0].position;
 	output.uv = input[0].uv;
@@ -597,7 +617,7 @@ void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<Pixel
 	output.uv = uv02;
 	outStream.Append(output);*/
 	
-	return;
+	/*return;
 	float sub_divisions = 2;
 	float3 v0 = input[0].position;
 	float3 v1 = input[1].position;
@@ -632,17 +652,8 @@ void GSTerrainWater(triangle PixelInputType input[3], inout TriangleStream<Pixel
 			x = v0.x;
 			z += dz;
 		}
-	}
+	}*/
 }
-
-static matrix<float, 3, 3> sf3x3TextureAnimation = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
-
-
-//#define _WITH_BASE_TEXTURE_ONLY
-#define _WITH_FULL_TEXTURES
-#define _WITH_CONSTANT_BUFFER_MATRIX
-//#define _WITH_STATIC_MATRIX
-
 
 half3 BoxProjection_half(half3 direction, half3 position) {
 	float3 _SpecCube0_ProbePosition = gvCameraPosition;
@@ -678,8 +689,17 @@ float4 PSTerrainWater(PixelInputType input) : SV_TARGET
 	float4 cColor = cBaseTexColor1 * cBaseTexColor * cDetail0TexColor;
 	cColor.rgb *= (Lighting(input.position, input.normal).rgb * 3 + float3(0.3, 0.3, 0.3));
 	cColor.rgb = saturate(cColor.rgb);
-	cColor.rgb += reflecCol;
-	cColor.a = 0.8f;
+	float alpha = saturate(lerp(-3, 1, 1 - gtxtTerrainAlphaTexture.SampleLevel(gSamplerState, input.uv, 0).a));
+	cColor.rgb = lerp(half3(0.1, 0.5, 1), cColor.rgb, alpha);
+	half fresnel = pow(1 + dot(input.normal, viewDirec),2.5);
+	cColor.rgb = lerp(cColor.rgb * 0.3+ reflecCol*0.7, reflecCol, fresnel);
+
+	half fogDensity = saturate(-0.2+0.8*exp2(-input.uv.z * input.uv.z));
+	half3 fogColor = gtxtSkyCubeTexture.SampleLevel(gssClamp, input.positionW - gvCameraPosition, fogDensity * 5+6);
+	cColor.rgb = lerp(fogColor, cColor, fogDensity);
+
+	
+	cColor.a = lerp(alpha, 1, fresnel);
 	return(cColor);
 }
 
@@ -699,7 +719,7 @@ struct GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT {
 	float4 position : SV_POSITION;
 	float3 positionW : POSITION;
 	float3 normal : NORMAL;
-	float2 uv : TEXCOORD;
+	float3 uv : TEXCOORD;
 	uint index : TEXTURE;
 	float3 color : COLOR;
 };
@@ -725,7 +745,8 @@ void GSBillboard(point VS_BILLBOARD_INPUT input[1], inout TriangleStream<GS_BILL
 		output.positionW = pf4Vertices[i].xyz;
 		output.position = mul(mul(pf4Vertices[i], gmtxView), gmtxProjection);
 		output.normal = f3Look;
-		output.uv = pf2UVs[i];
+		output.uv.xy = pf2UVs[i];
+		output.uv.z = output.position.z * 0.0010;
 		output.index = input[0].index;
 		output.color = VSLighting(output.positionW);
 
@@ -741,6 +762,9 @@ float4 PSBillboard(GS_BILLBOARD_GEOMETRY_COLOR_OUTPUT input) : SV_TARGET
 	float4 cColor = gtxtBillboardTextures[input.index].Sample(gSamplerState, input.uv);
 	if (cColor.a <= 0.3f) discard; //clip(cColor.a - 0.3f);
 	cColor.xyz *= input.color;
+	half fogDensity = saturate(-0.2+0.8*exp2(-input.uv.z * input.uv.z));
+	half3 fogColor = gtxtSkyCubeTexture.SampleLevel(gssClamp, input.positionW - gvCameraPosition, fogDensity * 5+6);
+	cColor.rgb = lerp(fogColor, cColor, fogDensity);
 	return(cColor);
 }
 ///////////////////////////////////////////////////////////////////////////

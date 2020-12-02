@@ -43,8 +43,8 @@ using Microsoft::WRL::ComPtr;
 #define DIR_UP 0x10
 #define DIR_DOWN 0x20
 
-#define LASSETPATH L"../../DX12"
-#define ASSETPATH "../../DX12"
+#define LASSETPATH L"./"
+#define ASSETPATH "./"
 
 #define FRAME_BUFFER_WIDTH 640
 #define FRAME_BUFFER_HEIGHT 480
@@ -70,7 +70,7 @@ using Microsoft::WRL::ComPtr;
 /*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
 
-float Random();
+float Random(); // 0.0 ~ 0.1
 float Random(float fMin, float fMax);
 XMFLOAT3 RandomPositionInSphere(XMFLOAT3 xmf3Center, float fRadius, int nColumn, int nColumnSpace);
 
@@ -81,6 +81,7 @@ inline float InverseSqrt(float fValue) { return 1.0f / sqrtf(fValue); }
 inline void Swap(float *pfS, float *pfT) { float fTemp = *pfS; *pfS = *pfT; *pfT = fTemp; }
 
 void print(LPCTSTR pszStr, ...);
+#define DebugPrint(...) print(L"%s %s %d: ", __FILEW__, __FUNCTIONW__, __LINE__, __VA_ARGS__);
 
 // -1.0 ~ 1.0
 float random();

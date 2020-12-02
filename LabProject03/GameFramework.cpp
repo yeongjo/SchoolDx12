@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "GameFramework.h"
+#include <dxgidebug.h>
 
 CGameFramework::CGameFramework() {
 	m_pdxgiFactory = nullptr;
@@ -118,6 +119,26 @@ void CGameFramework::CreateDirect3DDevice() {
 	if (pd3dDebugController) {
 		pd3dDebugController->EnableDebugLayer();
 		pd3dDebugController->Release();
+	}
+
+	Microsoft::WRL::ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+
+	typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
+
+	HMODULE dxgidebug = LoadLibraryEx(L"dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+	if (dxgidebug) {
+		auto dxgiGetDebugInterface = reinterpret_cast<LPDXGIGETDEBUGINTERFACE>(
+			reinterpret_cast<void*>(GetProcAddress(dxgidebug, "DXGIGetDebugInterface")));
+
+		if (SUCCEEDED(dxgiGetDebugInterface(IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf())))) {
+			dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+			dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
+			/*dxgiInfoQueue.GetAddressOf()->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);*/
+		}
+		ComPtr<IDXGIDebug> debug;
+		if (SUCCEEDED(dxgiGetDebugInterface(IID_PPV_ARGS(&debug)))) {
+			debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		}
 	}
 	nDXGIFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
@@ -343,6 +364,7 @@ void CGameFramework::BuildObjects() {
 	if (m_pScene) m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, nullptr);
 	CAirplanePlayer *pAirplanePlayer = new CAirplanePlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
 	m_pScene->m_pPlayer = m_pPlayer = pAirplanePlayer;
+	pAirplanePlayer->SetPosition(XMFLOAT3(300, 500, 300));
 	m_pCamera = m_pPlayer->GetCamera();
 
 	auto rectMesh = new CTexturedRectMesh(m_pd3dDevice, m_pd3dCommandList, 2, 2, 0,0,0,0.1f);
@@ -522,6 +544,8 @@ void CGameFramework::UpdateShaderVariables() {
 
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fxCursorPos, 2);
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fyCursorPos, 3);
+	auto screen = XMFLOAT2(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 2, &screen, 4);
 }
 //#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {
@@ -576,6 +600,8 @@ void CGameFramework::FrameAdvance() {
 	//3인칭 카메라일 때 플레이어를 렌더링한다. 
 	if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
+	////////////////////////////////////////////////////////
+	
 	// 렌더 텍스처 랜더 타겟에서 텍스처로
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
@@ -603,6 +629,8 @@ void CGameFramework::FrameAdvance() {
 	screenShader->OnPrepareRender(m_pd3dCommandList, 0);
 	screenShader->m_ppObjects[0]->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(m_pd3dCommandList);
 	screenShader->m_ppObjects[0]->m_pMesh->Render(m_pd3dCommandList, 0);
+
+	////////////////////////////////////////////////////////
 
 	d3dResourceBarrier.Transition.pResource = m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
