@@ -839,7 +839,11 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	//UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256의 배수
 
-	CTerrainShader *pTerrainShader = new CTerrainShader();
+#ifdef _WITH_TERRAIN_TESSELATION
+	CTerrainTessellationShader* pTerrainShader = new CTerrainTessellationShader();
+#else
+	CTerrainShader* pTerrainShader = new CTerrainShader();
+#endif
 	pTerrainShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
 	//pTerrainShader->CreateShaderVariables(pd3dDevice, pd3dCommandList); // Nothing
 	pTerrainShader->CreateCbvSrvDescriptorHeaps(pd3dDevice, 0, 5);
@@ -1080,7 +1084,7 @@ void ObjectSpawner::AddObject(int idx, XMFLOAT3 off, bool isReverse) {
 	t->offset = RandomPositionInSphere(XMFLOAT3(0, 0, 0), 30, 5, 5);
 	if(idx == 0) {
 		// 작은 헬기
-		t->speed = Random(0.009f, 0.012f);
+		t->speed = Random(0.002f, 0.003f);
 	}else {
 		t->attackRange = Random(0.1f, 0.12f);
 		t->durability = 8.0f;

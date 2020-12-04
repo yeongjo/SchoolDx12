@@ -4,6 +4,15 @@
 #include "Scene.h"
 //#define RENDER_WIREFRAME
 
+struct CB_FRAMEWORK_INFO {
+	float					m_fCurrentTime = 0;
+	float					m_fElapsedTime = 0;
+	UINT					m_nRenderMode = 0;
+};
+
+#define DYNAMIC_TESSELLATION		0x10
+#define DEBUG_TESSELLATION			0x20
+
 class CCamera;
 
 class CGameFramework : public Singleton<CGameFramework>{
@@ -103,4 +112,9 @@ public:
 	float GetTotalTime() { return m_GameTimer.GetTotalTime(); }
 	float GetElaspedTime() { return m_GameTimer.GetTimeElapsed(); }
 	CScene *GetScene() { return m_pScene; }
+
+protected:
+	CB_FRAMEWORK_INFO* m_pcbMappedFrameworkInfo = NULL;
+	ID3D12Resource* m_pd3dcbFrameworkInfo = NULL;
+
 };

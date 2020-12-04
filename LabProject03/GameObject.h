@@ -390,7 +390,7 @@ public:
 	float pos = 0;
 	float direc = 1;
 	float canMove = 1;
-	float speed = Random(0.006f, 0.008f);
+	float speed = Random(0.001f, 0.003f);
 	float attackRange = Random(0.04f, 0.06f);
 	float attackDelay = 1;
 	float durability = 5; // 내구도

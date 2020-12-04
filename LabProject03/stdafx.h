@@ -60,6 +60,12 @@ using Microsoft::WRL::ComPtr;
 #define PARAMETER_SKYBOX_CUBE_TEXTURE	4
 #endif
 
+#define _WITH_TERRAIN_TESSELATION
+
+#ifdef _WITH_TERRAIN_TESSELATION
+#define _WITH_TERRAIN_PARTITION
+#endif
+
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -69,6 +75,8 @@ using Microsoft::WRL::ComPtr;
 
 /*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
+
+extern bool gbTerrainTessellationWireframe;
 
 float Random(); // 0.0 ~ 0.1
 float Random(float fMin, float fMax);

@@ -295,6 +295,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 
 //스왑체인의 각 후면 버퍼에 대한 렌더 타겟 뷰를 생성한다.
 void CGameFramework::CreateRenderTargetViews() {
+	m_pcbMappedFrameworkInfo = new CB_FRAMEWORK_INFO;
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	auto m_d3dSrvCPUDescriptorNextHandle = m_pd3dCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	
@@ -421,6 +422,21 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			break;
 		case VK_DELETE:
 			break;
+		case 'R':
+			m_pcbMappedFrameworkInfo->m_nRenderMode = 0x00;
+			break;
+		case 'Y':
+			m_pcbMappedFrameworkInfo->m_nRenderMode |= DYNAMIC_TESSELLATION;
+			break;
+		case 'D':
+			m_pcbMappedFrameworkInfo->m_nRenderMode |= (DYNAMIC_TESSELLATION | DEBUG_TESSELLATION);
+			break;
+		case 'W':
+			::gbTerrainTessellationWireframe = !::gbTerrainTessellationWireframe;
+			break;
+		case VK_F9:
+			ChangeSwapChainState();
+			break;
 		default:
 			break;
 		}
@@ -544,8 +560,13 @@ void CGameFramework::UpdateShaderVariables() {
 
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fxCursorPos, 2);
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &fyCursorPos, 3);
+
+	// screen size
 	auto screen = XMFLOAT2(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 2, &screen, 4);
+
+	// render mode
+	m_pd3dCommandList->SetGraphicsRoot32BitConstants(16, 1, &m_pcbMappedFrameworkInfo->m_nRenderMode, 6);
 }
 //#define _WITH_PLAYER_TOP
 void CGameFramework::FrameAdvance() {

@@ -7,6 +7,8 @@ UINT gnRtvDescriptorIncrementSize = 0;
 UINT gnDsvDescriptorIncrementSize = 0;
 UINT gnCbvSrvDescriptorIncrementSize = 0;
 
+bool gbTerrainTessellationWireframe = false;
+
 float random(){ return (float)rand()/(float)RAND_MAX*2.0f-1.0f; }
 
 wchar_t* ConverCtoWC(const char* str) {

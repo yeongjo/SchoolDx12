@@ -198,7 +198,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[15].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[16].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[16].Constants.Num32BitValues = 6;
+	pd3dRootParameters[16].Constants.Num32BitValues = 7;
 	pd3dRootParameters[16].Constants.ShaderRegister = 3; //cbFrameworkInfo
 	pd3dRootParameters[16].Constants.RegisterSpace = 0;
 	pd3dRootParameters[16].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -313,7 +313,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	XMFLOAT3 xmf3Scale(8.0f, 2.0f, 8.0f);
 	XMFLOAT4 xmf4Color(0.0f, 0.5f, 0.0f, 0.0f);
 #ifdef _WITH_TERRAIN_PARTITION
-	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("Image/HeightMap.raw"), 257, 257, 17, 17, xmf3Scale, xmf4Color);
+	auto pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("Image/HeightMap.raw"), 257, 257, 9, 9, xmf3Scale, xmf4Color);
 #else
 	auto pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("Image/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 #endif
@@ -337,6 +337,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pSuperCobraModel->PrepareAnimate();
 	CGameObject* pGunshipModel = new CGunshipObject(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 	pGunshipModel->SetChild(CGameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, ASSETPATH"/Model/Gunship.bin", pObjectsShader));
+	auto gunShipMaterial = pGunshipModel->m_pChild[0].m_pChild[0].m_ppMaterials[0];
+	gunShipMaterial->m_pTexture[0].LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, LASSETPATH L"Model/Textures/1K_GunshipTXTR(Normal).dds", RESOURCE_TEXTURE2D, 2);
+	pObjectsShader->CreateShaderResourceView(pd3dDevice, &gunShipMaterial->m_pTexture[0], 2);
+	gunShipMaterial->m_pTexture[0].SetRootParameterIndex(2, PARAMETER_STANDARD_TEXTURE + 2);
+	gunShipMaterial->SetMaterialType(MATERIAL_NORMAL_MAP);
 	pGunshipModel->PrepareAnimate();
 
 	pTerrainWater = new CTerrainWater(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, 257 * xmf3Scale.x, 257 * xmf3Scale.z);
@@ -346,7 +351,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	auto t = new ObjectSpawner();
 	t->targetShader = pObjectsShader;
-	t->baseObjs.push_back(pSuperCobraModel);
+	t->baseObjs.push_back(pSuperCobraModel); // 작은헬기
 	t->baseObjs.push_back(pGunshipModel);
 	t->bulletShader = pTexturedShader;
 	m_ppGameObjects.push_back(t);

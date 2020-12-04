@@ -78,6 +78,7 @@ protected:
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC	m_d3dPipelineStateDesc;
 
 	ID3D12DescriptorHeap*				m_pd3dCbvSrvDescriptorHeap = nullptr;
+	ID3D12RootSignature*				m_pd3dGraphicsRootSignature = NULL;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE			m_d3dCbvCPUDescriptorStartHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE			m_d3dCbvGPUDescriptorStartHandle;
@@ -216,6 +217,24 @@ public:
 	D3D12_SHADER_BYTECODE CreatePixelShader() override;
 
 	void CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) override;
+};
+////////////////////////////////////////////////////////////////////////////////////
+class CTerrainTessellationShader : public CTerrainShader {
+public:
+	CTerrainTessellationShader() { name = L"CTerrainTessellationShader"; }
+	virtual ~CTerrainTessellationShader() = default;
+
+	D3D12_INPUT_LAYOUT_DESC CreateInputLayout() override;
+	D3D12_RASTERIZER_DESC CreateRasterizerState() override;
+
+	D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	D3D12_SHADER_BYTECODE CreatePixelShader() override;
+	D3D12_SHADER_BYTECODE CreateHullShader();
+	D3D12_SHADER_BYTECODE CreateDomainShader();
+
+	void CreateShader(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature) override;
+
+	void OnPrepareRender(ID3D12GraphicsCommandList* pd3dCommandList, int nPipelineState = 0);
 };
 /////////////////////////////////////////////////////////////////////////////////////
 //
