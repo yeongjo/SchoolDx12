@@ -51,6 +51,8 @@ public:
 
 	void BuildDefaultLightsAndMaterials();
 
+	void CreateCbvSrvUavDescriptorHeaps(ID3D12Device* pd3dDevice, int nConstantBufferViews, int nShaderResourceViews,
+	                                    int nUnorderedAccessViews);
 	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	void ReleaseObjects();
 	bool ProcessInput(UCHAR *pKeysBuffer);
@@ -58,6 +60,10 @@ public:
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	void PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList);
 	void ReleaseUploadBuffers();
+	ID3D12RootSignature* CreateRootSignature(ID3D12Device* pd3dDevice, D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags,
+	                                         UINT nRootParameters, D3D12_ROOT_PARAMETER* pd3dRootParameters,
+	                                         UINT nStaticSamplerDescs,
+	                                         D3D12_STATIC_SAMPLER_DESC* pd3dStaticSamplerDescs);
 
 	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
 	CGameObject *PickObjectPointedByCursor(int xClient, int yClient, CCamera *pCamera);
@@ -66,6 +72,7 @@ public:
 
 	//그래픽 루트 시그너쳐를 생성한다. 
 	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
+	ID3D12RootSignature* CreateComputeRootSignature(ID3D12Device* pd3dDevice);
 	ID3D12RootSignature *GetGraphicsRootSignature();
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = nullptr;

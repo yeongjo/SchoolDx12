@@ -426,10 +426,10 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			m_pcbMappedFrameworkInfo->m_nRenderMode = 0x00;
 			break;
 		case 'Y':
-			m_pcbMappedFrameworkInfo->m_nRenderMode |= DYNAMIC_TESSELLATION;
+			m_pcbMappedFrameworkInfo->m_nRenderMode ^= DYNAMIC_TESSELLATION;
 			break;
 		case 'D':
-			m_pcbMappedFrameworkInfo->m_nRenderMode |= (DYNAMIC_TESSELLATION | DEBUG_TESSELLATION);
+			m_pcbMappedFrameworkInfo->m_nRenderMode ^= DEBUG_TESSELLATION;
 			break;
 		case 'W':
 			::gbTerrainTessellationWireframe = !::gbTerrainTessellationWireframe;
@@ -504,7 +504,7 @@ void CGameFramework::ProcessInput() {
 			}
 			/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 이동 거리는 시간에 비례하도록 한다. 플레이어의 이동 속력은 (50/초)로 가정한다.*/
 			if (dwDirection)
-				m_pPlayer->Move(dwDirection, 50000.0f * m_GameTimer.GetTimeElapsed(), true);
+				m_pPlayer->Move(dwDirection, 5000.0f * m_GameTimer.GetTimeElapsed(), true);
 		}
 	}
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());

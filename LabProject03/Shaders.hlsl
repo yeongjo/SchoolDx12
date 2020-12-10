@@ -529,7 +529,10 @@ DS_TERRAIN_TESSELLATION_OUTPUT DSTerrainTessellation(HS_TERRAIN_TESSELLATION_CON
 
 	float3 position = CubicBezierSum5x5(patch, uB, vB);
 	matrix mtxWorldViewProjection = mul(mul(gmtxGameObject, gmtxView), gmtxProjection);
+	position.y *= gtxtTerrainAlphaTexture.SampleLevel(gssWrap, output.uv0, 0).a;
 	output.position = mul(float4(position, 1.0f), mtxWorldViewProjection);
+
+	
 
 	output.tessellation = float4(patchConstant.fTessEdges[0], patchConstant.fTessEdges[1], patchConstant.fTessEdges[2], patchConstant.fTessEdges[3]);
 
@@ -540,7 +543,7 @@ float4 PSTerrainTessellation(DS_TERRAIN_TESSELLATION_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (gnRenderMode & (DEBUG_TESSELLATION | DYNAMIC_TESSELLATION))
+	if ((gnRenderMode & DEBUG_TESSELLATION) && (gnRenderMode & DYNAMIC_TESSELLATION))
 	{
 		if (input.tessellation.w <= 5.0f) cColor = float4(1.0f, 0.0f, 0.0f, 1.0f);
 		else if (input.tessellation.w <= 10.0f) cColor = float4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -555,8 +558,8 @@ float4 PSTerrainTessellation(DS_TERRAIN_TESSELLATION_OUTPUT input) : SV_TARGET
 	{
 		float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gssWrap, input.uv0);
 		float4 cDetailTexColor = gtxtTerrainDetailTextures[0].Sample(gssWrap, input.uv1);
-		float fAlpha = gtxtTerrainAlphaTexture.Sample(gssWrap, input.uv0);
-
+		float fAlpha = gtxtTerrainAlphaTexture.Sample(gssWrap, input.uv0).a;
+		return fAlpha;
 		cColor = saturate(lerp(cBaseTexColor, cDetailTexColor, fAlpha));
 	}
 
