@@ -5,7 +5,7 @@
 
 UINT gnRtvDescriptorIncrementSize = 0;
 UINT gnDsvDescriptorIncrementSize = 0;
-UINT gnCbvSrvDescriptorIncrementSize = 0;
+UINT gnCbvSrvUavDescriptorIncrementSize = 0;
 
 bool gbTerrainTessellationWireframe = false;
 

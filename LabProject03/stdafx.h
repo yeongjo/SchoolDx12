@@ -101,7 +101,7 @@ inline float clamp(float n, float lower, float upper) {
 //char 에서 wchar_t 로의 형변환 함수
 wchar_t* ConverCtoWC(const char* str);
 
-extern UINT gnCbvSrvDescriptorIncrementSize;
+extern UINT gnCbvSrvUavDescriptorIncrementSize;
 extern UINT	gnRtvDescriptorIncrementSize;
 extern UINT gnDsvDescriptorIncrementSize;
 

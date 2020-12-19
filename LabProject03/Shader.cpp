@@ -219,12 +219,12 @@ void CShader::CreateCbvSrvDescriptorHeaps(ID3D12Device *pd3dDevice, int nConstan
 	d3dDescriptorHeapDesc.NodeMask = 0;
 	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dCbvSrvDescriptorHeap);
 
-	m_pd3dCbvSrvDescriptorHeap->SetName(name.c_str());
+	m_pd3dCbvSrvDescriptorHeap->SetName((name+wstring(L"::m_pd3dCbvSrvDescriptorHeap")).c_str());
 
 	m_d3dCbvCPUDescriptorStartHandle = m_pd3dCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dCbvGPUDescriptorStartHandle = m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	m_d3dSrvCPUDescriptorStartHandle.ptr = m_d3dCbvCPUDescriptorStartHandle.ptr + (::gnCbvSrvDescriptorIncrementSize * nConstantBufferViews);
-	m_d3dSrvGPUDescriptorStartHandle.ptr = m_d3dCbvGPUDescriptorStartHandle.ptr + (::gnCbvSrvDescriptorIncrementSize * nConstantBufferViews);
+	m_d3dSrvCPUDescriptorStartHandle.ptr = m_d3dCbvCPUDescriptorStartHandle.ptr + (::gnCbvSrvUavDescriptorIncrementSize * nConstantBufferViews);
+	m_d3dSrvGPUDescriptorStartHandle.ptr = m_d3dCbvGPUDescriptorStartHandle.ptr + (::gnCbvSrvUavDescriptorIncrementSize * nConstantBufferViews);
 
 	m_d3dSrvCPUDescriptorNextHandle = m_d3dSrvCPUDescriptorStartHandle;
 	m_d3dSrvGPUDescriptorNextHandle = m_d3dSrvGPUDescriptorStartHandle;
@@ -237,14 +237,14 @@ void CShader::CreateConstantBufferViews(ID3D12Device *pd3dDevice, int nConstantB
 	for (int j = 0; j < nConstantBufferViews; j++) {
 		d3dCBVDesc.BufferLocation = d3dGpuVirtualAddress + (nStride * j);
 		D3D12_CPU_DESCRIPTOR_HANDLE d3dCbvCPUDescriptorHandle;
-		d3dCbvCPUDescriptorHandle.ptr = m_d3dCbvCPUDescriptorStartHandle.ptr + (::gnCbvSrvDescriptorIncrementSize * j);
+		d3dCbvCPUDescriptorHandle.ptr = m_d3dCbvCPUDescriptorStartHandle.ptr + (::gnCbvSrvUavDescriptorIncrementSize * j);
 		pd3dDevice->CreateConstantBufferView(&d3dCBVDesc, d3dCbvCPUDescriptorHandle);
 	}
 }
 
 void CShader::CreateShaderResourceViews(ID3D12Device* pd3dDevice, CTexture* pTexture, UINT nDescriptorHeapIndex, UINT nRootParameterStartIndex) {
-	m_d3dSrvCPUDescriptorNextHandle.ptr += (::gnCbvSrvDescriptorIncrementSize * nDescriptorHeapIndex);
-	m_d3dSrvGPUDescriptorNextHandle.ptr += (::gnCbvSrvDescriptorIncrementSize * nDescriptorHeapIndex);
+	m_d3dSrvCPUDescriptorNextHandle.ptr += (::gnCbvSrvUavDescriptorIncrementSize * nDescriptorHeapIndex);
+	m_d3dSrvGPUDescriptorNextHandle.ptr += (::gnCbvSrvUavDescriptorIncrementSize * nDescriptorHeapIndex);
 
 	int nTextures = pTexture->GetTextures();
 	UINT nTextureType = pTexture->GetTextureType();
@@ -252,9 +252,9 @@ void CShader::CreateShaderResourceViews(ID3D12Device* pd3dDevice, CTexture* pTex
 		ID3D12Resource* pShaderResource = pTexture->GetResource(i);
 		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = pTexture->GetShaderResourceViewDesc(i);
 		pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle);
-		m_d3dSrvCPUDescriptorNextHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-		pTexture->SetGpuDescriptorHandle(i, m_d3dSrvGPUDescriptorNextHandle);
-		m_d3dSrvGPUDescriptorNextHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvCPUDescriptorNextHandle.ptr += ::gnCbvSrvUavDescriptorIncrementSize;
+		pTexture->SetSrvGpuDescriptorHandle(i, m_d3dSrvGPUDescriptorNextHandle);
+		m_d3dSrvGPUDescriptorNextHandle.ptr += ::gnCbvSrvUavDescriptorIncrementSize;
 	}
 	int nRootParameters = pTexture->GetRootParameters();
 	for (int i = 0; i < nRootParameters; i++) pTexture->SetRootParameterIndex(i, nRootParameterStartIndex + i);
@@ -267,10 +267,10 @@ void CShader::CreateShaderResourceView(ID3D12Device* pd3dDevice, CTexture* pText
 	if (pShaderResource && !d3dGpuDescriptorHandle.ptr) {
 		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = pTexture->GetShaderResourceViewDesc(nIndex);
 		pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle);
-		m_d3dSrvCPUDescriptorNextHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvCPUDescriptorNextHandle.ptr += ::gnCbvSrvUavDescriptorIncrementSize;
 
-		pTexture->SetGpuDescriptorHandle(nIndex, m_d3dSrvGPUDescriptorNextHandle);
-		m_d3dSrvGPUDescriptorNextHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		pTexture->SetSrvGpuDescriptorHandle(nIndex, m_d3dSrvGPUDescriptorNextHandle);
+		m_d3dSrvGPUDescriptorNextHandle.ptr += ::gnCbvSrvUavDescriptorIncrementSize;
 	}
 }
 
@@ -281,7 +281,7 @@ D3D12_SHADER_BYTECODE CShader::CreateEmptyShader() {
 	return(d3dShaderByteCode);
 }
 
-void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState) {
+void CShader::OnPrepare(ID3D12GraphicsCommandList *pd3dCommandList, int nPipelineState) {
 	if (m_ppd3dPipelineStates) pd3dCommandList->SetPipelineState(m_ppd3dPipelineStates[nPipelineState]);
 
 	// 리소스 GPU 주소가진 서술자힙 할당하고 위치 이동시켜야함
@@ -289,7 +289,7 @@ void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nP
 	if (m_pd3dCbvSrvDescriptorHeap) pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
 }
 void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nPipelineState) {
-	OnPrepareRender(pd3dCommandList);
+	OnPrepare(pd3dCommandList);
 }
 //========================================================================
 // CStandardShader
@@ -896,7 +896,7 @@ void CTerrainTessellationShader::CreateShader(ID3D12Device* pd3dDevice, ID3D12Gr
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
-void CTerrainTessellationShader::OnPrepareRender(ID3D12GraphicsCommandList* pd3dCommandList, int nPipelineState) {
+void CTerrainTessellationShader::OnPrepare(ID3D12GraphicsCommandList* pd3dCommandList, int nPipelineState) {
 	if (m_pd3dGraphicsRootSignature) pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
 	if (m_ppd3dPipelineStates) pd3dCommandList->SetPipelineState((::gbTerrainTessellationWireframe) ? m_ppd3dPipelineStates[1] : m_ppd3dPipelineStates[0]);
 	if (m_pd3dCbvSrvDescriptorHeap) pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
@@ -1175,3 +1175,93 @@ D3D12_SHADER_BYTECODE CViewportShader::CreateVertexShader() {
 D3D12_SHADER_BYTECODE CViewportShader::CreatePixelShader() {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSViewport", "ps_5_1", &m_pd3dPixelShaderBlob));
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CComputeShader::CComputeShader() {
+}
+
+CComputeShader::~CComputeShader() {
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::CreateComputeShader(ID3DBlob** ppd3dShaderBlob) {
+	D3D12_SHADER_BYTECODE d3dShaderByteCode;
+	d3dShaderByteCode.BytecodeLength = 0;
+	d3dShaderByteCode.pShaderBytecode = NULL;
+
+	return(d3dShaderByteCode);
+}
+
+void CComputeShader::CreateShader(ID3D12Device* pd3dDevice, ID3D12RootSignature* pd3dRootSignature, UINT cxThreadGroups, UINT cyThreadGroups, UINT czThreadGroups) {
+	name = ConverCtoWC(typeid(*this).name());
+	if (pd3dRootSignature)
+	{
+		m_pd3dGraphicsRootSignature = pd3dRootSignature;
+		pd3dRootSignature->AddRef();
+	}
+	
+	m_nPipelineStates = 1;
+	m_ppd3dPipelineStates = new ID3D12PipelineState * [m_nPipelineStates];
+	ID3DBlob* pd3dComputeShaderBlob = NULL;
+
+	D3D12_CACHED_PIPELINE_STATE d3dCachedPipelineState = { };
+	D3D12_COMPUTE_PIPELINE_STATE_DESC d3dPipelineStateDesc;
+	::ZeroMemory(&d3dPipelineStateDesc, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
+	d3dPipelineStateDesc.pRootSignature = pd3dRootSignature;
+	d3dPipelineStateDesc.CS = CreateComputeShader(&pd3dComputeShaderBlob);
+	d3dPipelineStateDesc.NodeMask = 0;
+	d3dPipelineStateDesc.CachedPSO = d3dCachedPipelineState;
+	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	HRESULT hResult = pd3dDevice->CreateComputePipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void**)&m_ppd3dPipelineStates[0]);
+
+	if (pd3dComputeShaderBlob) pd3dComputeShaderBlob->Release();
+
+	m_cxThreadGroups = cxThreadGroups;
+	m_cyThreadGroups = cyThreadGroups;
+	m_czThreadGroups = czThreadGroups;
+}
+
+void CComputeShader::OnPrepare(ID3D12GraphicsCommandList* pd3dCommandList, int nPipelineState) {
+	if (m_ppd3dPipelineStates) pd3dCommandList->SetPipelineState(m_ppd3dPipelineStates[nPipelineState]);
+}
+
+void CComputeShader::Dispatch(ID3D12GraphicsCommandList* pd3dCommandList) {
+	OnPrepare(pd3dCommandList);
+	//UpdateShaderVariables(pd3dCommandList, NULL); //Nothing
+	pd3dCommandList->Dispatch(m_cxThreadGroups, m_cyThreadGroups, m_czThreadGroups);
+}
+
+void CComputeShader::Dispatch(ID3D12GraphicsCommandList* pd3dCommandList, UINT cxThreadGroups, UINT cyThreadGroups, UINT czThreadGroups) {
+	OnPrepare(pd3dCommandList);
+	//UpdateShaderVariables(pd3dCommandList, NULL);//Nothing
+	pd3dCommandList->Dispatch(cxThreadGroups, cyThreadGroups, czThreadGroups);
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+//
+CEdgeDetectionComputeShader::CEdgeDetectionComputeShader() {
+}
+
+CEdgeDetectionComputeShader::~CEdgeDetectionComputeShader() {
+}
+
+D3D12_SHADER_BYTECODE CEdgeDetectionComputeShader::CreateComputeShader(ID3DBlob** ppd3dShaderBlob) {
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "CSTextures", "cs_5_1", ppd3dShaderBlob));
+}
+
+void CEdgeDetectionComputeShader::CreateShaderVariables(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList) {
+}
+
+void CEdgeDetectionComputeShader::UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList) {
+}
+
+void CEdgeDetectionComputeShader::ReleaseShaderVariables() {
+}
+
+void CEdgeDetectionComputeShader::ReleaseUploadBuffers() {
+}
+
+void CEdgeDetectionComputeShader::Dispatch(ID3D12GraphicsCommandList* pd3dCommandList, UINT cxThreadGroups, UINT cyThreadGroups, UINT czThreadGroups) {
+	CComputeShader::Dispatch(pd3dCommandList, cxThreadGroups, cyThreadGroups, czThreadGroups);
+}
+

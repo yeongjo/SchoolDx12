@@ -1027,6 +1027,6 @@ float4 PSTexturedNormalMapLighting(VS_NORMALMAP_TEXTURED_OUTPUT input, uint nPri
 RWTexture2D<float4> gtxtRWOutput : register(u0);
 
 [numthreads(32, 32, 1)]
-void CSAddTextures(int3 nDispatchID : SV_DispatchThreadID) {
+void CSTextures(int3 nDispatchID : SV_DispatchThreadID) {
 	gtxtRWOutput[nDispatchID.xy] = gtxtTexture[nDispatchID.xy] * float4(1,0,0,1);
 }

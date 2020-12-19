@@ -184,9 +184,9 @@ void CGameFramework::CreateDirect3DDevice() {
 	////뷰포트를 주 윈도우의 클라이언트 영역 전체로 설정한다.
 	//m_d3dScissorRect = {0, 0, m_nWndClientWidth, m_nWndClientHeight};
 	//씨저 사각형을 주 윈도우의 클라이언트 영역 전체로 설정한다.
-	::gnCbvSrvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	::gnCbvSrvUavDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	::gnCbvSrvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	::gnCbvSrvUavDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	::gnRtvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	::gnDsvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	
@@ -250,6 +250,8 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	HRESULT hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc,
 		__uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dRtvDescriptorHeap);
 	//렌더 타겟 서술자 힙(서술자의 개수는 스왑체인 버퍼의 개수)을 생성한다.
+
+	m_pd3dRtvDescriptorHeap->SetName(L"CGameFramework::m_pd3dRtvDescriptorHeap");
 	
 	//렌더 타겟 서술자 힙의 원소의 크기를 저장한다. 
 	d3dDescriptorHeapDesc.NumDescriptors = 1;
@@ -262,9 +264,10 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	////////////////////////////////////////////////////////////
 	// 랜더텍스처 만들기
 	D3D12_CLEAR_VALUE clearValue = { DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 0, 1 };
-	m_pColorRenderTex = new CTexture(1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 1);
-	m_pColorRenderTex->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 0, RESOURCE_TEXTURE2D, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, &clearValue);
+	m_pColorRenderTex = new CTexture(2, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 1, 1, 1);
+	m_pColorRenderTex->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 0, RESOURCE_TEXTURE2D, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON, &clearValue);
 	m_pColorRenderTex->SetRootParameterIndex(0, 17);
+	m_pColorRenderTex->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 1, RESOURCE_TEXTURE2D, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, &clearValue);
 	
 	D3D12_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
@@ -305,7 +308,7 @@ void CGameFramework::CreateRenderTargetViews() {
 		m_ppd3dRenderTargetBuffers[i]->SetName((n+ to_wstring(i)).c_str());
 		m_pd3dDevice->CreateRenderTargetView(m_ppd3dRenderTargetBuffers[i], nullptr, d3dRtvCPUDescriptorHandle);
 		d3dRtvCPUDescriptorHandle.ptr += gnRtvDescriptorIncrementSize;
-		//m_d3dSrvCPUDescriptorNextHandle.ptr += gnCbvSrvDescriptorIncrementSize;
+		//m_d3dSrvCPUDescriptorNextHandle.ptr += gnCbvSrvUavDescriptorIncrementSize;
 	}
 
 	////////////////////////////////////////////////////////////
@@ -321,11 +324,11 @@ void CGameFramework::CreateRenderTargetViews() {
 	d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
 	d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 	m_pColorRenderTex->GetResource(0)->SetName(L"ColorRenderTex");
-	m_pd3dDevice->CreateShaderResourceView(m_pColorRenderTex->GetResource(0), &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle);
-	m_pd3dDevice->CreateRenderTargetView(m_pColorRenderTex->GetResource(0), nullptr, d3dRtvCPUDescriptorHandle);
+	//m_pd3dDevice->CreateShaderResourceView(m_pColorRenderTex->GetResource(0), &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorNextHandle); // 씬에 힙쓸거임
+	m_pd3dDevice->CreateRenderTargetView(m_pColorRenderTex->GetResource(0), nullptr, d3dRtvCPUDescriptorHandle); //d3dRtvCPUDescriptorHandle의 2 인덱스에 컬러렌더텍스처 뷰 넣음
 
-
-	m_pColorRenderTex->SetGpuDescriptorHandle(0, m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	m_pd3dCbvSrvUavDescriptorHeap->SetName(L"GameFramework::m_pd3dCbvSrvUavDescriptorHeap");// 이제 안씀
+	//m_pColorRenderTex->SetSrvGpuDescriptorHandle(0, m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart()); 씬에 힙씀
 }
 void CGameFramework::CreateDepthStencilView() {
 	D3D12_RESOURCE_DESC d3dResourceDesc;
@@ -368,8 +371,19 @@ void CGameFramework::BuildObjects() {
 	pAirplanePlayer->SetPosition(XMFLOAT3(300, 500, 300));
 	m_pCamera = m_pPlayer->GetCamera();
 
-	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0, 1, 1, 1);
-	m_pTexture->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 2, RESOURCE_TEXTURE2D, 1024, 1024, 1,1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, NULL);
+	//m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0, 1, 1, 1);
+	//m_pTexture->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 2, RESOURCE_TEXTURE2D, 1024, 1024, 1,1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, NULL);
+
+	GetScene()->CreateShaderResourceViews(m_pd3dDevice, m_pColorRenderTex, 0);
+	GetScene()->CreateUnorderedAccessView(m_pd3dDevice, m_pColorRenderTex, 1); //TODO 문제생길 가능성 있음 nIndex 1에서 0으로 바꿈
+
+	m_pColorRenderTex->SetComputeSrvRootParameterIndex(0, 0, 0);
+	m_pColorRenderTex->SetComputeUavRootParameterIndex(0, 1, 1);
+
+	auto* pComputeShader = new CEdgeDetectionComputeShader();
+	pComputeShader->CreateShader(m_pd3dDevice, GetScene()->GetComputeRootSignature(), (UINT)(FRAME_BUFFER_WIDTH / 32.0f + 0.5f), (UINT)(FRAME_BUFFER_HEIGHT / 32.0f + 0.5f), 1);
+
+	m_vpComputeShaders.push_back(pComputeShader);
 
 	auto rectMesh = new CTexturedRectMesh(m_pd3dDevice, m_pd3dCommandList, 2, 2, 0,0,0,0.1f);
 	auto screenQuadObj = new CGameObject(1);
@@ -377,9 +391,9 @@ void CGameFramework::BuildObjects() {
 	screenMaterial->SetTexture(m_pColorRenderTex);
 	screenQuadObj->SetMaterial(0, screenMaterial);
 	screenQuadObj->SetMesh(rectMesh);
-	screenShader = new CViewportShader();
-	screenShader->m_ppObjects.push_back(screenQuadObj);
-	screenShader->CreateShader(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
+	m_pScreenShader = new CViewportShader();
+	m_pScreenShader->m_ppObjects.push_back(screenQuadObj);
+	m_pScreenShader->CreateShader(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
 
 	assert(SUCCEEDED(m_pd3dCommandList->Close()));
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
@@ -578,21 +592,11 @@ void CGameFramework::FrameAdvance() {
 	AnimateObjects();
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, nullptr);
-	D3D12_RESOURCE_BARRIER d3dResourceBarrier;
-	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
-	d3dResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	d3dResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	d3dResourceBarrier.Transition.pResource = m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+	
+	::SynchronizeResourceTransition(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	// 렌더 텍스처 렌더타겟으로
-	d3dResourceBarrier.Transition.pResource = m_pColorRenderTex->GetResource(0);
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+	::SynchronizeResourceTransition(m_pd3dCommandList, m_pColorRenderTex->GetResource(0), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->
 		GetCPUDescriptorHandleForHeapStart();
@@ -606,13 +610,11 @@ void CGameFramework::FrameAdvance() {
 		GetCPUDescriptorHandleForHeapStart();
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle,
 	                                         D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
-	                                      &d3dDsvCPUDescriptorHandle);
+	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE, &d3dDsvCPUDescriptorHandle);
 
 
 	if (m_pScene){
 		m_pScene->PrepareRender(m_pd3dCommandList);
-
 		UpdateShaderVariables();
 
 
@@ -630,9 +632,7 @@ void CGameFramework::FrameAdvance() {
 	////////////////////////////////////////////////////////
 
 	// 렌더 텍스처 랜더 타겟에서 텍스처로
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+	::SynchronizeResourceTransition(m_pd3dCommandList, m_pColorRenderTex->GetResource(0), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * gnRtvDescriptorIncrementSize);
@@ -647,18 +647,27 @@ void CGameFramework::FrameAdvance() {
 	m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
 
 	// 포스트 프로세싱 시작
-	GetScene()->SetComputeRootSignature(m_pd3dCommandList);
+	//::SynchronizeResourceTransition(m_pd3dCommandList, m_pColorRenderTex->GetResource(1), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	//m_pd3dCommandList->SetDescriptorHeaps(1, &GetScene()->m_pd3dCbvSrvUavDescriptorHeap);
+	//GetScene()->SetComputeRootSignature(m_pd3dCommandList);
+	//m_pColorRenderTex->UpdateComputeShaderVariables(m_pd3dCommandList);
+
+	//for (size_t i = 0; i < m_vpComputeShaders.size(); i++)
+	//{
+	//	m_vpComputeShaders[i]->Dispatch(m_pd3dCommandList);
+	//}
+
+	//::SynchronizeResourceTransition(m_pd3dCommandList, m_pColorRenderTex->GetResource(1), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
 
 	// 쿼드 렌더 시작
-	m_pScene->PrepareRender(m_pd3dCommandList);
-	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvUavDescriptorHeap);
-	auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	m_pd3dCommandList->SetGraphicsRootDescriptorTable(17, GPUDescriptorHandleForHeapStart);
-	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvUavDescriptorHeap);
+	//m_pScene->PrepareRender(m_pd3dCommandList);
+	//m_pd3dCommandList->SetDescriptorHeaps(1, &GetScene()->m_pd3dCbvSrvUavDescriptorHeap);
+	//auto GPUDescriptorHandleForHeapStart = GetScene()->m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	//m_pd3dCommandList->SetGraphicsRootDescriptorTable(17, GPUDescriptorHandleForHeapStart);
 
-	screenShader->OnPrepareRender(m_pd3dCommandList, 0);
-	screenShader->m_ppObjects[0]->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(m_pd3dCommandList);
-	screenShader->m_ppObjects[0]->m_pMesh->Render(m_pd3dCommandList, 0);
+	//m_pScreenShader->OnPrepare(m_pd3dCommandList, 0);
+	//m_pScreenShader->m_ppObjects[0]->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(m_pd3dCommandList);
+	//m_pScreenShader->m_ppObjects[0]->m_pMesh->Render(m_pd3dCommandList, 0);
 
 	////////////////////////////////////////////////////////
 
