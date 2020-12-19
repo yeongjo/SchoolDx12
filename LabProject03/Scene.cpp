@@ -576,3 +576,7 @@ void CScene::ReleaseShaderVariables() {
 void CScene::PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList) {
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
 }
+
+void CScene::SetComputeRootSignature(ID3D12GraphicsCommandList* pd3dCommandList) {
+	pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
+}

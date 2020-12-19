@@ -44,7 +44,7 @@ private:
 	//렌더 타겟 버퍼, 서술자 힙 인터페이스 포인터, 렌더 타겟 서술자 원소의 크기이다.
 	ID3D12Resource *m_pd3dDepthStencilBuffer;
 	ID3D12DescriptorHeap *m_pd3dDsvDescriptorHeap;
-	ID3D12DescriptorHeap *m_pd3dCbvSrvDescriptorHeap;
+	ID3D12DescriptorHeap *m_pd3dCbvSrvUavDescriptorHeap;
 	//깊이-스텐실 버퍼, 서술자 힙 인터페이스 포인터, 깊이-스텐실 서술자 원소의 크기이다.
 	ID3D12CommandQueue *m_pd3dCommandQueue;
 	ID3D12CommandAllocator *m_pd3dCommandAllocator;
@@ -116,5 +116,5 @@ public:
 protected:
 	CB_FRAMEWORK_INFO* m_pcbMappedFrameworkInfo = NULL;
 	ID3D12Resource* m_pd3dcbFrameworkInfo = NULL;
-
+	CTexture* m_pTexture = NULL;
 };

@@ -290,14 +290,14 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
-	m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dCbvSrvDescriptorHeap);
+	m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dCbvSrvUavDescriptorHeap);
 }
 
 //스왑체인의 각 후면 버퍼에 대한 렌더 타겟 뷰를 생성한다.
 void CGameFramework::CreateRenderTargetViews() {
 	m_pcbMappedFrameworkInfo = new CB_FRAMEWORK_INFO;
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	auto m_d3dSrvCPUDescriptorNextHandle = m_pd3dCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	auto m_d3dSrvCPUDescriptorNextHandle = m_pd3dCbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	
 	for (UINT i = 0; i < m_nSwapChainBuffers; i++) {
 		m_pdxgiSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_ppd3dRenderTargetBuffers[i]);
@@ -325,7 +325,7 @@ void CGameFramework::CreateRenderTargetViews() {
 	m_pd3dDevice->CreateRenderTargetView(m_pColorRenderTex->GetResource(0), nullptr, d3dRtvCPUDescriptorHandle);
 
 
-	m_pColorRenderTex->SetGpuDescriptorHandle(0, m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	m_pColorRenderTex->SetGpuDescriptorHandle(0, m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }
 void CGameFramework::CreateDepthStencilView() {
 	D3D12_RESOURCE_DESC d3dResourceDesc;
@@ -367,6 +367,9 @@ void CGameFramework::BuildObjects() {
 	m_pScene->m_pPlayer = m_pPlayer = pAirplanePlayer;
 	pAirplanePlayer->SetPosition(XMFLOAT3(300, 500, 300));
 	m_pCamera = m_pPlayer->GetCamera();
+
+	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0, 1, 1, 1);
+	m_pTexture->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 2, RESOURCE_TEXTURE2D, 1024, 1024, 1,1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, NULL);
 
 	auto rectMesh = new CTexturedRectMesh(m_pd3dDevice, m_pd3dCommandList, 2, 2, 0,0,0,0.1f);
 	auto screenQuadObj = new CGameObject(1);
@@ -591,25 +594,28 @@ void CGameFramework::FrameAdvance() {
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->
+		GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (2 * gnRtvDescriptorIncrementSize);
 	//d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * gnRtvDescriptorIncrementSize); 
 #ifdef  RENDER_WIREFRAME
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle, pfClearColor/*Colors::Azure*/, 0, nullptr);
 #endif
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle = m_pd3dDsvDescriptorHeap->
+		GetCPUDescriptorHandleForHeapStart();
+	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle,
+	                                         D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
-		&d3dDsvCPUDescriptorHandle);
+	                                      &d3dDsvCPUDescriptorHandle);
 
-	
-	if (m_pScene) { 
+
+	if (m_pScene){
 		m_pScene->PrepareRender(m_pd3dCommandList);
-		
+
 		UpdateShaderVariables();
-		
-		
+
+
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);
 	}
 	//3인칭 카메라일 때 플레이어가 항상 보이도록 렌더링한다. 
@@ -622,7 +628,7 @@ void CGameFramework::FrameAdvance() {
 	if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
 	////////////////////////////////////////////////////////
-	
+
 	// 렌더 텍스처 랜더 타겟에서 텍스처로
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
@@ -630,22 +636,25 @@ void CGameFramework::FrameAdvance() {
 
 	d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * gnRtvDescriptorIncrementSize);
-	
+
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE, &d3dDsvCPUDescriptorHandle);
 
-	// 쿼드렌더
-	m_pScene->PrepareRender(m_pd3dCommandList);
-
-	D3D12_VIEWPORT m_d3dViewport = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f };
-	D3D12_RECT m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
+	// 뷰포트 설정
+	D3D12_VIEWPORT m_d3dViewport = {0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f};
+	D3D12_RECT m_d3dScissorRect = {0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT};
 	m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
 	m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
 
-	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
-	auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	// 포스트 프로세싱 시작
+	GetScene()->SetComputeRootSignature(m_pd3dCommandList);
+
+	// 쿼드 렌더 시작
+	m_pScene->PrepareRender(m_pd3dCommandList);
+	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvUavDescriptorHeap);
+	auto GPUDescriptorHandleForHeapStart = m_pd3dCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	m_pd3dCommandList->SetGraphicsRootDescriptorTable(17, GPUDescriptorHandleForHeapStart);
-	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvDescriptorHeap);
+	m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dCbvSrvUavDescriptorHeap);
 
 	screenShader->OnPrepareRender(m_pd3dCommandList, 0);
 	screenShader->m_ppObjects[0]->m_ppMaterials[0]->m_pTexture->UpdateShaderVariables(m_pd3dCommandList);
@@ -653,12 +662,12 @@ void CGameFramework::FrameAdvance() {
 
 	////////////////////////////////////////////////////////
 
-	d3dResourceBarrier.Transition.pResource = m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+	SynchronizeResourceTransition(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex],
+	                              D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+
 	hResult = m_pd3dCommandList->Close();
-	ID3D12CommandList* ppd3dCommandLists[] = { m_pd3dCommandList };
+
+	ID3D12CommandList* ppd3dCommandLists[] = {m_pd3dCommandList};
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 	WaitForGpuComplete();
 	m_pdxgiSwapChain->Present(0, 0);
@@ -666,6 +675,7 @@ void CGameFramework::FrameAdvance() {
 	m_GameTimer.GetFrameRate(m_pszFrameRate + 12, 37);
 	::SetWindowText(m_hWnd, m_pszFrameRate);
 }
+
 void CGameFramework::ProcessSelectedObject(DWORD dwDirection, float cxDelta, float
 	cyDelta) {
 	//픽킹으로 선택한 게임 객체가 있으면 키보드를 누르거나 마우스를 움직이면 게임 개체를 이동 또는 회전한다. 

@@ -59,6 +59,7 @@ public:
 	void AnimateObjects(float fTimeElapsed);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	void PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList);
+	void SetComputeRootSignature(ID3D12GraphicsCommandList* pd3dCommandList);
 	void ReleaseUploadBuffers();
 	ID3D12RootSignature* CreateRootSignature(ID3D12Device* pd3dDevice, D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags,
 	                                         UINT nRootParameters, D3D12_ROOT_PARAMETER* pd3dRootParameters,
@@ -76,6 +77,7 @@ public:
 	ID3D12RootSignature *GetGraphicsRootSignature();
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = nullptr;
+	ID3D12RootSignature			* m_pd3dComputeRootSignature = nullptr;
 	
 	CPlayer						*m_pPlayer = nullptr;
 

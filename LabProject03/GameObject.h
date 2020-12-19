@@ -24,7 +24,7 @@ class CGameObject;
 
 class CTexture : public CRef {
 public:
-	CTexture(int nTextureResources, UINT nResourceType, int nSamplers, int nRootParameters);
+	CTexture(int nTextureResources, UINT nResourceType, int nSamplers, int nGraphicsSrvRootParameters, int nComputeUavRootParameters=0, int nComputeSrvRootParameters = 0);
 	virtual ~CTexture();
 
 private:
@@ -46,6 +46,16 @@ private:
 
 	int								m_nSamplers = 0;
 	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSamplerGpuDescriptorHandles = nullptr;
+	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dUavGpuDescriptorHandles;
+	int m_nGraphicsSrvRootParameters;
+	int* m_pnGraphicsSrvRootParameterIndices;
+	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dGraphicsRootParameterSrvGpuDescriptorHandles;
+	int m_nComputeUavRootParameters;
+	int* m_pnComputeUavRootParameterIndices;
+	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dComputeRootParameterUavGpuDescriptorHandles;
+	int m_nComputeSrvRootParameters;
+	int* m_pnComputeSrvRootParameterIndices;
+	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dComputeRootParameterSrvGpuDescriptorHandles;
 
 public:
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);

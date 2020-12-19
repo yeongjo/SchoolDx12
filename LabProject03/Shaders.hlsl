@@ -155,7 +155,7 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 		float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.bitangentW), normalize(input.normalW));
 		float3 vNormal = normalize(cNormalColor.rgb * 8.0f - 4.0f); //[0, 1] ¡æ [-1, 1]
 		normalW = normalize(mul(vNormal, TBN));
-		return half4(normalW,1);
+		//return half4(normalW,1);
 	}
 	float4 cIllumination = Lighting(input.positionW, normalW);
 	cColor = cColor * cIllumination;
@@ -556,11 +556,15 @@ float4 PSTerrainTessellation(DS_TERRAIN_TESSELLATION_OUTPUT input) : SV_TARGET
 		else cColor = float4(0.87f, 0.17f, 1.0f, 1.0f);
 	} else
 	{
-		float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gssWrap, input.uv0);
-		float4 cDetailTexColor = gtxtTerrainDetailTextures[0].Sample(gssWrap, input.uv1);
-		float fAlpha = gtxtTerrainAlphaTexture.Sample(gssWrap, input.uv0).a;
-		return fAlpha;
-		cColor = saturate(lerp(cBaseTexColor, cDetailTexColor, fAlpha));
+		float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gssWrap, input.uv0); // Ç®
+		float4 cDetailTexColor = gtxtTerrainDetailTextures[0].Sample(gssWrap, input.uv1); // Èë
+		float4 cDetailTexColor1 = gtxtTerrainDetailTextures[1].Sample(gssWrap, input.uv1); // ¹°
+		float4 cDetailTexColor2 = gtxtTerrainDetailTextures[2].Sample(gssWrap, input.uv1); // ¿ë¾Æ¤±
+		float4 fAlpha = gtxtTerrainAlphaTexture.Sample(gssWrap, input.uv0);
+		//return fAlpha;
+		cColor = saturate(lerp(cBaseTexColor, cDetailTexColor, fAlpha.r));
+		//cColor = saturate(lerp(cColor, cDetailTexColor1, fAlpha.g));
+		cColor = saturate(lerp(cColor, cDetailTexColor1, 1-fAlpha.a));
 	}
 
 	return(cColor);
@@ -1018,4 +1022,11 @@ float4 PSTexturedNormalMapLighting(VS_NORMALMAP_TEXTURED_OUTPUT input, uint nPri
 
 	//	return(cTexture * cIllumination);
 		return(lerp(cTexture, cIllumination, 0.35f));
+}
+
+RWTexture2D<float4> gtxtRWOutput : register(u0);
+
+[numthreads(32, 32, 1)]
+void CSAddTextures(int3 nDispatchID : SV_DispatchThreadID) {
+	gtxtRWOutput[nDispatchID.xy] = gtxtTexture[nDispatchID.xy] * float4(1,0,0,1);
 }
