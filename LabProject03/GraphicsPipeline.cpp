@@ -1,11 +1,13 @@
 #include "stdafx.h"
 #include "GraphicsPipeline.h"
 
-XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4World = NULL;
-XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4ViewProject = NULL;
-XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4View = NULL;
-XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4Project = NULL;
-CViewport* CGraphicsPipeline::m_pViewport = NULL;BoundingFrustum CGraphicsPipeline::boundingFrustum;
+XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4World = nullptr;
+XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4ViewProject = nullptr;
+XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4View = nullptr;
+XMFLOAT4X4* CGraphicsPipeline::m_pxmf4x4Project = nullptr;
+CViewport* CGraphicsPipeline::m_pViewport = nullptr;
+BoundingFrustum CGraphicsPipeline::boundingFrustum;
+
 
 XMFLOAT3 CGraphicsPipeline::Project(XMFLOAT3& xmf3Model){
 	//XMMATRIX xmmtxModelToProject =

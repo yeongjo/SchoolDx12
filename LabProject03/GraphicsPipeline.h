@@ -10,7 +10,6 @@ private:
 	//현재 카메라 객체의 (카메라 변환 행렬 * 원근 투영 변환 행렬)이다. 
 	static XMFLOAT4X4* m_pxmf4x4ViewProject;
 
-	static CViewport* m_pViewport;
 	static BoundingFrustum boundingFrustum;
 public:
 
@@ -24,10 +23,6 @@ public:
 		m_pxmf4x4ViewProject = pxmf4x4ViewProject;
 		boundingFrustum = BoundingFrustum(XMLoadFloat4x4(m_pxmf4x4ViewProject));
 	}
-	static void SetViewport(CViewport* pViewport) {
-		m_pViewport =
-			pViewport;
-	}
 	static XMFLOAT3 ScreenTransform(XMFLOAT3& xmf3Project);
 	static XMFLOAT3 Viewport2World(XMFLOAT3& viewport);
 	static XMFLOAT3 Project(XMFLOAT3& xmf3Model);
@@ -38,4 +33,5 @@ public:
 	static BoundingFrustum GetBoundingFrustum(){
 		return boundingFrustum;
 	}
-};
+};
+

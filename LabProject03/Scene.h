@@ -23,24 +23,25 @@ struct LIGHT {
 	int						m_nType;
 	float					m_fRange;
 	float					padding;
-	XMFLOAT4				test;
 };
 
 struct LIGHTS {
 	LIGHT					m_pLights[MAX_LIGHTS];
 	XMFLOAT4				m_xmf4GlobalAmbient;
+	int						m_nLights;
 };
 
-struct MATERIALS {
-	MATERIAL				m_pReflections[MAX_MATERIALS];
+struct TessellationBuffer {
+	float tessellationAmount;
+	XMFLOAT3 padding;
 };
 
 class CScene
 {
 public:
-	CScene();
-	~CScene();
-	//씬에서 마우스와 키보드 메시지를 처리한다. 
+	CScene() {}
+	~CScene(){}
+
 	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
@@ -48,49 +49,55 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	void BuildLightsAndMaterials();
+	void BuildDefaultLightsAndMaterials();
 
+	void CreateCbvSrvUavDescriptorHeaps(ID3D12Device* pd3dDevice, int nConstantBufferViews, int nShaderResourceViews,
+	                                    int nUnorderedAccessViews);
 	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	void ReleaseObjects();
 	bool ProcessInput(UCHAR *pKeysBuffer);
 	void AnimateObjects(float fTimeElapsed);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	void PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList);
+	void SetComputeRootSignature(ID3D12GraphicsCommandList* pd3dCommandList);
 	void ReleaseUploadBuffers();
+	ID3D12RootSignature* CreateRootSignature(ID3D12Device* pd3dDevice, D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags,
+	                                         UINT nRootParameters, D3D12_ROOT_PARAMETER* pd3dRootParameters,
+	                                         UINT nStaticSamplerDescs,
+	                                         D3D12_STATIC_SAMPLER_DESC* pd3dStaticSamplerDescs);
+
+	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
+	CGameObject *PickObjectPointedByCursor(int xClient, int yClient, CCamera *pCamera);
+	CGameObject *GetNearestObject(CGameObject *obj, float * pfNearHitDistance);
+	bool RemoveGameObject(CGameObject* obj);
 
 	//그래픽 루트 시그너쳐를 생성한다. 
-	ID3D12RootSignature			*CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
-	ID3D12RootSignature			*GetGraphicsRootSignature();
+	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
+	ID3D12RootSignature* CreateComputeRootSignature(ID3D12Device* pd3dDevice);
+	ID3D12RootSignature *GetGraphicsRootSignature();
 
-	CPlayer						*m_pPlayer = NULL;
-protected:
-	CHeightMapTerrain			*m_pTerrain = NULL;
-public:
-	CHeightMapTerrain			*GetTerrain() { return(m_pTerrain); }
+	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = nullptr;
+	ID3D12RootSignature			* m_pd3dComputeRootSignature = nullptr;
+	
+	CPlayer						*m_pPlayer = nullptr;
 
-protected:
-	//씬은 게임 객체들의 집합이다. 게임 객체는 셰이더를 포함한다. 
-	CGameObject					**m_ppObjects = NULL;
-	int							m_nObjects = 0;
+	vector<CGameObject*>		m_ppGameObjects;
 
-	//배치(Batch) 처리를 하기 위하여 씬을 셰이더들의 리스트로 표현한다. 
-	CObjectsShader				**m_pShaders = NULL;
-	int							m_nShaders = 0;
+	vector<CShader*>			m_ppShaders;
 
-	LIGHTS						*m_pLights = NULL;
+	LIGHT						*m_pLights = nullptr;
+	int							m_nLights = 0;
+	XMFLOAT4					m_xmf4GlobalAmbient;
 
-	ID3D12Resource				*m_pd3dcbLights = NULL;
-	LIGHTS						*m_pcbMappedLights = NULL;
+	ID3D12Resource				*m_pd3dcbLights = nullptr;
+	LIGHTS						*m_pcbMappedLights = nullptr;
 
-	MATERIALS					*m_pMaterials = NULL;
+	CSkyBox						*m_pSkyBox = nullptr;
+	CTerrainWater				*pTerrainWater = nullptr;
 
-	ID3D12Resource				*m_pd3dcbMaterials = NULL;
-	MATERIAL					*m_pcbMappedMaterials = NULL;
+	WayPointHandler				*_wayPointHandler = nullptr;
 
-	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
-public:
-	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
-	CGameObject					*PickObjectPointedByCursor(int xClient, int yClient, CCamera *pCamera);
-	CGameObject					*GetIntersectObject(const XMFLOAT3 & xmf3Position, float * pfNearHitDistance);
-	bool						RemoveGameObject(CGameObject* obj);
+	ID3D12Resource				*m_pd3dcbTessellation = nullptr;
+	TessellationBuffer			*m_pcbMappedTessellation = nullptr;
 };
 

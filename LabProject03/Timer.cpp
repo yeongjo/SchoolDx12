@@ -94,4 +94,29 @@ void CGameTimer::Reset()
 	m_nCurrentFrameRate = 0;
 	m_FramePerSecond = 0;
 	m_fFPSTimeElapsed = 0.0f;
+
+	Tick();
+}
+
+void CGameTimer::Start() {
+	__int64 nPerformanceCounter;
+	::QueryPerformanceCounter((LARGE_INTEGER *)&nPerformanceCounter);
+	if (m_bStopped) {
+		m_nPausedPerformanceCounter += (nPerformanceCounter - m_nStopPerformanceCounter);
+		m_nLastPerformanceCounter = nPerformanceCounter;
+		m_nStopPerformanceCounter = 0;
+		m_bStopped = false;
+	}
+}
+
+void CGameTimer::Stop() {
+	if (!m_bStopped) {
+		::QueryPerformanceCounter((LARGE_INTEGER *)&m_nStopPerformanceCounter);
+		m_bStopped = true;
+	}
+}
+
+float CGameTimer::GetTotalTime() {
+	if (m_bStopped) return(float(((m_nStopPerformanceCounter - m_nPausedPerformanceCounter) - m_nBasePerformanceCounter) * m_fTimeScale));
+	return(float(((m_nCurrentPerformanceCounter - m_nPausedPerformanceCounter) - m_nBasePerformanceCounter) * m_fTimeScale));
 }

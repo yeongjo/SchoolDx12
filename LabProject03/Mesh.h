@@ -1,208 +1,230 @@
 ﻿#pragma once
-
-//정점을 표현하기 위한 클래스를 선언한다. 
-class CVertex {
-protected:
-	//정점의 위치 벡터이다(모든 정점은 최소한 위치 벡터를 가져야 한다). 
-	XMFLOAT3 m_xmf3Position;
+class CRef {
+	int	m_nReferences = 0;
 public:
-	CVertex() {
-		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	}
-	CVertex(XMFLOAT3 xmf3Position) {
-		m_xmf3Position = xmf3Position;
-	}
+	void AddRef() { m_nReferences++; }
+	void Release() { if (--m_nReferences <= 0) delete this; }
+};
+
+#define VERTEXT_POSITION				0x01
+#define VERTEXT_COLOR					0x02
+#define VERTEXT_NORMAL					0x04
+#define VERTEXT_TANGENT					0x08
+#define VERTEXT_TEXTURE_COORD0			0x10
+#define VERTEXT_TEXTURE_COORD1			0x20
+
+#define VERTEXT_TEXTURE					(VERTEXT_POSITION | VERTEXT_TEXTURE_COORD0)
+#define VERTEXT_DETAIL					(VERTEXT_POSITION | VERTEXT_TEXTURE_COORD0 | VERTEXT_TEXTURE_COORD1)
+#define VERTEXT_NORMAL_TEXTURE			(VERTEXT_POSITION | VERTEXT_NORMAL | VERTEXT_TEXTURE_COORD0)
+#define VERTEXT_NORMAL_TANGENT_TEXTURE	(VERTEXT_POSITION | VERTEXT_NORMAL | VERTEXT_TANGENT | VERTEXT_TEXTURE_COORD0)
+#define VERTEXT_NORMAL_DETAIL			(VERTEXT_POSITION | VERTEXT_NORMAL | VERTEXT_TEXTURE_COORD0 | VERTEXT_TEXTURE_COORD1)
+#define VERTEXT_NORMAL_TANGENT__DETAIL	(VERTEXT_POSITION | VERTEXT_NORMAL | VERTEXT_TANGENT | VERTEXT_TEXTURE_COORD0 | VERTEXT_TEXTURE_COORD1)
+
+class CVertex {
+public:
+	XMFLOAT3						m_xmf3Position;
+
+public:
+	CVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); }
+	CVertex(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	~CVertex() {}
 };
+
 class CDiffusedVertex : public CVertex {
-protected:
-	//정점의 색상이다. 
-	XMFLOAT4 m_xmf4Diffuse;
 public:
-	CDiffusedVertex() {
-		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
-	}
-	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse) {
-		m_xmf3Position =
-			XMFLOAT3(x, y, z); m_xmf4Diffuse = xmf4Diffuse;
-	}
-	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse) {
-		m_xmf3Position =
-			xmf3Position; m_xmf4Diffuse = xmf4Diffuse;
-	}
+	XMFLOAT4						m_xmf4Diffuse;
+
+public:
+	CDiffusedVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); }
+	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf4Diffuse = xmf4Diffuse; }
+	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f)) { m_xmf3Position = xmf3Position; m_xmf4Diffuse = xmf4Diffuse; }
 	~CDiffusedVertex() {}
 };
-class CIlluminatedVertex : public CVertex {
-protected:
+
+class CDiffused2TexturedVertex : public CDiffusedVertex {
+public:
+	XMFLOAT2						m_xmf2TexCoord0;
+	XMFLOAT2						m_xmf2TexCoord1;
 	XMFLOAT3						m_xmf3Normal;
 
 public:
-	CIlluminatedVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf3Normal = XMFLOAT3(0.0f, 0.0f, 0.0f); }
-	CIlluminatedVertex(float x, float y, float z, XMFLOAT3 xmf3Normal = XMFLOAT3(0.0f, 0.0f, 0.0f)) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf3Normal = xmf3Normal; }
-	CIlluminatedVertex(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Normal = XMFLOAT3(0.0f, 0.0f, 0.0f)) { m_xmf3Position = xmf3Position; m_xmf3Normal = xmf3Normal; }
-	~CIlluminatedVertex() {}
+	CDiffused2TexturedVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); m_xmf2TexCoord0 = m_xmf2TexCoord1 = XMFLOAT2(0.0f, 0.0f); }
+	CDiffused2TexturedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse, XMFLOAT2 xmf2TexCoord0, XMFLOAT2 xmf2TexCoord1) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf4Diffuse = xmf4Diffuse; m_xmf2TexCoord0 = xmf2TexCoord0; m_xmf2TexCoord1 = xmf2TexCoord1; }
+	CDiffused2TexturedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f), XMFLOAT2 xmf2TexCoord0 = XMFLOAT2(0.0f, 0.0f), XMFLOAT2 xmf2TexCoord1 = XMFLOAT2(0.0f, 0.0f)) { m_xmf3Position = xmf3Position; m_xmf4Diffuse = xmf4Diffuse; m_xmf2TexCoord0 = xmf2TexCoord0; m_xmf2TexCoord1 = xmf2TexCoord1; }
+	~CDiffused2TexturedVertex() {}
 };
-class CMesh {
+class CGeometryBillboardParticleVertex : public CVertex {
+public:
+	XMFLOAT2						m_xmf2Size;
+	XMFLOAT3						m_xmf2Velocity;
+	CGeometryBillboardParticleVertex() = default;
+	~CGeometryBillboardParticleVertex() = default;
+};
+class CGeometryBillboardVertex : public CVertex {
+public:
+	XMFLOAT2						m_xmf2Size;
+	UINT							m_nTexture;
+
+public:
+	CGeometryBillboardVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf2Size = XMFLOAT2(5.0f, 10.0f); m_nTexture = 0; }
+	CGeometryBillboardVertex(float x, float y, float z, XMFLOAT2 xmf2Size = XMFLOAT2(5.0f, 10.0f), UINT nTexture = 0) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf2Size = xmf2Size; m_nTexture = nTexture; }
+	CGeometryBillboardVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size = XMFLOAT2(5.0f, 10.0f), UINT nTexture = 0) { m_xmf3Position = xmf3Position; m_xmf2Size = xmf2Size; m_nTexture = nTexture; }
+	~CGeometryBillboardVertex() {}
+};
+
+class CMesh : public CRef {
 public:
 	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual							~CMesh();
+	virtual ~CMesh();
 
-	BoundingOrientedBox				GetBoundingBox();
+	UINT GetType() { return(m_nType); }
 
-	//광선과 메쉬의 교차를 검사하고 교차하는 횟수와 거리를 반환하는 함수이다. 
-	int								CheckRayIntersection(XMFLOAT3& xmRayPosition, XMFLOAT3& xmRayDirection, float *pfNearHitDistance);
-	virtual void					Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
-	virtual void					Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances, D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView);
-
-	void							LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
-
-
-
-	void							AddRef();
-	void							Release();
-	void							ReleaseUploadBuffers();
+	virtual int GetIntersectRayCount(XMFLOAT3& xmf3RayOrigin, XMFLOAT3& xmf3RayDirection, float *pfNearHitDistance);
+	virtual void ReleaseUploadBuffers();
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet);
 protected:
-	ID3D12Resource					*m_pd3dVertexBuffer = NULL;
-	ID3D12Resource					*m_pd3dVertexUploadBuffer = NULL;
+	char							m_pstrMeshName[256] = { 0 };
 
-	ID3D12Resource					*m_pd3dNormalBuffer = NULL;
-	ID3D12Resource					*m_pd3dNormalUploadBuffer = NULL;
+	UINT							m_nType = 0x00;
 
-	ID3D12Resource					*m_pd3dTextureCoordBuffer = NULL;
-	ID3D12Resource					*m_pd3dTextureCoordUploadBuffer = NULL;
-
-	UINT							m_nVertexBufferViews = 0;
-	D3D12_VERTEX_BUFFER_VIEW		*m_pd3dVertexBufferViews = NULL;
-
-	ID3D12Resource					*m_pd3dIndexBuffer = NULL;
-	ID3D12Resource					*m_pd3dIndexUploadBuffer = NULL;
-	D3D12_INDEX_BUFFER_VIEW			m_d3dIndexBufferView;
-
-	D3D12_PRIMITIVE_TOPOLOGY		m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	XMFLOAT3						m_xmf3AABBCenter = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	XMFLOAT3						m_xmf3AABBExtents = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	BoundingBox						m_xmBoundingBox;
+	
 	UINT							m_nSlot = 0;
-	UINT							m_nVertices = 0;
-	UINT							m_nStride = 0;
 	UINT							m_nOffset = 0;
+	
+	XMFLOAT3						*m_pxmf3Positions = nullptr;
 
-	UINT							*m_pnIndices = NULL;
-	UINT							m_nIndices = 0;
-	UINT							m_nStartIndex = 0; //인덱스 버퍼에서 메쉬를 그리기 위해 사용되는 시작 인덱스이다.
-	int								m_nBaseVertex = 0;	//인덱스 버퍼의 인덱스에 더해질 인덱스이다.
+	ID3D12Resource					*m_pd3dPositionBuffer = nullptr;
+	ID3D12Resource					*m_pd3dPositionUploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dPositionBufferView;
 
-	BoundingOrientedBox				m_xmBoundingBox;
+	int								m_nSubMeshes = 0;
+	int								*m_pnSubSetIndices = nullptr;
+	UINT							**m_ppnSubSetIndices = nullptr;
 
-	//정점을 픽킹을 위하여 저장한다.
-	CDiffusedVertex					*m_pVertices = NULL;
-private:
-	int								m_nReferences = 0;
-};
-
-class CTriangleMesh : public CMesh {
+	ID3D12Resource					**m_ppd3dSubSetIndexBuffers = nullptr;
+	ID3D12Resource					**m_ppd3dSubSetIndexUploadBuffers = nullptr;
+	D3D12_INDEX_BUFFER_VIEW*		m_pd3dSubSetIndexBufferViews = nullptr;
 public:
-	CTriangleMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual ~CTriangleMesh() {}
+	int								m_nVertices = 0;
+	D3D12_PRIMITIVE_TOPOLOGY		m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
-class CCubeMeshDiffused : public CMesh {
+/////////////////////////////////////////////////////////////////////////////////////
+//
+class CSkyBoxMesh : public CMesh {
 public:
-	//직육면체의 가로, 세로, 깊이의 길이를 지정하여 직육면체 메쉬를 생성한다. 
-	CCubeMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f);
-	virtual ~CCubeMeshDiffused();
+	CSkyBoxMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 20.0f, float fHeight = 20.0f, float fDepth = 20.0f);
+	virtual ~CSkyBoxMesh();
 };
 
-class CAirplaneMeshDiffused : public CMesh {
+/////////////////////////////////////////////////////////////////////////////////////
+//
+class CTexturedRectMesh : public CMesh {
 public:
-	CAirplaneMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList, float fWidth = 20.0f, float fHeight = 20.0f, float fDepth = 4.0f,
-		XMFLOAT4 xmf4Color = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.0f));
-	virtual ~CAirplaneMeshDiffused();
+	CTexturedRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 20.0f, float fHeight = 0.0f, float fDepth = 20.0f, float fxPosition = 0.0f, float fyPosition = 0.0f, float fzPosition = 0.0f, float divX = 1, float divY = 1, float divZ = 1);
+	virtual ~CTexturedRectMesh();
+
+protected:
+	XMFLOAT2						*m_pxmf2TextureCoords0 = nullptr;
+
+	ID3D12Resource					*m_pd3dTextureCoord0Buffer = nullptr;
+	ID3D12Resource					*m_pd3dTextureCoord0UploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dTextureCoord0BufferView;
+
+public:
+	void ReleaseUploadBuffers() override;
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet) override;
 };
 
+/////////////////////////////////////////////////////////////////////////////////////
+//
+class CStandardMesh : public CMesh {
+public:
+	CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual ~CStandardMesh();
+
+protected:
+	XMFLOAT4						*m_pxmf4Colors = nullptr;
+	XMFLOAT3						*m_pxmf3Normals = nullptr;
+	XMFLOAT3						*m_pxmf3Tangents = nullptr;
+	XMFLOAT3						*m_pxmf3BiTangents = nullptr;
+	XMFLOAT2						*m_pxmf2TextureCoords0 = nullptr;
+	XMFLOAT2						*m_pxmf2TextureCoords1 = nullptr;
+
+	ID3D12Resource					*m_pd3dTextureCoord0Buffer = nullptr;
+	ID3D12Resource					*m_pd3dTextureCoord0UploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dTextureCoord0BufferView;
+
+	ID3D12Resource					*m_pd3dTextureCoord1Buffer = nullptr;
+	ID3D12Resource					*m_pd3dTextureCoord1UploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dTextureCoord1BufferView;
+
+	ID3D12Resource					*m_pd3dNormalBuffer = nullptr;
+	ID3D12Resource					*m_pd3dNormalUploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dNormalBufferView;
+
+	ID3D12Resource					*m_pd3dTangentBuffer = nullptr;
+	ID3D12Resource					*m_pd3dTangentUploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dTangentBufferView;
+
+	ID3D12Resource					*m_pd3dBiTangentBuffer = nullptr;
+	ID3D12Resource					*m_pd3dBiTangentUploadBuffer = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dBiTangentBufferView;
+
+public:
+	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pInFile);
+
+	void ReleaseUploadBuffers() override;
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet) override;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 class CHeightMapImage {
 private:
-	//높이 맵 이미지 픽셀(8-비트)들의 이차원 배열이다. 각 픽셀은 0~255의 값을 갖는다. 
-	BYTE							*m_pHeightMapPixels;
-	//높이 맵 이미지의 가로와 세로 크기이다. 
-	int 							m_nWidth;
-	int 							m_nLength;
-	//높이 맵 이미지를 실제로 몇 배 확대하여 사용할 것인가를 나타내는 스케일 벡터이다.
-	XMFLOAT3 						m_xmf3Scale;
+	BYTE						*m_pHeightMapPixels;
+
+	int							m_nWidth;
+	int							m_nLength;
+	XMFLOAT3					m_xmf3Scale;
+
 public:
 	CHeightMapImage(LPCTSTR pFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
 	~CHeightMapImage(void);
-	//높이 맵 이미지에서 (x, z) 위치의 픽셀 값에 기반한 지형의 높이를 반환한다. 
-	float 							GetHeight(float x, float z);
-	//높이 맵 이미지에서 (x, z) 위치의 법선 벡터를 반환한다.
-	XMFLOAT3 						GetHeightMapNormal(int x, int z);
-	XMFLOAT3 						GetScale() { return(m_xmf3Scale); }
-	BYTE 							*GetHeightMapPixels() { return(m_pHeightMapPixels); }
-	int 							GetHeightMapWidth() { return(m_nWidth); }
-	int 							GetHeightMapLength() { return(m_nLength); }
+
+	float GetHeight(float x, float z, bool bReverseQuad = false);
+	XMFLOAT3 GetHeightMapNormal(int x, int z);
+	XMFLOAT3 GetScale() { return(m_xmf3Scale); }
+
+	BYTE GetRawImagePixel(int x, int z) { return(m_pHeightMapPixels[x + (z*m_nWidth)]); }
+	BYTE *GetHeightMapPixels() { return(m_pHeightMapPixels); }
+	int GetHeightMapWidth() { return(m_nWidth); }
+	int GetHeightMapLength() { return(m_nLength); }
 };
+
 class CHeightMapGridMesh : public CMesh {
 protected:
-	//격자의 크기(가로: x-방향, 세로: z-방향)이다. 
-	int m_nWidth;
-	int m_nLength;
-	/*격자의 스케일(가로: x-방향, 세로: z-방향, 높이: y-방향) 벡터이다. 실제 격자 메쉬의 각 정점의 x-좌표, y-좌표, z-좌표는 스케일 벡터의 x-좌표, y-좌표, z-좌표로 곱한 값을 갖는다. 즉, 실제 격자의 x-축 방향의 간격은 1이 아니라 스케일 벡터의 x-좌표가 된다. 이렇게 하면 작은 격자(적은 정점)를 사용하더라도 큰 크기의 격자(지형)를 생성할 수 있다.*/
-	XMFLOAT3 m_xmf3Scale;
+	int							m_nWidth;
+	int							m_nLength;
+	XMFLOAT3					m_xmf3Scale;
+
 public:
-	CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList, int xStart, int zStart, int nWidth, int nLength, XMFLOAT3 xmf3Scale =
-		XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT4 xmf4Color = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.0f), void
-		*pContext = NULL);
+	CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int xStart, int zStart, int nWidth, int nLength, XMFLOAT3 xmf3Scale = XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT4 xmf4Color = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.0f), void *pContext = nullptr);
 	virtual ~CHeightMapGridMesh();
-	XMFLOAT3 GetScale() {
-		return(m_xmf3Scale);
-	}
-	int GetWidth() {
-		return(m_nWidth);
-	}
-	int GetLength() {
-		return(m_nLength);
-	}
-	//격자의 좌표가 (x, z)일 때 교점(정점)의 높이를 반환하는 함수이다. 
+
+	XMFLOAT3 GetScale() { return(m_xmf3Scale); }
+	int GetWidth() { return(m_nWidth); }
+	int GetLength() { return(m_nLength); }
+
 	virtual float OnGetHeight(int x, int z, void *pContext);
-	//격자의 좌표가 (x, z)일 때 교점(정점)의 색상을 반환하는 함수이다. 
 	virtual XMFLOAT4 OnGetColor(int x, int z, void *pContext);
 };
-class CSphereMeshDiffused : public CMesh {
-public:
-	CSphereMeshDiffused(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList, float fRadius = 2.0f, int nSlices = 20, int nStacks = 20);
-	virtual ~CSphereMeshDiffused();
-};
-class CFileMesh : public CMesh {
-public:
-	CFileMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* fileName);
-	virtual ~CFileMesh() {}
-};
-class CMeshIlluminated : public CMesh {
-public:
-	CMeshIlluminated(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList);
-	virtual ~CMeshIlluminated();
-public:
-	void CalculateTriangleListVertexNormals(XMFLOAT3 *pxmf3Normals, XMFLOAT3
-		*pxmf3Positions, int nVertices);
-	void CalculateTriangleListVertexNormals(XMFLOAT3 *pxmf3Normals, XMFLOAT3
-		*pxmf3Positions, UINT nVertices, UINT *pnIndices, UINT nIndices);
-	void CalculateTriangleStripVertexNormals(XMFLOAT3 *pxmf3Normals, XMFLOAT3
-		*pxmf3Positions, UINT nVertices, UINT *pnIndices, UINT nIndices);
-	void CalculateVertexNormals(XMFLOAT3 *pxmf3Normals, XMFLOAT3 *pxmf3Positions, int
-		nVertices, UINT *pnIndices, int nIndices);
-};
 
-class CCubeMeshIlluminated : public CMeshIlluminated {
+class CGeometryBillboardMesh : public CMesh {
 public:
-	CCubeMeshIlluminated(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f);
-	virtual ~CCubeMeshIlluminated();
-};
-
-class CSphereMeshIlluminated : public CMeshIlluminated {
-public:
-	CSphereMeshIlluminated(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fRadius = 2.0f, UINT nSlices = 20, UINT nStacks = 20);
-	virtual ~CSphereMeshIlluminated();
+	CGeometryBillboardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pVertices, UINT nVertices, UINT nStride);
+	virtual ~CGeometryBillboardMesh();
 };

@@ -2,6 +2,16 @@
 #include "Timer.h"
 #include "Player.h"
 #include "Scene.h"
+//#define RENDER_WIREFRAME
+
+struct CB_FRAMEWORK_INFO {
+	float					m_fCurrentTime = 0;
+	float					m_fElapsedTime = 0;
+	UINT					m_nRenderMode = 0;
+};
+
+#define DYNAMIC_TESSELLATION		0x10
+#define DEBUG_TESSELLATION			0x20
 
 class CCamera;
 
@@ -29,11 +39,12 @@ private:
 	//현재 스왑 체인의 후면 버퍼 인덱스이다. 
 	ID3D12Resource *m_ppd3dRenderTargetBuffers[m_nSwapChainBuffers];
 	ID3D12DescriptorHeap *m_pd3dRtvDescriptorHeap;
-	UINT m_nRtvDescriptorIncrementSize;
+
+	CTexture *m_pColorRenderTex;
 	//렌더 타겟 버퍼, 서술자 힙 인터페이스 포인터, 렌더 타겟 서술자 원소의 크기이다.
 	ID3D12Resource *m_pd3dDepthStencilBuffer;
 	ID3D12DescriptorHeap *m_pd3dDsvDescriptorHeap;
-	UINT m_nDsvDescriptorIncrementSize;
+	ID3D12DescriptorHeap *m_pd3dCbvSrvUavDescriptorHeap;
 	//깊이-스텐실 버퍼, 서술자 힙 인터페이스 포인터, 깊이-스텐실 서술자 원소의 크기이다.
 	ID3D12CommandQueue *m_pd3dCommandQueue;
 	ID3D12CommandAllocator *m_pd3dCommandAllocator;
@@ -48,16 +59,19 @@ private:
 
 	CScene *m_pScene;
 
+	CObjectsShader* screenShader;
+
+
 	_TCHAR m_pszFrameRate[128];
 public:
-	CCamera *m_pCamera = NULL;
-public:
+	CCamera *m_pCamera = nullptr;
+
 	//플레이어 객체에 대한 포인터이다.
-	CPlayer *m_pPlayer = NULL;
+	CPlayer *m_pPlayer = nullptr;
 	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
 	POINT m_ptOldCursorPos; 
 
-	CGameObject *m_pSelectedObject = NULL;
+	CGameObject *m_pSelectedObject = nullptr;
 public:
 	CGameFramework();
 	~CGameFramework(){
@@ -76,8 +90,8 @@ public:
 	//렌더 타겟 뷰와 깊이-스텐실 뷰를 생성하는 함수이다. 
 	void BuildObjects();
 	void ReleaseObjects();
-	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
-	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
+
+	void UpdateShaderVariables();
 	void ProcessInput();
 	void AnimateObjects();
 	void FrameAdvance();
@@ -93,7 +107,14 @@ public:
 		LPARAM lParam);
 	//윈도우의 메시지(키보드, 마우스 입력)를 처리하는 함수이다. 
 
-public:
 	void ProcessSelectedObject(DWORD dwDirection, float cxDelta, float cyDelta);
 
+	float GetTotalTime() { return m_GameTimer.GetTotalTime(); }
+	float GetElaspedTime() { return m_GameTimer.GetTimeElapsed(); }
+	CScene *GetScene() { return m_pScene; }
+
+protected:
+	CB_FRAMEWORK_INFO* m_pcbMappedFrameworkInfo = NULL;
+	ID3D12Resource* m_pd3dcbFrameworkInfo = NULL;
+	CTexture* m_pTexture = NULL;
 };

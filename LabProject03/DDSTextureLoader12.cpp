@@ -115,7 +115,7 @@ namespace
 
     typedef public std::unique_ptr<void, handle_closer> ScopedHandle;
 
-    inline HANDLE safe_handle(HANDLE h) { return (h == INVALID_HANDLE_VALUE) ? 0 : h; }
+    inline HANDLE safe_handle(HANDLE h) { return (h == INVALID_HANDLE_VALUE) ? nullptr : h; }
 
     template<UINT TNameLength>
     inline void SetDebugObjectName(_In_ ID3D12DeviceChild* resource, _In_z_ const wchar_t(&name)[TNameLength])
@@ -1430,7 +1430,7 @@ HRESULT DirectX::LoadDDSTextureFromMemoryEx(
         texture, subresources, isCubeMap);
     if (SUCCEEDED(hr))
     {
-        if (texture != 0 && *texture != 0)
+        if (texture != nullptr && *texture != nullptr)
         {
             SetDebugObjectName(*texture, L"DDSTextureLoader");
         }
@@ -1522,7 +1522,7 @@ HRESULT DirectX::LoadDDSTextureFromFileEx(
     if (SUCCEEDED(hr))
     {
 #if !defined(NO_D3D12_DEBUG_NAME) && ( defined(_DEBUG) || defined(PROFILE) )
-        if (texture != 0)
+        if (texture != nullptr)
         {
             CHAR strFileA[MAX_PATH];
             int result = WideCharToMultiByte(CP_ACP,
@@ -1532,7 +1532,7 @@ HRESULT DirectX::LoadDDSTextureFromFileEx(
                 strFileA,
                 MAX_PATH,
                 nullptr,
-                FALSE
+                nullptr
             );
             if (result > 0)
             {
@@ -1546,7 +1546,7 @@ HRESULT DirectX::LoadDDSTextureFromFileEx(
                     pstrName++;
                 }
 
-                if (texture != 0 && *texture != 0)
+                if (texture != nullptr && *texture != nullptr)
                 {
                     (*texture)->SetName(pstrName);
                 }

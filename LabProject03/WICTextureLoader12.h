@@ -41,7 +41,7 @@ namespace DirectX
     };
 
     // Standard version
-    HRESULT __cdecl LoadWICTextureFromMemory(
+    HRESULT LoadWICTextureFromMemory(
         _In_ ID3D12Device* d3dDevice,
         _In_reads_bytes_(wicDataSize) const uint8_t* wicData,
         size_t wicDataSize,
@@ -50,7 +50,7 @@ namespace DirectX
         D3D12_SUBRESOURCE_DATA& subresource,
         size_t maxsize = 0);
 
-    HRESULT __cdecl LoadWICTextureFromFile(
+    HRESULT LoadWICTextureFromFile(
         _In_ ID3D12Device* d3dDevice,
         _In_z_ const wchar_t* szFileName,
         _Outptr_ ID3D12Resource** texture,
@@ -59,7 +59,7 @@ namespace DirectX
         size_t maxsize = 0);
 
     // Extended version
-    HRESULT __cdecl LoadWICTextureFromMemoryEx(
+    HRESULT LoadWICTextureFromMemoryEx(
         _In_ ID3D12Device* d3dDevice,
         _In_reads_bytes_(wicDataSize) const uint8_t* wicData,
         size_t wicDataSize,
@@ -70,7 +70,7 @@ namespace DirectX
         std::unique_ptr<uint8_t[]>& decodedData,
         D3D12_SUBRESOURCE_DATA& subresource);
 
-    HRESULT __cdecl LoadWICTextureFromFileEx(
+    HRESULT LoadWICTextureFromFileEx(
         _In_ ID3D12Device* d3dDevice,
         _In_z_ const wchar_t* szFileName,
         size_t maxsize,
