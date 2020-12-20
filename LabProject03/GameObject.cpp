@@ -81,12 +81,23 @@ CTexture::~CTexture() {
 	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
 }
 
-void CTexture::SetRootParameterIndex(int nIndex, UINT nRootParameterIndex) {
-	m_pnRootParameterIndices[nIndex] = nRootParameterIndex;
-}
-
 void CTexture::SetGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle) {
 	m_pd3dSrvGpuDescriptorHandles[nIndex] = d3dSrvGpuDescriptorHandle;
+}
+
+void CTexture::SetGraphicsSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex) {
+	m_pnGraphicsSrvRootParameterIndices[nIndex] = nRootParameterIndex;
+	m_pd3dGraphicsRootParameterSrvGpuDescriptorHandles[nIndex] = m_pd3dSrvGpuDescriptorHandles[nGpuHandleIndex];
+}
+
+void CTexture::SetComputeUavRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex) {
+	m_pnComputeUavRootParameterIndices[nIndex] = nRootParameterIndex;
+	m_pd3dComputeRootParameterUavGpuDescriptorHandles[nIndex] = m_pd3dUavGpuDescriptorHandles[nGpuHandleIndex];
+}
+
+void CTexture::SetComputeSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex) {
+	m_pnComputeSrvRootParameterIndices[nIndex] = nRootParameterIndex;
+	m_pd3dComputeRootParameterSrvGpuDescriptorHandles[nIndex] = m_pd3dSrvGpuDescriptorHandles[nGpuHandleIndex];
 }
 
 void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle) {

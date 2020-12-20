@@ -264,7 +264,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps() {
 	D3D12_CLEAR_VALUE clearValue = { DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0, 0, 1 };
 	m_pColorRenderTex = new CTexture(1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 1);
 	m_pColorRenderTex->CreateTexture(m_pd3dDevice, m_pd3dCommandList, 0, RESOURCE_TEXTURE2D, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, &clearValue);
-	m_pColorRenderTex->SetRootParameterIndex(0, 17);
+	//m_pColorRenderTex->SetRootParameterIndex(0, 17);
 	
 	D3D12_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
