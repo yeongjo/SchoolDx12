@@ -59,7 +59,7 @@ private:
 
 	CScene *m_pScene;
 
-	CObjectsShader* screenShader;
+	CObjectsShader* m_pScreenShader;
 
 
 	_TCHAR m_pszFrameRate[128];
@@ -116,5 +116,6 @@ public:
 protected:
 	CB_FRAMEWORK_INFO* m_pcbMappedFrameworkInfo = NULL;
 	ID3D12Resource* m_pd3dcbFrameworkInfo = NULL;
-	CTexture* m_pTexture = NULL;
+
+	vector<CComputeShader*> m_vpComputeShaders;
 };

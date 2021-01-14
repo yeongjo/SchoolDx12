@@ -26,6 +26,7 @@ class CTexture : public CRef {
 public:
 	CTexture(int nTextureResources, UINT nResourceType, int nSamplers, int nGraphicsSrvRootParameters, int nComputeUavRootParameters=0, int nComputeSrvRootParameters = 0);
 	virtual ~CTexture();
+	D3D12_UNORDERED_ACCESS_VIEW_DESC GetUnorderedAccessViewDesc(int i);
 
 private:
 	UINT							m_nTextureType;
@@ -40,15 +41,14 @@ private:
 	DXGI_FORMAT*					m_pdxgiBufferFormats = nullptr;
 	int*							m_pnBufferElements = nullptr;
 
-	int								m_nRootParameters = 0;
-	int*							m_pnRootParameterIndices = nullptr;
+	int								m_nGraphicsSrvRootParameters = 0;
+	int*							m_pnGraphicsSrvRootParameterIndices = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSrvGpuDescriptorHandles = nullptr;
 
 	int								m_nSamplers = 0;
 	D3D12_GPU_DESCRIPTOR_HANDLE*	m_pd3dSamplerGpuDescriptorHandles = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dUavGpuDescriptorHandles;
-	int m_nGraphicsSrvRootParameters;
-	int* m_pnGraphicsSrvRootParameterIndices;
+	
 	D3D12_GPU_DESCRIPTOR_HANDLE* m_pd3dGraphicsRootParameterSrvGpuDescriptorHandles;
 	int m_nComputeUavRootParameters;
 	int* m_pnComputeUavRootParameterIndices;
@@ -59,8 +59,13 @@ private:
 
 public:
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
+	void SetComputeUavRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex);
+	void SetComputeSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex);
+	void UpdateComputeShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList);
 
 	void UpdateShaderVariable(ID3D12GraphicsCommandList* pd3dCommandList, int nParameterIndex, int nTextureIndex);
+	void SetUavGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dUavGpuDescriptorHandle);
+	void SetSrvGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle);
 	void UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList);
 	void ReleaseShaderVariables();
 
@@ -70,17 +75,14 @@ public:
 
 	int LoadTextureFromFile(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CGameObject* pParent, FILE* pInFile, CShader* pShader, UINT nIndex);
 
-	void SetGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle);
-	void SetGraphicsSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex);
-	void SetComputeUavRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex);
-	void SetComputeSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex);
+	void SetRootParameterIndex(int nIndex, UINT nRootParameterIndex);
 
-	int GetRootParameters() { return(m_nRootParameters); }
+	int GetRootParameters() { return(m_nGraphicsSrvRootParameters); }
 	int GetTextures() { return(m_nTextures); }
 	_TCHAR* GetTextureName(int nIndex) { return(m_ppstrTextureNames[nIndex]); }
 	ID3D12Resource* GetResource(int nIndex) { return(m_ppd3dTextures[nIndex]); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGpuDescriptorHandle(int nIndex) { return(m_pd3dSrvGpuDescriptorHandles[nIndex]); }
-	int GetRootParameter(int nIndex) { return(m_pnRootParameterIndices[nIndex]); }
+	int GetRootParameter(int nIndex) { return(m_pnGraphicsSrvRootParameterIndices[nIndex]); }
 
 	UINT GetTextureType() { return(m_nTextureType); }
 	UINT GetTextureType(int nIndex) { return(m_pnResourceTypes[nIndex]); }

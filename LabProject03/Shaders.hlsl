@@ -171,6 +171,7 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 //
 Texture2D gtxtTexture : register(t0);
 SamplerState gSamplerState : register(s0);
+RWTexture2D<float4> gtxtRWOutput : register(u0);
 
 struct VS_TEXTURED_INPUT {
 	float3 position : POSITION;
@@ -1024,9 +1025,26 @@ float4 PSTexturedNormalMapLighting(VS_NORMALMAP_TEXTURED_OUTPUT input, uint nPri
 		return(lerp(cTexture, cIllumination, 0.35f));
 }
 
-RWTexture2D<float4> gtxtRWOutput : register(u0);
+static float3 gf3ToLuminance = float3(0.3f, 0.59f, 0.11f);
+static float gfLaplacians[9] = { -1.0f, -1.0f, -1.0f, -1.0f, 8.0f, -1.0f, -1.0f, -1.0f, -1.0f };
+static int2 gnOffsets[9] = { { -1,-1 }, { 0,-1 }, { 1,-1 }, { -1,0 }, { 0,0 }, { 1,0 }, { -1,1 }, { 0,1 }, { 1,1 } };
+
+void LaplacianEdge(int3 nDispatchID : SV_DispatchThreadID) {
+	float3 cEdgeness = float3(0.0f, 0.0f, 0.0f);
+	if ((uint(nDispatchID.x) >= 1) || (uint(nDispatchID.y) >= 1) || (uint(nDispatchID.x) <= gtxtTexture.Length.x - 2) || (uint(nDispatchID.y) <= gtxtTexture.Length.y - 2))
+	{
+		for (int i = 0; i < 9; i++)
+		{
+			cEdgeness += gfLaplacians[i] * dot(gf3ToLuminance, gtxtTexture[int2(nDispatchID.xy) + gnOffsets[i]].xyz);
+		}
+	}
+	float3 cColor = lerp(gtxtTexture[int2(nDispatchID.xy)].rgb, cEdgeness, 0.1f);
+
+	gtxtRWOutput[nDispatchID.xy] = float4(cColor, 1.0f);
+}
 
 [numthreads(32, 32, 1)]
-void CSAddTextures(int3 nDispatchID : SV_DispatchThreadID) {
-	gtxtRWOutput[nDispatchID.xy] = gtxtTexture[nDispatchID.xy] * float4(1,0,0,1);
+void CSTextures(int3 nDispatchID : SV_DispatchThreadID) {
+	LaplacianEdge(nDispatchID);
+	//gtxtRWOutput[nDispatchID.xy] = gtxtTexture[nDispatchID.xy] * float4(1,0,0,1);
 }

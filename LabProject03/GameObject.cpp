@@ -12,6 +12,9 @@ CTexture::CTexture(int nTextureResources, UINT nResourceType, int nSamplers, int
 	m_nTextures = nTextureResources;
 	if (m_nTextures > 0)
 	{
+		m_ppstrTextureNames = new _TCHAR[m_nTextures][64];
+		for (int i = 0; i < m_nTextures; i++) m_ppstrTextureNames[i][0] = '\0';
+		
 		m_ppd3dTextures = new ID3D12Resource * [m_nTextures];
 		for (int i = 0; i < m_nTextures; i++) m_ppd3dTextures[i] = NULL;
 		m_ppd3dTextureUploadBuffers = new ID3D12Resource * [m_nTextures];
@@ -75,19 +78,59 @@ CTexture::~CTexture() {
 	if (m_pdxgiBufferFormats) delete[] m_pdxgiBufferFormats;
 	if (m_pnBufferElements) delete[] m_pnBufferElements;
 
-	if (m_pnRootParameterIndices) delete[] m_pnRootParameterIndices;
+	if (m_pnGraphicsSrvRootParameterIndices) delete[] m_pnGraphicsSrvRootParameterIndices;
 	if (m_pd3dSrvGpuDescriptorHandles) delete[] m_pd3dSrvGpuDescriptorHandles;
 
 	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
 }
 
-void CTexture::SetGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle) {
+D3D12_UNORDERED_ACCESS_VIEW_DESC CTexture::GetUnorderedAccessViewDesc(int nIndex) {
+	ID3D12Resource* pShaderResource = GetResource(nIndex);
+	D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC d3dUnorderedAccessViewDesc;
+
+	int nTextureType = GetTextureType(nIndex);
+	switch (nTextureType)
+	{
+	case RESOURCE_TEXTURE2D: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 1)
+	case RESOURCE_TEXTURE2D_ARRAY: //[]
+		d3dUnorderedAccessViewDesc.Format = d3dResourceDesc.Format;
+		d3dUnorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		d3dUnorderedAccessViewDesc.Texture2D.MipSlice = 0;
+		d3dUnorderedAccessViewDesc.Texture2D.PlaneSlice = 0;
+		break;
+	case RESOURCE_TEXTURE2DARRAY: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize != 1)
+		d3dUnorderedAccessViewDesc.Format = d3dResourceDesc.Format;
+		d3dUnorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+		d3dUnorderedAccessViewDesc.Texture2DArray.MipSlice = 0;
+		d3dUnorderedAccessViewDesc.Texture2DArray.FirstArraySlice = 0;
+		d3dUnorderedAccessViewDesc.Texture2DArray.ArraySize = d3dResourceDesc.DepthOrArraySize;
+		d3dUnorderedAccessViewDesc.Texture2DArray.PlaneSlice = 0;
+		break;
+	case RESOURCE_BUFFER: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+		d3dUnorderedAccessViewDesc.Format = m_pdxgiBufferFormats[nIndex];
+		d3dUnorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		d3dUnorderedAccessViewDesc.Buffer.FirstElement = 0;
+		d3dUnorderedAccessViewDesc.Buffer.NumElements = 0;
+		d3dUnorderedAccessViewDesc.Buffer.StructureByteStride = 0;
+		d3dUnorderedAccessViewDesc.Buffer.CounterOffsetInBytes = 0;
+		d3dUnorderedAccessViewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		break;
+	}
+	return(d3dUnorderedAccessViewDesc);
+}
+
+void CTexture::SetRootParameterIndex(int nIndex, UINT nRootParameterIndex) {
+	m_pnGraphicsSrvRootParameterIndices[nIndex] = nRootParameterIndex;
+}
+
+void CTexture::SetSrvGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle) {
 	m_pd3dSrvGpuDescriptorHandles[nIndex] = d3dSrvGpuDescriptorHandle;
 }
 
-void CTexture::SetGraphicsSrvRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex) {
-	m_pnGraphicsSrvRootParameterIndices[nIndex] = nRootParameterIndex;
-	m_pd3dGraphicsRootParameterSrvGpuDescriptorHandles[nIndex] = m_pd3dSrvGpuDescriptorHandles[nGpuHandleIndex];
+void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle) {
+	m_pd3dSamplerGpuDescriptorHandles[nIndex] = d3dSamplerGpuDescriptorHandle;
 }
 
 void CTexture::SetComputeUavRootParameterIndex(int nIndex, int nRootParameterIndex, int nGpuHandleIndex) {
@@ -100,24 +143,36 @@ void CTexture::SetComputeSrvRootParameterIndex(int nIndex, int nRootParameterInd
 	m_pd3dComputeRootParameterSrvGpuDescriptorHandles[nIndex] = m_pd3dSrvGpuDescriptorHandles[nGpuHandleIndex];
 }
 
-void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle) {
-	m_pd3dSamplerGpuDescriptorHandles[nIndex] = d3dSamplerGpuDescriptorHandle;
+void CTexture::UpdateComputeShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList) {
+	for (int i = 0; i < m_nComputeSrvRootParameters; i++)
+	{
+		if ((m_pnComputeSrvRootParameterIndices[i] != -1) && (m_pd3dComputeRootParameterSrvGpuDescriptorHandles[i].ptr != NULL)) pd3dCommandList->SetComputeRootDescriptorTable(m_pnComputeSrvRootParameterIndices[i], m_pd3dComputeRootParameterSrvGpuDescriptorHandles[i]);
+	}
+
+	for (int i = 0; i < m_nComputeUavRootParameters; i++)
+	{
+		if ((m_pnComputeUavRootParameterIndices[i] != -1) && (m_pd3dComputeRootParameterUavGpuDescriptorHandles[i].ptr != NULL)) pd3dCommandList->SetComputeRootDescriptorTable(m_pnComputeUavRootParameterIndices[i], m_pd3dComputeRootParameterUavGpuDescriptorHandles[i]);
+	}
 }
 
 void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList) {
-	if (m_nRootParameters == m_nTextures) {
-		for (int i = 0; i < m_nRootParameters; i++) {
-			if (m_pd3dSrvGpuDescriptorHandles[i].ptr && (m_pnRootParameterIndices[i] != -1))
-				pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[i], m_pd3dSrvGpuDescriptorHandles[i]);
+	if (m_nGraphicsSrvRootParameters == m_nTextures) {
+		for (int i = 0; i < m_nGraphicsSrvRootParameters; i++) {
+			if (m_pd3dSrvGpuDescriptorHandles[i].ptr && (m_pnGraphicsSrvRootParameterIndices[i] != -1))
+				pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnGraphicsSrvRootParameterIndices[i], m_pd3dSrvGpuDescriptorHandles[i]);
 		}
 	} else {
 		if (m_pd3dSrvGpuDescriptorHandles[0].ptr)
-			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[0], m_pd3dSrvGpuDescriptorHandles[0]);
+			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnGraphicsSrvRootParameterIndices[0], m_pd3dSrvGpuDescriptorHandles[0]);
 	}
 }
 
 void CTexture::UpdateShaderVariable(ID3D12GraphicsCommandList* pd3dCommandList, int nParameterIndex, int nTextureIndex) {
-	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnRootParameterIndices[nParameterIndex], m_pd3dSrvGpuDescriptorHandles[nTextureIndex]);
+	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pnGraphicsSrvRootParameterIndices[nParameterIndex], m_pd3dSrvGpuDescriptorHandles[nTextureIndex]);
+}
+
+void CTexture::SetUavGpuDescriptorHandle(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dUavGpuDescriptorHandle) {
+	m_pd3dUavGpuDescriptorHandles[nIndex] = d3dUavGpuDescriptorHandle;
 }
 
 void CTexture::ReleaseShaderVariables() {
@@ -184,7 +239,7 @@ int CTexture::LoadTextureFromFile(ID3D12Device* pd3dDevice, ID3D12GraphicsComman
 			LoadTextureFromDDSFile(pd3dDevice, pd3dCommandList, m_ppstrTextureNames[nIndex], RESOURCE_TEXTURE2D, nIndex);
 			pShader->CreateShaderResourceView(pd3dDevice, this, nIndex);
 #ifdef _WITH_STANDARD_TEXTURE_MULTIPLE_DESCRIPTORS
-			m_pnRootParameterIndices[nIndex] = PARAMETER_STANDARD_TEXTURE + nIndex;
+			m_pnGraphicsSrvRootParameterIndices[nIndex] = PARAMETER_STANDARD_TEXTURE + nIndex;
 #endif
 		} else {
 			if (pParent) {
@@ -197,7 +252,7 @@ int CTexture::LoadTextureFromFile(ID3D12Device* pd3dDevice, ID3D12GraphicsComman
 				int nParameterIndex = pRootGameObject->FindReplicatedTexture(m_ppstrTextureNames[nIndex], &d3dSrvGpuDescriptorHandle);
 				if (nParameterIndex >= 0) {
 					m_pd3dSrvGpuDescriptorHandles[nIndex] = d3dSrvGpuDescriptorHandle;
-					m_pnRootParameterIndices[nIndex] = nParameterIndex;
+					m_pnGraphicsSrvRootParameterIndices[nIndex] = nParameterIndex;
 				}
 			}
 		}
@@ -377,7 +432,7 @@ void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandLi
 	pd3dCommandList->SetGraphicsRoot32BitConstants(1, 16, &xmf4x4World, 0);
 }
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {
-	//OnPrepareRender();
+	//OnPrepare();
 
 	UpdateShaderVariables(pd3dCommandList);
 
@@ -485,7 +540,7 @@ void CGameObject::Scale(float x, float y, float z) {
 }
 bool CGameObject::IsVisible(CCamera *pCamera) {
 	return true;
-	//OnPrepareRender();
+	//OnPrepare();
 	//bool bIsVisible = true;
 	//BoundingOrientedBox xmBoundingBox = m_pMesh->GetBoundingBox();
 	////모델 좌표계의 바운딩 박스를 월드 좌표계로 변환한다. 
